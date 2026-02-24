@@ -88,6 +88,10 @@ app.include_router(tasks_router)
 from .api.routes_workflows import router as workflows_router
 app.include_router(workflows_router)
 
+# Import and include coordination router
+from .api.routes_coordination import router as coordination_router
+app.include_router(coordination_router)
+
 # Root endpoint
 @app.get("/")
 async def root():
