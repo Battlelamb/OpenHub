@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  agenthub:
+    build: .
+    container_name: agenthub
+    ports:
+      - "7788:7788"
+    volumes:
+      - ./data/state:/app/data/state
+      - ./data/artifacts:/app/data/artifacts
+      - ./data/zvec:/app/data/zvec
+      - ./app:/app/app:ro  # Read-only for development
+    environment:
+      - AGENTHUB_HOST=0.0.0.0
+      - AGENTHUB_PORT=7788
+      - AGENTHUB_DB_PATH=/app/data/state/agenthub.db
+      - AGENTHUB_ARTIFACT_DIR=/app/data/artifacts
+      - AGENTHUB_ZVEC_PATH=/app/data/zvec
+      - AGENTHUB_LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - agenthub-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: agenthub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    restart: unless-stopped
+    networks:
+      - agenthub-network
+
+volumes:
+  redis_data:
+
+networks:
+  agenthub-network:
+    driver: bridge

@@ -1,0 +1,43 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# WebSocket Support
+websockets==12.0
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Vector Database
+zvec==0.1.0
+
+# Cache & Messaging  
+redis==5.0.1
+
+# Data Validation
+pydantic==2.4.2
+pydantic-settings==2.0.3
+
+# HTTP Client
+httpx==0.25.2
+
+# File Upload
+python-multipart==0.0.6
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Monitoring
+prometheus-client==0.19.0
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Utilities
+python-dotenv==1.0.0
+structlog==23.2.0
+click==8.1.7
