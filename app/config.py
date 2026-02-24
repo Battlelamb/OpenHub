@@ -50,6 +50,43 @@ class Settings(BaseSettings):
     cors_origins: List[str] = Field(default=["*"], description="CORS allowed origins")
     cors_methods: List[str] = Field(default=["*"], description="CORS allowed methods")
     cors_headers: List[str] = Field(default=["*"], description="CORS allowed headers")
+    
+    # JWT Authentication Configuration
+    jwt_secret_key: str = Field(default="your-super-secret-jwt-key-change-in-production", description="JWT secret key")
+    jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
+    jwt_access_token_expire_minutes: int = Field(default=30, description="Access token expiration in minutes")
+    jwt_refresh_token_expire_days: int = Field(default=7, description="Refresh token expiration in days")
+    
+    # API Key Configuration
+    api_key_header: str = Field(default="X-API-Key", description="API key header name")
+    api_key_max_length: int = Field(default=64, description="Maximum API key length")
+    
+    # Redis Configuration for Auth Caching
+    redis_token_prefix: str = Field(default="openhub:tokens:", description="Redis token key prefix")
+    redis_blacklist_prefix: str = Field(default="openhub:blacklist:", description="Redis blacklist key prefix")
+    
+    # Security Configuration
+    password_min_length: int = Field(default=8, description="Minimum password length")
+    max_login_attempts: int = Field(default=5, description="Maximum login attempts before lockout")
+    lockout_duration_minutes: int = Field(default=15, description="Account lockout duration")
+    
+    # Rate Limiting Configuration
+    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
+    rate_limit_requests_per_minute: int = Field(default=60, description="Requests per minute limit")
+    rate_limit_burst: int = Field(default=10, description="Burst limit for rate limiting")
+    
+    # Agent Heartbeat Configuration
+    heartbeat_timeout_sec: int = Field(default=120, description="Agent heartbeat timeout in seconds")
+    heartbeat_check_interval_sec: int = Field(default=30, description="Heartbeat check interval in seconds")
+    agent_offline_threshold_sec: int = Field(default=300, description="Consider agent offline after this timeout")
+    
+    # Hatchet Workflow Configuration
+    hatchet_server_url: str = Field(default="http://localhost:8080", description="Hatchet server URL")
+    hatchet_api_key: Optional[str] = Field(default=None, description="Hatchet API key")
+    hatchet_tenant_id: str = Field(default="default", description="Hatchet tenant ID")
+    workflow_default_timeout_sec: int = Field(default=1800, description="Default workflow timeout in seconds")
+    workflow_step_default_timeout_sec: int = Field(default=300, description="Default workflow step timeout in seconds")
+    workflow_max_retries: int = Field(default=3, description="Maximum workflow retries")
 
     class Config:
         env_prefix = "AGENTHUB_"

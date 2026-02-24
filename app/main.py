@@ -68,6 +68,26 @@ app.add_middleware(
 # Include routers
 app.include_router(health_router)
 
+# Import and include auth router
+from .api.routes_auth import router as auth_router
+app.include_router(auth_router)
+
+# Import and include admin router
+from .api.routes_admin import router as admin_router
+app.include_router(admin_router)
+
+# Import and include agents router
+from .api.routes_agents import router as agents_router
+app.include_router(agents_router)
+
+# Import and include tasks router
+from .api.routes_tasks import router as tasks_router
+app.include_router(tasks_router)
+
+# Import and include workflows router
+from .api.routes_workflows import router as workflows_router
+app.include_router(workflows_router)
+
 # Root endpoint
 @app.get("/")
 async def root():
