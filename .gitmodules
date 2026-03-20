@@ -1,0 +1,3 @@
+[submodule "AGENTS_HUB/Promt"]
+	path = AGENTS_HUB/Promt
+	url = https://github.com/Battlelamb/Promt.git
