@@ -92,6 +92,10 @@ app.include_router(workflows_router)
 from .api.routes_coordination import router as coordination_router
 app.include_router(coordination_router)
 
+# Import and include ACN router
+from .api.routes_acn import router as acn_router
+app.include_router(acn_router)
+
 # Root endpoint
 @app.get("/")
 async def root():

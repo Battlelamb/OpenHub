@@ -4,6 +4,8 @@ Repository pattern implementations for database access
 from .base import BaseRepository
 from .agents import AgentRepository
 from .tasks import TaskRepository
+from .acn_nodes import ACNNodeRepository
+from .remote_agent_mappings import RemoteAgentMappingRepository
 
 # The following modules do not exist yet:
 # from .events import EventRepository
@@ -17,4 +19,6 @@ __all__ = [
     "BaseRepository",
     "AgentRepository",
     "TaskRepository",
+    "ACNNodeRepository",
+    "RemoteAgentMappingRepository",
 ]
