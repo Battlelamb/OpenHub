@@ -1,6 +1,7 @@
 """
 Task service for OpenHub - clean business logic
 """
+import json as _json
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -263,7 +264,7 @@ class TaskService:
             }
             
             updated_task = self.task_repo.update(task_id, {
-                "payload": current_payload
+                "payload": _json.dumps(current_payload)
             })
             
             return updated_task is not None
@@ -301,16 +302,16 @@ class TaskService:
             if task.started_at:
                 duration = (datetime.utcnow() - task.started_at).total_seconds()
             
-            # Update task
+            # Update task (serialize dicts/lists to JSON for sqlite)
             update_data = {
                 "status": TaskStatus.COMPLETED.value,
                 "completed_at": datetime.utcnow(),
                 "result_summary": completion.result_summary,
-                "output": completion.output,
-                "artifact_ids": completion.artifact_ids,
+                "output": _json.dumps(completion.output or {}),
+                "artifact_ids": _json.dumps(completion.artifact_ids or []),
                 "duration_seconds": duration
             }
-            
+
             # Add completion metrics to payload
             if completion.metrics:
                 current_payload = task.payload or {}
