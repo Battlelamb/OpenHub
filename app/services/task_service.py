@@ -49,10 +49,10 @@ class TaskService:
             new_task_model = Task(
                 id=task_id,
                 title=task_data.title,
-                description=task_data.description,
+                description=task_data.description or "",
                 task_type=task_type_val,
                 priority=task_data.priority,
-                status=TaskStatus.QUEUED.value,
+                status=TaskStatus.QUEUED,
                 required_capabilities=task_data.required_capabilities,
                 payload=task_data.payload or {},
                 deadline_at=task_data.deadline_at,
