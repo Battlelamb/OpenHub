@@ -51,7 +51,7 @@ class AgentRepository(BaseRepository[Agent]):
             "agent_name": agent.agent_name,
             "description": agent.description,
             "capabilities": json.dumps(agent.capabilities),
-            "status": agent.status.value,
+            "status": agent.status if isinstance(agent.status, str) else agent.status.value,
             "labels": json.dumps(agent.labels),
             "metadata": json.dumps(agent.metadata),
             "created_at": agent.created_at,
