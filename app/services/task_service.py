@@ -43,22 +43,26 @@ class TaskService:
             # Generate task ID
             task_id = str(uuid.uuid4())
             
-            # Create task record
-            new_task = self.task_repo.create({
-                "id": task_id,
-                "title": task_data.title,
-                "description": task_data.description,
-                "task_type": task_data.task_type.value,
-                "priority": task_data.priority,
-                "status": TaskStatus.QUEUED.value,
-                "required_capabilities": task_data.required_capabilities,
-                "payload": task_data.payload,
-                "deadline_at": task_data.deadline_at,
-                "max_retries": task_data.max_retries,
-                "idempotency_key": task_data.idempotency_key,
-                "labels": task_data.labels,
-                "created_by": created_by
-            })
+            # Create task model
+            from ..models.tasks import Task
+            task_type_val = task_data.task_type if isinstance(task_data.task_type, str) else task_data.task_type.value
+            new_task_model = Task(
+                id=task_id,
+                title=task_data.title,
+                description=task_data.description,
+                task_type=task_type_val,
+                priority=task_data.priority,
+                status=TaskStatus.QUEUED.value,
+                required_capabilities=task_data.required_capabilities,
+                payload=task_data.payload or {},
+                deadline_at=task_data.deadline_at,
+                max_retries=task_data.max_retries,
+                idempotency_key=task_data.idempotency_key,
+                labels=task_data.labels or {},
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            new_task = self.task_repo.create(new_task_model)
             
             if not new_task:
                 raise Exception("Failed to create task in database")
