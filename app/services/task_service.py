@@ -142,7 +142,7 @@ class TaskService:
                 logger.warning("task_claim_not_found", task_id=task_id)
                 return False
             
-            if task.status != TaskStatus.QUEUED:
+            if (task.status if isinstance(task.status, str) else task.status.value) != TaskStatus.QUEUED.value:
                 logger.warning("task_claim_invalid_status", 
                               task_id=task_id,
                               current_status=task.status)
@@ -154,10 +154,11 @@ class TaskService:
                 logger.warning("task_claim_agent_not_found", agent_id=claim_data.agent_id)
                 return False
             
-            if agent.status not in [AgentStatus.ONLINE, AgentStatus.IDLE]:
-                logger.warning("task_claim_agent_not_available", 
+            agent_status_val = agent.status if isinstance(agent.status, str) else agent.status.value
+            if agent_status_val not in [AgentStatus.ONLINE.value, AgentStatus.IDLE.value]:
+                logger.warning("task_claim_agent_not_available",
                               agent_id=claim_data.agent_id,
-                              agent_status=agent.status)
+                              agent_status=agent_status_val)
                 return False
             
             # Calculate lease expiration
@@ -209,7 +210,7 @@ class TaskService:
                               agent_id=agent_id)
                 return False
             
-            if task.status != TaskStatus.CLAIMED:
+            if (task.status if isinstance(task.status, str) else task.status.value) != TaskStatus.CLAIMED.value:
                 logger.warning("task_start_invalid_status", 
                               task_id=task_id,
                               current_status=task.status)
@@ -249,7 +250,7 @@ class TaskService:
             if not task or task.owner_agent_id != agent_id:
                 return False
             
-            if task.status != TaskStatus.RUNNING:
+            if (task.status if isinstance(task.status, str) else task.status.value) != TaskStatus.RUNNING.value:
                 return False
             
             # Update progress (stored in payload for now)
@@ -288,10 +289,11 @@ class TaskService:
                               agent_id=agent_id)
                 return False
             
-            if task.status not in [TaskStatus.RUNNING, TaskStatus.WAITING_APPROVAL]:
-                logger.warning("task_completion_invalid_status", 
+            task_status = task.status if isinstance(task.status, str) else task.status.value
+            if task_status not in [TaskStatus.RUNNING.value, TaskStatus.WAITING_APPROVAL.value]:
+                logger.warning("task_completion_invalid_status",
                               task_id=task_id,
-                              current_status=task.status)
+                              current_status=task_status)
                 return False
             
             # Calculate duration
@@ -424,7 +426,8 @@ class TaskService:
             if not task:
                 return False
             
-            if task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED]:
+            cancel_status = task.status if isinstance(task.status, str) else task.status.value
+            if cancel_status in [TaskStatus.COMPLETED.value, TaskStatus.FAILED.value, TaskStatus.CANCELLED.value]:
                 logger.warning("task_already_finished", 
                               task_id=task_id,
                               current_status=task.status)
@@ -473,7 +476,8 @@ class TaskService:
                 min_score=0.5  # Minimum 50% capability match
             )
             
-            if best_match and best_match.agent.status in [AgentStatus.ONLINE, AgentStatus.IDLE]:
+            best_status = best_match.agent.status if isinstance(best_match.agent.status, str) else best_match.agent.status.value if best_match else None
+            if best_match and best_status in [AgentStatus.ONLINE.value, AgentStatus.IDLE.value]:
                 # Auto-assign task
                 claim_data = TaskClaim(agent_id=best_match.agent.id)
                 success = self.claim_task(task.id, claim_data)
