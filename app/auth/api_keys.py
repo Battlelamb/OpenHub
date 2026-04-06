@@ -2,6 +2,7 @@
 Production-grade API Key management system for OpenHub
 """
 import hashlib
+import json
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
@@ -177,11 +178,11 @@ class APIKeyManager:
                 "key_type": key_type.value,
                 "key_hash": key_hash,
                 "salt": salt,
-                "scopes": str(validated_scopes),  # JSON string
+                "scopes": json.dumps(validated_scopes),
                 "description": description,
                 "expires_at": expires_at,
                 "created_by": created_by,
-                "metadata": str(metadata or {}),
+                "metadata": json.dumps(metadata or {}),
                 "is_active": True,
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc)
