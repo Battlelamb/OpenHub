@@ -362,33 +362,37 @@ async def list_remote_agents(
 
 # ========== TASK ROUTING (auth required) ==========
 
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class ACNTaskCreate(PydanticBaseModel):
+    """Simple task creation model for ACN"""
+    title: str
+    description: str
+    task_type: str = "feature"
+    priority: int = 50
+    required_capabilities: List[str] = ["code_edit"]
+    payload: Optional[Dict[str, Any]] = None
+
+
 @router.post("/tasks/create")
 async def create_task(
-    title: str,
-    description: str,
-    task_type: str = "feature",
-    priority: int = 50,
-    required_capabilities: Optional[List[str]] = None,
+    body: ACNTaskCreate,
     key_info: Dict = Depends(_require_api_key),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
     """
     Create a task and auto-assign to best matching agent.
-    Requires any valid API key.
-
-    The system will:
-    1. Create the task in QUEUED status
-    2. Find the best agent based on required_capabilities
-    3. Auto-assign (CLAIMED) if a match is found
+    Requires any valid API key. Send JSON body.
     """
     try:
         task_data = TaskCreate(
-            title=title,
-            description=description,
-            task_type=TaskType(task_type) if task_type in [t.value for t in TaskType] else TaskType.FEATURE,
-            priority=priority,
-            required_capabilities=required_capabilities or [],
-            payload={},
+            title=body.title,
+            description=body.description,
+            task_type=TaskType(body.task_type) if body.task_type in [t.value for t in TaskType] else TaskType.FEATURE,
+            priority=body.priority,
+            required_capabilities=body.required_capabilities,
+            payload=body.payload or {},
             labels={},
             max_retries=3,
         )
