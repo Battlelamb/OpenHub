@@ -16,8 +16,10 @@ from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..services.remote_agent_service import RemoteAgentService
+from ..services.task_service import TaskService
 from ..models.acn import ACNNode, ACNNodeCreate, RemoteAgentRegister
 from ..models.agents import Agent
+from ..models.tasks import TaskCreate, TaskType, TaskPriority, TaskStatus, TaskClaim, TaskComplete, TaskFail
 from ..auth.api_keys import APIKeyManager, APIKeyType, APIKeyScope
 
 logger = get_logger(__name__)
@@ -42,6 +44,11 @@ def get_remote_agent_service() -> RemoteAgentService:
 def get_api_key_manager() -> APIKeyManager:
     database = get_database()
     return APIKeyManager(database)
+
+
+def get_task_service() -> TaskService:
+    database = get_database()
+    return TaskService(database)
 
 
 def _get_admin_key() -> str:
@@ -351,6 +358,170 @@ async def list_remote_agents(
     """List all remote agents. Requires API key."""
     agents = service.get_remote_agents()
     return {"remote_agents": agents, "total": len(agents)}
+
+
+# ========== TASK ROUTING (auth required) ==========
+
+@router.post("/tasks/create")
+async def create_task(
+    title: str,
+    description: str,
+    task_type: str = "feature",
+    priority: int = 50,
+    required_capabilities: Optional[List[str]] = None,
+    key_info: Dict = Depends(_require_api_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """
+    Create a task and auto-assign to best matching agent.
+    Requires any valid API key.
+
+    The system will:
+    1. Create the task in QUEUED status
+    2. Find the best agent based on required_capabilities
+    3. Auto-assign (CLAIMED) if a match is found
+    """
+    try:
+        task_data = TaskCreate(
+            title=title,
+            description=description,
+            task_type=TaskType(task_type) if task_type in [t.value for t in TaskType] else TaskType.FEATURE,
+            priority=priority,
+            required_capabilities=required_capabilities or [],
+            payload={},
+            labels={},
+            max_retries=3,
+        )
+        new_task = task_service.create_task(task_data, created_by=key_info.get("name"))
+
+        return {
+            "task_id": new_task.id,
+            "title": new_task.title,
+            "status": new_task.status if isinstance(new_task.status, str) else new_task.status.value,
+            "assigned_to": new_task.owner_agent_id,
+            "message": "Task created" + (f" and assigned to {new_task.owner_agent_id}" if new_task.owner_agent_id else " - waiting in queue"),
+        }
+    except Exception as e:
+        logger.error("acn_task_creation_failed", error=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/tasks/{task_id}/claim")
+async def claim_task(
+    task_id: str,
+    agent_id: str,
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, str]:
+    """Claim a task for a specific agent. Requires API key."""
+    claim = TaskClaim(agent_id=agent_id)
+    success = task_service.claim_task(task_id, claim)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to claim task")
+    return {"status": "claimed", "task_id": task_id, "agent_id": agent_id}
+
+
+@router.post("/tasks/{task_id}/start")
+async def start_task(
+    task_id: str,
+    agent_id: str,
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, str]:
+    """Start a claimed task. Requires API key."""
+    success = task_service.start_task(task_id, agent_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to start task")
+    return {"status": "started", "task_id": task_id}
+
+
+@router.post("/tasks/{task_id}/complete")
+async def complete_task(
+    task_id: str,
+    agent_id: str,
+    result_summary: Optional[str] = None,
+    output: Optional[Dict[str, Any]] = None,
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, str]:
+    """Complete a task with results. Requires API key."""
+    completion = TaskComplete(
+        result_summary=result_summary or "Task completed",
+        output=output or {},
+    )
+    success = task_service.complete_task(task_id, agent_id, completion)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to complete task")
+    return {"status": "completed", "task_id": task_id}
+
+
+@router.post("/tasks/{task_id}/fail")
+async def fail_task(
+    task_id: str,
+    agent_id: str,
+    error_message: str = "Task failed",
+    retryable: bool = True,
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, str]:
+    """Report task failure. Requires API key."""
+    failure = TaskFail(error_message=error_message, retryable=retryable)
+    success = task_service.fail_task(task_id, agent_id, failure)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to process task failure")
+    return {"status": "failed", "task_id": task_id}
+
+
+@router.get("/tasks/available")
+async def get_available_tasks(
+    agent_id: str,
+    limit: int = 10,
+    key_info: Dict = Depends(_require_api_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Get tasks available for a specific agent based on capabilities."""
+    tasks = task_service.get_available_tasks(agent_id, limit)
+    return {
+        "tasks": [
+            {
+                "task_id": t.id,
+                "title": t.title,
+                "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
+                "priority": t.priority,
+                "required_capabilities": t.required_capabilities,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+            }
+            for t in tasks
+        ],
+        "total": len(tasks),
+    }
+
+
+@router.get("/tasks/{task_id}")
+async def get_task(
+    task_id: str,
+    key_info: Dict = Depends(_require_api_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Get task details. Requires API key."""
+    task = task_service.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    return {
+        "task_id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "task_type": task.task_type if isinstance(task.task_type, str) else task.task_type.value,
+        "priority": task.priority,
+        "status": task.status if isinstance(task.status, str) else task.status.value,
+        "assigned_to": task.owner_agent_id,
+        "required_capabilities": task.required_capabilities,
+        "result_summary": task.result_summary,
+        "output": task.output,
+        "last_error": task.last_error,
+        "created_at": task.created_at.isoformat() if task.created_at else None,
+        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+    }
 
 
 # ========== PUBLIC (no auth) ==========
