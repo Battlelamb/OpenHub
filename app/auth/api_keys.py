@@ -49,6 +49,13 @@ class APIKeyScope(str, Enum):
     WEBHOOK_RECEIVE = "webhook:receive"
     WEBHOOK_SEND = "webhook:send"
 
+    # ACN scopes
+    ACN_NODE_MANAGE = "acn:node_manage"
+    ACN_AGENT_REGISTER = "acn:agent_register"
+    ACN_AGENT_READ = "acn:agent_read"
+    ACN_TASK_SUBMIT = "acn:task_submit"
+    ACN_ADMIN = "acn:admin"
+
 
 class APIKeyManager:
     """Clean and secure API Key management"""
@@ -82,11 +89,14 @@ class APIKeyManager:
             APIKeyType.AGENT: [
                 APIKeyScope.AGENT_REGISTER, APIKeyScope.AGENT_HEARTBEAT,
                 APIKeyScope.TASK_READ, APIKeyScope.TASK_CREATE, APIKeyScope.TASK_UPDATE,
-                APIKeyScope.ARTIFACT_READ, APIKeyScope.ARTIFACT_UPLOAD
+                APIKeyScope.ARTIFACT_READ, APIKeyScope.ARTIFACT_UPLOAD,
+                APIKeyScope.ACN_NODE_MANAGE, APIKeyScope.ACN_AGENT_REGISTER,
+                APIKeyScope.ACN_AGENT_READ, APIKeyScope.ACN_TASK_SUBMIT,
             ],
             APIKeyType.SERVICE: [
                 APIKeyScope.TASK_READ, APIKeyScope.TASK_CREATE,
-                APIKeyScope.ARTIFACT_READ, APIKeyScope.SYSTEM_MONITOR
+                APIKeyScope.ARTIFACT_READ, APIKeyScope.SYSTEM_MONITOR,
+                APIKeyScope.ACN_AGENT_READ, APIKeyScope.ACN_NODE_MANAGE,
             ],
             APIKeyType.ADMIN: list(APIKeyScope),  # All scopes
             APIKeyType.READONLY: [

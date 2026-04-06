@@ -1,108 +1,331 @@
 """
-ACN (Agent Collaboration Network) endpoints
+ACN (Agent Collaboration Network) endpoints - Secure onboarding flow
+
+Flow:
+1. Admin creates invite key:     POST /v1/acn/admin/invite
+2. New agent joins with invite:  POST /v1/acn/join
+3. Agent gets permanent API key (oh_...) in response
+4. All subsequent requests use:  X-API-Key: oh_...
 """
-from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 
 from ..config import get_settings
 from ..logging import get_logger
-from ..database.connection import get_database
+from ..database.connection import get_database, Database
 from ..services.remote_agent_service import RemoteAgentService
 from ..models.acn import ACNNode, ACNNodeCreate, RemoteAgentRegister
 from ..models.agents import Agent
+from ..auth.api_keys import APIKeyManager, APIKeyType, APIKeyScope
 
 logger = get_logger(__name__)
 settings = get_settings()
 
 router = APIRouter(prefix="/v1/acn", tags=["acn"])
 
+# In-memory invite store (short-lived, single-use)
+# Format: {invite_code: {created_at, created_by, expires_at, used: bool}}
+_invite_store: Dict[str, Dict[str, Any]] = {}
+
+# Master admin key - set via env AGENTHUB_ACN_ADMIN_KEY
+# If not set, first request to /admin/invite creates it
+_admin_key: Optional[str] = None
+
 
 def get_remote_agent_service() -> RemoteAgentService:
-    """Get remote agent service instance"""
     database = get_database()
     return RemoteAgentService(database)
 
+
+def get_api_key_manager() -> APIKeyManager:
+    database = get_database()
+    return APIKeyManager(database)
+
+
+def _get_admin_key() -> str:
+    """Get or generate the admin key"""
+    global _admin_key
+    if _admin_key is None:
+        _admin_key = settings.acn_admin_key if hasattr(settings, 'acn_admin_key') and settings.acn_admin_key else None
+    return _admin_key
+
+
+def _require_admin_key(x_admin_key: str = Header(..., alias="X-Admin-Key")):
+    """Require admin key for admin endpoints"""
+    admin_key = _get_admin_key()
+    if admin_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Admin key not configured. Set AGENTHUB_ACN_ADMIN_KEY env var."
+        )
+    if not secrets.compare_digest(x_admin_key, admin_key):
+        logger.warning("acn_admin_auth_failed")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin key"
+        )
+    return True
+
+
+def _require_api_key(
+    x_api_key: str = Header(None, alias="X-API-Key"),
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """Require valid API key for agent endpoints"""
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="X-API-Key header required"
+        )
+    manager = APIKeyManager(database)
+    key_info = manager.validate_api_key(x_api_key)
+    if not key_info:
+        logger.warning("acn_api_key_invalid")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired API key"
+        )
+    return key_info
+
+
+def _require_scope(required_scope: str):
+    """Factory: require specific scope on API key"""
+    def checker(
+        x_api_key: str = Header(None, alias="X-API-Key"),
+        database: Database = Depends(get_database),
+    ) -> Dict[str, Any]:
+        if not x_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="X-API-Key header required"
+            )
+        manager = APIKeyManager(database)
+        key_info = manager.validate_api_key(x_api_key, required_scope=required_scope)
+        if not key_info:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"API key missing required scope: {required_scope}"
+            )
+        return key_info
+    return checker
+
+
+# ========== ADMIN ENDPOINTS ==========
+
+@router.post("/admin/setup")
+async def setup_admin(request: Request) -> Dict[str, str]:
+    """
+    One-time setup: generates admin key.
+    Only works if no admin key is set yet.
+    Must be called from localhost.
+    """
+    global _admin_key
+
+    # Only allow from localhost
+    client_ip = request.client.host if request.client else "unknown"
+    if client_ip not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Setup only allowed from localhost"
+        )
+
+    if _admin_key is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Admin key already configured"
+        )
+
+    _admin_key = f"ak_{secrets.token_hex(24)}"
+
+    logger.info("acn_admin_key_generated", client_ip=client_ip)
+
+    return {
+        "admin_key": _admin_key,
+        "message": "Save this key securely. It won't be shown again. Use it in X-Admin-Key header."
+    }
+
+
+@router.post("/admin/invite")
+async def create_invite(
+    request: Request,
+    _: bool = Depends(_require_admin_key),
+) -> Dict[str, str]:
+    """
+    Create a single-use invite code for a new agent.
+    Requires X-Admin-Key header.
+    Invite expires in 24 hours.
+    """
+    invite_code = f"inv_{secrets.token_hex(16)}"
+    _invite_store[invite_code] = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+        "used": False,
+    }
+
+    logger.info("acn_invite_created",
+               invite_prefix=invite_code[:8],
+               client_ip=request.client.host if request.client else None)
+
+    return {
+        "invite_code": invite_code,
+        "expires_in": "24 hours",
+        "usage": "POST /v1/acn/join with this invite_code to register your agent"
+    }
+
+
+@router.get("/admin/invites")
+async def list_invites(
+    _: bool = Depends(_require_admin_key),
+) -> Dict[str, Any]:
+    """List all invite codes and their status"""
+    invites = []
+    for code, info in _invite_store.items():
+        invites.append({
+            "invite_prefix": code[:12] + "...",
+            "created_at": info["created_at"],
+            "expires_at": info["expires_at"],
+            "used": info["used"],
+        })
+    return {"invites": invites, "total": len(invites)}
+
+
+# ========== JOIN (Public with invite) ==========
+
+@router.post("/join")
+async def join_acn(
+    agent_data: RemoteAgentRegister,
+    invite_code: str = Header(..., alias="X-Invite-Code"),
+    request: Request = None,
+    service: RemoteAgentService = Depends(get_remote_agent_service),
+    key_manager: APIKeyManager = Depends(get_api_key_manager),
+) -> Dict[str, Any]:
+    """
+    Join the ACN with an invite code.
+    Returns a permanent API key for all future requests.
+
+    Headers:
+        X-Invite-Code: inv_... (from admin)
+
+    Body:
+        agent_name, capabilities, node_name, description
+    """
+    # Validate invite
+    invite = _invite_store.get(invite_code)
+    if not invite:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid invite code"
+        )
+    if invite["used"]:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Invite code already used"
+        )
+    if datetime.fromisoformat(invite["expires_at"]) < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Invite code expired"
+        )
+
+    # Mark invite as used
+    invite["used"] = True
+
+    # Ensure node exists (auto-create if needed)
+    try:
+        node = service.node_repo.find_by_name(agent_data.node_name)
+        if not node:
+            service.register_node(ACNNodeCreate(
+                node_name=agent_data.node_name,
+                node_url=agent_data.callback_url or "http://localhost",
+            ))
+    except ValueError:
+        pass  # Node already exists
+
+    # Register the agent
+    try:
+        new_agent = service.register_remote_agent(agent_data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    # Create permanent API key for this agent
+    try:
+        api_key_result = key_manager.create_api_key(
+            name=f"acn-agent-{agent_data.agent_name}",
+            key_type=APIKeyType.AGENT,
+            scopes=[
+                APIKeyScope.ACN_NODE_MANAGE.value,
+                APIKeyScope.ACN_AGENT_REGISTER.value,
+                APIKeyScope.ACN_AGENT_READ.value,
+                APIKeyScope.ACN_TASK_SUBMIT.value,
+                APIKeyScope.AGENT_HEARTBEAT.value,
+                APIKeyScope.TASK_READ.value,
+                APIKeyScope.TASK_UPDATE.value,
+            ],
+            description=f"ACN agent key for {agent_data.agent_name}",
+            created_by="acn-join",
+            metadata={"agent_id": new_agent.id, "agent_name": new_agent.agent_name},
+        )
+    except Exception as e:
+        logger.error("acn_join_key_creation_failed", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Agent registered but API key creation failed"
+        )
+
+    logger.info("acn_agent_joined",
+               agent_id=new_agent.id,
+               agent_name=new_agent.agent_name,
+               client_ip=request.client.host if request.client else None)
+
+    return {
+        "agent_id": new_agent.id,
+        "agent_name": new_agent.agent_name,
+        "api_key": api_key_result["api_key"],
+        "key_id": api_key_result["key_id"],
+        "scopes": api_key_result["scopes"],
+        "expires_at": api_key_result["expires_at"],
+        "message": "Save your API key securely. Use it in X-API-Key header for all requests."
+    }
+
+
+# ========== AUTHENTICATED ENDPOINTS ==========
 
 @router.post("/nodes", response_model=ACNNode)
 async def register_node(
     node_data: ACNNodeCreate,
     request: Request,
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_NODE_MANAGE.value)),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> ACNNode:
-    """
-    Register a new ACN node
-    """
-    logger.info("acn_node_registration_request",
-               node_name=node_data.node_name,
-               node_url=node_data.node_url,
-               client_ip=request.client.host if request.client else None)
-
+    """Register a new ACN node. Requires API key with acn:node_manage scope."""
     try:
-        new_node = service.register_node(node_data)
-
-        logger.info("acn_node_registration_successful",
-                   node_id=new_node.id,
-                   node_name=new_node.node_name)
-
-        return new_node
-
+        return service.register_node(node_data)
     except ValueError as e:
-        logger.warning("acn_node_registration_failed",
-                      node_name=node_data.node_name,
-                      reason=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
-
-    except Exception as e:
-        logger.error("acn_node_registration_error",
-                    node_name=node_data.node_name,
-                    error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Node registration failed"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.get("/nodes", response_model=List[ACNNode])
 async def list_nodes(
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_AGENT_READ.value)),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> List[ACNNode]:
-    """
-    List all ACN nodes
-    """
-    nodes = service.get_all_nodes()
-
-    logger.debug("acn_nodes_listed", count=len(nodes))
-
-    return nodes
+    """List all ACN nodes. Requires API key."""
+    return service.get_all_nodes()
 
 
 @router.post("/nodes/{node_id}/heartbeat")
 async def node_heartbeat(
     node_id: str,
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_NODE_MANAGE.value)),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Dict[str, str]:
-    """
-    Send heartbeat for an ACN node
-    """
-    # Verify node exists
+    """Send heartbeat for an ACN node. Requires API key."""
     node = service.get_node(node_id)
     if not node:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Node '{node_id}' not found"
-        )
-
-    success = service.heartbeat_node(node_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Heartbeat update failed"
-        )
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Node '{node_id}' not found")
+    service.heartbeat_node(node_id)
     return {"status": "heartbeat_received", "node_id": node_id}
 
 
@@ -110,73 +333,31 @@ async def node_heartbeat(
 async def register_remote_agent(
     agent_data: RemoteAgentRegister,
     request: Request,
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_AGENT_REGISTER.value)),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Agent:
-    """
-    Register a remote agent through ACN
-    """
-    logger.info("remote_agent_registration_request",
-               agent_name=agent_data.agent_name,
-               node_name=agent_data.node_name,
-               capabilities=agent_data.capabilities,
-               client_ip=request.client.host if request.client else None)
-
+    """Register a remote agent. Requires API key with acn:agent_register scope."""
     try:
-        new_agent = service.register_remote_agent(agent_data)
-
-        logger.info("remote_agent_registration_successful",
-                   agent_id=new_agent.id,
-                   agent_name=new_agent.agent_name)
-
-        return new_agent
-
+        return service.register_remote_agent(agent_data)
     except ValueError as e:
-        logger.warning("remote_agent_registration_failed",
-                      agent_name=agent_data.agent_name,
-                      reason=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
-
-    except Exception as e:
-        logger.error("remote_agent_registration_error",
-                    agent_name=agent_data.agent_name,
-                    error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Remote agent registration failed"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.get("/agents")
 async def list_remote_agents(
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_AGENT_READ.value)),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Dict[str, Any]:
-    """
-    List all remote agents
-    """
-    remote_agents = service.get_remote_agents()
+    """List all remote agents. Requires API key."""
+    agents = service.get_remote_agents()
+    return {"remote_agents": agents, "total": len(agents)}
 
-    logger.debug("remote_agents_listed", count=len(remote_agents))
 
-    return {
-        "remote_agents": remote_agents,
-        "total": len(remote_agents)
-    }
-
+# ========== PUBLIC (no auth) ==========
 
 @router.get("/health")
 async def acn_health(
-    service: RemoteAgentService = Depends(get_remote_agent_service)
+    service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Dict[str, Any]:
-    """
-    Get ACN network health summary
-    """
-    health = service.get_network_health()
-
-    logger.debug("acn_health_requested",
-                total_nodes=health["total_nodes"],
-                online_nodes=health["online_nodes"])
-
-    return health
+    """ACN network health - public, no auth required."""
+    return service.get_network_health()

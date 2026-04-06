@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     acn_enabled: bool = Field(default=True, description="Enable ACN")
     acn_node_id: str = Field(default="openhub-primary", description="This node's ID")
     acn_node_url: str = Field(default="http://localhost:7788", description="This node's URL")
+    acn_admin_key: Optional[str] = Field(default=None, description="ACN admin key for invite management")
 
     # Hatchet Workflow Configuration
     hatchet_server_url: str = Field(default="http://localhost:8080", description="Hatchet server URL")
