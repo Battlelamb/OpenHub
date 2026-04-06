@@ -29,8 +29,10 @@ def setup_logging(log_level: Optional[str] = None, log_file: Optional[str] = Non
             structlog.processors.TimeStamper(fmt="iso"),
             # Add log level
             structlog.processors.add_log_level,
-            # Add logger name
-            structlog.processors.add_logger_name,
+            # Add caller info
+            structlog.processors.CallsiteParameterAdder(
+                [structlog.processors.CallsiteParameter.MODULE]
+            ),
             # Stack info for exceptions
             structlog.processors.StackInfoRenderer(),
             # Format exceptions

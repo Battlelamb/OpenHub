@@ -376,6 +376,62 @@ class Task(IDMixin, TimestampMixin):
     )
 
 
+class TaskResponse(BaseModel):
+    """API response model for a single task"""
+
+    id: str = Field(description="Task ID")
+    title: str = Field(description="Task title")
+    description: Optional[str] = Field(default=None, description="Task description")
+    task_type: TaskType = Field(description="Task type")
+    priority: Any = Field(description="Task priority")
+    status: TaskStatus = Field(description="Current status")
+
+    # Assignment
+    assigned_agent_id: Optional[str] = Field(default=None, description="Assigned agent ID")
+    requested_capabilities: Optional[List[str]] = Field(default=None, description="Required capabilities")
+
+    # Data
+    input_data: Optional[Dict[str, Any]] = Field(default=None, description="Input payload")
+    output_data: Optional[Dict[str, Any]] = Field(default=None, description="Output data")
+    error_data: Optional[Dict[str, Any]] = Field(default=None, description="Error details")
+
+    # Workflow
+    workflow_id: Optional[str] = Field(default=None, description="Workflow ID")
+    workflow_run_id: Optional[str] = Field(default=None, description="Workflow run ID")
+
+    # Metadata
+    created_by: Optional[str] = Field(default=None, description="Creator ID")
+    tags: Optional[List[str]] = Field(default=None, description="Tags")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Extra metadata")
+
+    # Timing
+    created_at: Optional[datetime] = Field(default=None, description="Created at")
+    updated_at: Optional[datetime] = Field(default=None, description="Updated at")
+    assigned_at: Optional[datetime] = Field(default=None, description="Assigned at")
+    started_at: Optional[datetime] = Field(default=None, description="Started at")
+    completed_at: Optional[datetime] = Field(default=None, description="Completed at")
+    deadline: Optional[datetime] = Field(default=None, description="Deadline")
+
+    # Retry
+    retry_count: int = Field(default=0, description="Retry count")
+    max_retries: int = Field(default=0, description="Max retries")
+    last_error: Optional[str] = Field(default=None, description="Last error message")
+
+    # Agent info
+    assigned_agent_name: Optional[str] = Field(default=None, description="Agent name")
+    assigned_agent_status: Optional[str] = Field(default=None, description="Agent status")
+
+
+class TaskFilter(BaseModel):
+    """Filter criteria for task queries"""
+
+    status: Optional[TaskStatus] = None
+    task_type: Optional[TaskType] = None
+    priority: Optional[TaskPriority] = None
+    assigned_agent_id: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+
 class TaskListResponse(BaseModel):
     """Response for task list"""
     

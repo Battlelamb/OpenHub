@@ -84,7 +84,7 @@ class PaginationParams(BaseModel):
     
     sort_order: str = Field(
         default="desc",
-        regex="^(asc|desc)$",
+        pattern="^(asc|desc)$",
         description="Sort order (asc or desc)"
     )
 

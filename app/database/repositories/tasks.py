@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import and_, or_, desc, asc, func
 
 from ...logging import get_logger
-from ..base import BaseRepository
+from .base import BaseRepository
 from ...models.tasks import Task, TaskStatus
 
 logger = get_logger(__name__)

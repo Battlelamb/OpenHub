@@ -5,26 +5,18 @@ from .connection import Database, get_database
 from .migrations import MigrationManager, run_migrations
 from .repositories import (
     AgentRepository,
-    TaskRepository, 
-    EventRepository,
-    ArtifactRepository,
-    LockRepository,
-    ThreadRepository,
-    MessageRepository,
-    ApprovalRepository
+    TaskRepository,
 )
+
+# The following repositories do not exist yet:
+# EventRepository, ArtifactRepository, LockRepository,
+# ThreadRepository, MessageRepository, ApprovalRepository
 
 __all__ = [
     "Database",
-    "get_database", 
+    "get_database",
     "MigrationManager",
     "run_migrations",
     "AgentRepository",
     "TaskRepository",
-    "EventRepository", 
-    "ArtifactRepository",
-    "LockRepository",
-    "ThreadRepository",
-    "MessageRepository",
-    "ApprovalRepository"
 ]

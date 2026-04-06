@@ -298,7 +298,7 @@ async def search_tasks(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     sort_by: str = Query("created_at", description="Sort field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     current_agent: CurrentAgent = None,
     task_service: TaskService = Depends(get_task_service)
 ) -> Dict[str, Any]:
