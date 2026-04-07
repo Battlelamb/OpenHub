@@ -98,14 +98,8 @@ class Database:
         return self._local.connection
 
     def sync(self) -> None:
-        """Sync embedded replica with Turso cloud (no-op for plain SQLite)"""
-        if self._use_turso:
-            try:
-                conn = self._get_connection()
-                conn.sync()
-                logger.debug("turso_sync_complete")
-            except Exception as e:
-                logger.warning("turso_sync_failed", error=str(e))
+        """No-op in remote mode. Sync only needed for embedded replicas."""
+        pass
 
     @contextmanager
     def get_sync_connection(self) -> Generator:
@@ -158,18 +152,13 @@ class Database:
             else:
                 cursor = conn.execute(query)
 
-            # Auto-commit and sync for write operations
+            # Auto-commit for write operations
             q = query.strip().upper()
             if q.startswith(("INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER")):
                 try:
                     conn.commit()
                 except Exception:
                     pass
-                if self._use_turso:
-                    try:
-                        conn.sync()
-                    except Exception as e:
-                        logger.warning("turso_auto_sync_failed", error=str(e))
 
             return cursor
 
