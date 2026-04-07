@@ -484,10 +484,12 @@ class TaskService:
                 success = self.claim_task(task.id, claim_data)
                 
                 if success:
-                    logger.info("task_auto_assigned", 
+                    logger.info("task_auto_assigned",
                                task_id=task.id,
                                agent_id=best_match.agent.id,
                                match_score=best_match.match_score)
+                    # Notify agent via callback URL
+                    self._notify_agent_task_assigned(best_match.agent, task)
                 else:
                     logger.warning("task_auto_assignment_failed", 
                                   task_id=task.id,
@@ -498,10 +500,55 @@ class TaskService:
                            required_capabilities=task.required_capabilities)
         
         except Exception as e:
-            logger.error("auto_assignment_error", 
+            logger.error("auto_assignment_error",
                         task_id=task.id,
                         error=str(e))
-    
+
+    def _notify_agent_task_assigned(self, agent, task) -> None:
+        """Send webhook notification to agent when task is assigned"""
+        try:
+            # Get callback URL from agent metadata
+            callback_url = None
+            if hasattr(agent, 'metadata') and agent.metadata:
+                callback_url = agent.metadata.get("callback_url")
+
+            if not callback_url:
+                # Try from remote_agent_mappings
+                row = self.db.fetch_one(
+                    "SELECT callback_url FROM remote_agent_mappings WHERE local_agent_id = :id",
+                    {"id": agent.id}
+                )
+                if row:
+                    callback_url = row["callback_url"] if isinstance(row, dict) else row[0]
+
+            if not callback_url:
+                logger.debug("no_callback_url_for_notification", agent_id=agent.id)
+                return
+
+            import httpx
+            payload = {
+                "event": "task_assigned",
+                "task_id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "task_type": task.task_type if isinstance(task.task_type, str) else task.task_type.value,
+                "priority": task.priority,
+                "required_capabilities": task.required_capabilities,
+            }
+
+            # Fire and forget (sync for simplicity)
+            try:
+                resp = httpx.post(callback_url, json=payload, timeout=10.0)
+                logger.info("agent_notified_task_assigned",
+                           agent_id=agent.id, agent_name=agent.agent_name,
+                           callback_url=callback_url[:50], status_code=resp.status_code)
+            except Exception as e:
+                logger.warning("agent_notification_failed",
+                              agent_id=agent.id, callback_url=callback_url[:50], error=str(e))
+
+        except Exception as e:
+            logger.error("notify_agent_error", agent_id=agent.id, error=str(e))
+
     def get_agent_tasks(self, agent_id: str, status_filter: Optional[List[TaskStatus]] = None) -> List[Task]:
         """Get tasks assigned to specific agent"""
         try:
