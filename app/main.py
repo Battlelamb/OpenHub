@@ -38,37 +38,55 @@ async def lifespan(app: FastAPI):
     from .database.connection import get_database
     try:
         db = get_database()
-        migrations_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "migrations")
-        if os.path.isdir(migrations_dir):
-            for sql_file in sorted(os.listdir(migrations_dir)):
-                if sql_file.endswith(".sql"):
-                    sql_path = os.path.join(migrations_dir, sql_file)
-                    with open(sql_path) as f:
-                        content = f.read()
-                    # Remove SQL comments and split by semicolons
-                    lines = [l for l in content.split("\n") if not l.strip().startswith("--")]
-                    clean_sql = "\n".join(lines)
-                    for stmt in clean_sql.split(";"):
-                        stmt = stmt.strip()
-                        if stmt and len(stmt) > 5:
-                            try:
-                                db.execute(stmt)
-                            except Exception:
-                                pass  # Table/index already exists
-                    logger.info("migration_applied", file=sql_file)
-
-        # Ensure api_keys table exists (not in migrations yet)
-        db.execute("""CREATE TABLE IF NOT EXISTS api_keys (
-            id TEXT PRIMARY KEY, name TEXT NOT NULL, key_type TEXT NOT NULL,
-            key_hash TEXT NOT NULL, salt TEXT NOT NULL, scopes TEXT DEFAULT '[]',
-            description TEXT, expires_at TIMESTAMP, created_by TEXT,
-            metadata TEXT DEFAULT '{}', is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_used_at TIMESTAMP, revoked_at TIMESTAMP, revoked_by TEXT
-        )""")
-
-        # Sync to Turso if configured
+        tables = [
+            """CREATE TABLE IF NOT EXISTS agents (
+                id TEXT PRIMARY KEY, agent_name TEXT NOT NULL UNIQUE, description TEXT,
+                capabilities TEXT DEFAULT '[]', status TEXT DEFAULT 'offline',
+                last_heartbeat TIMESTAMP, current_task TEXT,
+                labels TEXT DEFAULT '{}', metadata TEXT DEFAULT '{}',
+                tasks_completed INTEGER DEFAULT 0, tasks_failed INTEGER DEFAULT 0,
+                average_task_duration REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS tasks (
+                id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT,
+                task_type TEXT NOT NULL DEFAULT 'feature', priority INTEGER DEFAULT 50,
+                status TEXT NOT NULL DEFAULT 'queued',
+                required_capabilities TEXT DEFAULT '[]', owner_agent_id TEXT,
+                claimed_at TIMESTAMP, started_at TIMESTAMP, completed_at TIMESTAMP,
+                lease_until TIMESTAMP, retry_count INTEGER DEFAULT 0,
+                max_retries INTEGER DEFAULT 3, last_error TEXT,
+                deadline_at TIMESTAMP, idempotency_key TEXT,
+                labels TEXT DEFAULT '{}', metadata TEXT DEFAULT '{}',
+                payload TEXT DEFAULT '{}', result_summary TEXT,
+                output TEXT DEFAULT '{}', artifact_ids TEXT DEFAULT '[]',
+                duration_seconds REAL, created_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS acn_nodes (
+                id TEXT PRIMARY KEY, node_name TEXT NOT NULL UNIQUE, node_url TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'offline', capabilities TEXT DEFAULT '[]',
+                metadata TEXT DEFAULT '{}', labels TEXT DEFAULT '{}',
+                last_heartbeat TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS remote_agent_mappings (
+                id TEXT PRIMARY KEY, local_agent_id TEXT NOT NULL UNIQUE,
+                node_id TEXT NOT NULL, remote_agent_name TEXT NOT NULL,
+                callback_url TEXT, connection_metadata TEXT DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS api_keys (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, key_type TEXT NOT NULL,
+                key_hash TEXT NOT NULL, salt TEXT NOT NULL, scopes TEXT DEFAULT '[]',
+                description TEXT, expires_at TIMESTAMP, created_by TEXT,
+                metadata TEXT DEFAULT '{}', is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_used_at TIMESTAMP, revoked_at TIMESTAMP, revoked_by TEXT)""",
+        ]
+        for ddl in tables:
+            db.execute(ddl)
         db.sync()
         logger.info("database_tables_ready")
     except Exception as e:
