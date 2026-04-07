@@ -502,6 +502,29 @@ async def get_available_tasks(
     }
 
 
+@router.get("/tasks/mine")
+async def get_my_tasks(
+    agent_id: str,
+    key_info: Dict = Depends(_require_api_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Get tasks assigned to a specific agent (claimed/running)."""
+    tasks = []
+    for status_val in ["claimed", "running"]:
+        found = task_service.task_repo.find_by_status(status_val)
+        for t in found:
+            if t.owner_agent_id == agent_id:
+                tasks.append({
+                    "task_id": t.id,
+                    "title": t.title,
+                    "description": t.description,
+                    "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
+                    "priority": t.priority,
+                    "status": t.status if isinstance(t.status, str) else t.status.value,
+                })
+    return {"tasks": tasks, "total": len(tasks)}
+
+
 @router.get("/tasks/{task_id}")
 async def get_task(
     task_id: str,

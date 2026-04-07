@@ -122,10 +122,11 @@ class AgentBridge:
             await asyncio.sleep(self.heartbeat_interval)
 
     async def _task_poll_loop(self):
-        """Background task polling loop"""
+        """Background task polling - checks for claimed tasks assigned to this agent"""
         while self._running:
             try:
                 if self.agent_id:
+                    # Check for tasks assigned to me (claimed = needs start, or available = needs claim)
                     resp = await self.client.get(
                         f"/v1/acn/tasks/available?agent_id={self.agent_id}&limit=5"
                     )
@@ -134,13 +135,24 @@ class AgentBridge:
                         tasks = data.get("tasks", [])
                         if tasks:
                             logger.info("bridge_tasks_available", count=len(tasks))
-                        for task in tasks:
-                            if self._task_handler:
-                                try:
-                                    await self._task_handler(task)
-                                except Exception as e:
-                                    logger.error("bridge_task_handler_error",
-                                               task_id=task.get("task_id"), error=str(e))
+
+                    # Also check my assigned tasks (claimed/running)
+                    resp2 = await self.client.get(
+                        f"/v1/acn/tasks/mine?agent_id={self.agent_id}"
+                    )
+                    if resp2.status_code == 200:
+                        my_tasks = resp2.json().get("tasks", [])
+                        for task in my_tasks:
+                            task_status = task.get("status", "")
+                            if task_status == "claimed":
+                                logger.info("bridge_task_claimed_found",
+                                           task_id=task.get("task_id"), title=task.get("title"))
+                                if self._task_handler:
+                                    try:
+                                        await self._task_handler(task)
+                                    except Exception as e:
+                                        logger.error("bridge_task_handler_error",
+                                                   task_id=task.get("task_id"), error=str(e))
             except Exception as e:
                 logger.warning("bridge_task_poll_error", error=str(e))
 

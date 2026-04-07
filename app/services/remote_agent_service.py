@@ -155,25 +155,42 @@ class RemoteAgentService:
         return created_agent
 
     def get_remote_agents(self) -> List[Dict[str, Any]]:
-        """List all remote agents with their mapping info"""
+        """List all remote agents with their mapping info. Auto-detects offline agents."""
 
         mappings = self.mapping_repo.list_all()
         result = []
+        now = datetime.utcnow()
+        offline_threshold = 300  # 5 minutes
 
         for mapping in mappings:
             agent = self.agent_repo.get_by_id(mapping.local_agent_id)
             node = self.node_repo.get_by_id(mapping.node_id)
 
             if agent:
+                # Check heartbeat staleness
+                agent_status = agent.status if isinstance(agent.status, str) else agent.status.value
+                if agent.last_heartbeat:
+                    try:
+                        hb = agent.last_heartbeat
+                        if isinstance(hb, str):
+                            hb = datetime.fromisoformat(hb.replace('Z', '+00:00').replace('+00:00', ''))
+                        elapsed = (now - hb).total_seconds()
+                        if elapsed > offline_threshold and agent_status != "offline":
+                            # Mark offline
+                            self.agent_repo.update(agent.id, {"status": "offline"})
+                            agent_status = "offline"
+                    except Exception:
+                        pass
+
                 result.append({
                     "agent_id": agent.id,
                     "agent_name": agent.agent_name,
-                    "status": agent.status,
+                    "status": agent_status,
                     "capabilities": agent.capabilities,
                     "node_id": mapping.node_id,
                     "node_name": node.node_name if node else "unknown",
                     "callback_url": mapping.callback_url,
-                    "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat else None,
+                    "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat and not isinstance(agent.last_heartbeat, str) else agent.last_heartbeat,
                 })
 
         return result
