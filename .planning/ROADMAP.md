@@ -30,7 +30,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent registered with a list of capabilities can be matched to a task - json.loads() on stored capabilities succeeds
   4. Offline agents are detected automatically - the heartbeat monitor starts with the application and marks agents offline after missing heartbeats
   5. The /docs endpoint is accessible and all endpoints show correct auth requirements and structured error response shapes
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 01-00-PLAN.md - Test scaffold: pytest infrastructure, conftest.py, shared fixtures
+- [ ] 01-01-PLAN.md - Auth stub removal, shared API key dep, admin credential env vars
+- [ ] 01-02-PLAN.md - Capabilities JSON fix, heartbeat monitor wiring
+- [ ] 01-03-PLAN.md - CORS lockdown, datetime.utcnow() unification
+- [ ] 01-04-PLAN.md - Alembic schema migration consolidation
+- [ ] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
+- [ ] 01-06-PLAN.md - slowapi rate limiting, Prometheus metrics, structlog enhancement
 
 ### Phase 2: WebSocket + Test Suite
 **Goal**: Dashboard clients can connect to a stable WebSocket endpoint and receive live events, and the backend has a test suite covering auth, capability matching, and the task/agent lifecycle
@@ -91,7 +100,7 @@ Note: Phase 3 depends only on Phase 1 and can be planned in parallel with Phase 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Hardening | 0/TBD | Not started | - |
+| 1. Backend Hardening | 0/7 | Not started | - |
 | 2. WebSocket + Test Suite | 0/TBD | Not started | - |
 | 3. Vector Database | 0/TBD | Not started | - |
 | 4. Command Center UI | 0/TBD | Not started | - |
