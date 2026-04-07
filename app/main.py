@@ -125,6 +125,17 @@ async def lifespan(app: FastAPI):
                 expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS workflows (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                steps TEXT NOT NULL,
+                status TEXT DEFAULT 'created',
+                current_step INTEGER DEFAULT 0,
+                results TEXT DEFAULT '{}',
+                created_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             try:
@@ -215,6 +226,10 @@ app.include_router(ws_router)
 # Import and include memory router
 from .api.routes_memory import router as memory_router
 app.include_router(memory_router)
+
+# Import and include workflow engine router
+from .api.routes_workflow import router as workflow_engine_router
+app.include_router(workflow_engine_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
