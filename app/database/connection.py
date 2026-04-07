@@ -152,13 +152,28 @@ class Database:
         return new_query, param_tuple
 
     def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
-        """Execute a query synchronously"""
+        """Execute a query synchronously. Auto-commits and syncs for write operations."""
         with self.get_sync_connection() as conn:
             query, params = self._adapt_params(query, params)
             if params:
-                return conn.execute(query, params)
+                cursor = conn.execute(query, params)
             else:
-                return conn.execute(query)
+                cursor = conn.execute(query)
+
+            # Auto-commit and sync for write operations
+            q = query.strip().upper()
+            if q.startswith(("INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER")):
+                try:
+                    conn.commit()
+                except Exception:
+                    pass
+                if self._use_turso:
+                    try:
+                        conn.sync()
+                    except Exception as e:
+                        logger.warning("turso_auto_sync_failed", error=str(e))
+
+            return cursor
 
     def fetch_one(self, query: str, params: Optional[Dict[str, Any]] = None):
         """Fetch one row"""
