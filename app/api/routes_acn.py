@@ -529,6 +529,231 @@ async def get_task(
     }
 
 
+# ========== SELF-SERVICE APPLICATION (no auth required) ==========
+
+@router.post("/apply")
+async def apply_to_acn(
+    agent_data: RemoteAgentRegister,
+    request: Request,
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """
+    Apply to join the ACN. No auth required.
+    Admin will review and approve/reject via dashboard.
+
+    Body: same as /join (agent_name, capabilities, model, platform, skills, etc.)
+    """
+    import json as _json
+    from uuid import uuid4
+
+    client_ip = request.client.host if request.client else None
+    app_id = str(uuid4())
+
+    # Check if agent name already taken
+    service = RemoteAgentService(database)
+    existing = service.agent_repo.find_by_name(agent_data.agent_name)
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Agent name '{agent_data.agent_name}' already registered")
+
+    # Check if pending application exists for this name
+    existing_app = database.fetch_one(
+        "SELECT id FROM pending_applications WHERE agent_name = :name AND status = 'pending'",
+        {"name": agent_data.agent_name}
+    )
+    if existing_app:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Application for '{agent_data.agent_name}' already pending")
+
+    # Store application
+    database.execute(
+        """INSERT INTO pending_applications (id, agent_name, data, client_ip, status, created_at)
+           VALUES (:id, :name, :data, :ip, 'pending', :now)""",
+        {
+            "id": app_id,
+            "name": agent_data.agent_name,
+            "data": _json.dumps(agent_data.model_dump()),
+            "ip": client_ip,
+            "now": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
+    logger.info("acn_application_received",
+               app_id=app_id, agent_name=agent_data.agent_name, client_ip=client_ip)
+
+    return {
+        "application_id": app_id,
+        "agent_name": agent_data.agent_name,
+        "status": "pending",
+        "message": "Application received. Waiting for admin approval. Check status at GET /v1/acn/apply/{application_id}/status"
+    }
+
+
+@router.get("/apply/{application_id}/status")
+async def check_application_status(
+    application_id: str,
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """Check application status. No auth required - agent polls this after applying."""
+    row = database.fetch_one(
+        "SELECT * FROM pending_applications WHERE id = :id",
+        {"id": application_id}
+    )
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    app = dict(row) if isinstance(row, dict) else {k: row[i] for i, k in enumerate(["id", "agent_name", "data", "client_ip", "status", "api_key_value", "reviewed_by", "reviewed_at", "created_at"])}
+
+    result = {
+        "application_id": app["id"],
+        "agent_name": app["agent_name"],
+        "status": app["status"],
+        "created_at": app["created_at"],
+    }
+
+    if app["status"] == "approved" and app.get("api_key_value"):
+        result["api_key"] = app["api_key_value"]
+        result["message"] = "Approved! Use this API key in X-API-Key header for all requests."
+    elif app["status"] == "rejected":
+        result["message"] = "Application rejected."
+    else:
+        result["message"] = "Pending admin review."
+
+    return result
+
+
+# ========== ADMIN: APPLICATION MANAGEMENT ==========
+
+@router.get("/admin/applications")
+async def list_applications(
+    status_filter: Optional[str] = None,
+    _: bool = Depends(_require_admin_key),
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """List all applications. Requires X-Admin-Key."""
+    import json as _json
+
+    query = "SELECT * FROM pending_applications"
+    params = {}
+    if status_filter:
+        query += " WHERE status = :status"
+        params["status"] = status_filter
+    query += " ORDER BY created_at DESC"
+
+    rows = database.fetch_all(query, params if params else None)
+    apps = []
+    for row in rows:
+        r = dict(row) if isinstance(row, dict) else row
+        data = _json.loads(r["data"]) if isinstance(r.get("data"), str) else r.get("data", {})
+        apps.append({
+            "application_id": r["id"],
+            "agent_name": r["agent_name"],
+            "status": r["status"],
+            "client_ip": r.get("client_ip"),
+            "created_at": r.get("created_at"),
+            "model": data.get("model"),
+            "platform": data.get("platform"),
+            "capabilities": data.get("capabilities", []),
+            "skills_count": len(data.get("skills", [])),
+            "mcp_servers_count": len(data.get("mcp_servers", [])),
+        })
+
+    return {"applications": apps, "total": len(apps)}
+
+
+@router.post("/admin/applications/{application_id}/approve")
+async def approve_application(
+    application_id: str,
+    _: bool = Depends(_require_admin_key),
+    database: Database = Depends(get_database),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
+    key_manager: APIKeyManager = Depends(get_api_key_manager),
+) -> Dict[str, Any]:
+    """Approve an application. Creates agent + API key. Requires X-Admin-Key."""
+    import json as _json
+
+    row = database.fetch_one(
+        "SELECT * FROM pending_applications WHERE id = :id", {"id": application_id}
+    )
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    app = dict(row) if isinstance(row, dict) else row
+    if app["status"] != "pending":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Application already {app['status']}")
+
+    # Parse stored data back to RemoteAgentRegister
+    data = _json.loads(app["data"]) if isinstance(app["data"], str) else app["data"]
+    agent_data = RemoteAgentRegister(**data)
+
+    # Ensure node exists
+    try:
+        node = service.node_repo.find_by_name(agent_data.node_name)
+        if not node:
+            service.register_node(ACNNodeCreate(
+                node_name=agent_data.node_name,
+                node_url=agent_data.callback_url or "http://localhost",
+            ))
+    except ValueError:
+        pass
+
+    # Register agent
+    new_agent = service.register_remote_agent(agent_data, client_ip=app.get("client_ip"))
+
+    # Create API key
+    api_key_result = key_manager.create_api_key(
+        name=f"acn-agent-{agent_data.agent_name}",
+        key_type=APIKeyType.AGENT,
+        scopes=[
+            APIKeyScope.ACN_NODE_MANAGE.value, APIKeyScope.ACN_AGENT_REGISTER.value,
+            APIKeyScope.ACN_AGENT_READ.value, APIKeyScope.ACN_TASK_SUBMIT.value,
+            APIKeyScope.AGENT_HEARTBEAT.value, APIKeyScope.TASK_READ.value, APIKeyScope.TASK_UPDATE.value,
+        ],
+        description=f"ACN agent key for {agent_data.agent_name}",
+    )
+
+    # Update application status
+    database.execute(
+        """UPDATE pending_applications SET status = 'approved', api_key_value = :key,
+           reviewed_at = :now WHERE id = :id""",
+        {"key": api_key_result["api_key"], "now": datetime.now(timezone.utc).isoformat(), "id": application_id}
+    )
+
+    logger.info("acn_application_approved", app_id=application_id, agent_name=agent_data.agent_name)
+
+    return {
+        "status": "approved",
+        "agent_id": new_agent.id,
+        "agent_name": new_agent.agent_name,
+        "api_key": api_key_result["api_key"],
+    }
+
+
+@router.post("/admin/applications/{application_id}/reject")
+async def reject_application(
+    application_id: str,
+    _: bool = Depends(_require_admin_key),
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """Reject an application. Requires X-Admin-Key."""
+    row = database.fetch_one(
+        "SELECT * FROM pending_applications WHERE id = :id", {"id": application_id}
+    )
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    app = dict(row) if isinstance(row, dict) else row
+    if app["status"] != "pending":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Application already {app['status']}")
+
+    database.execute(
+        "UPDATE pending_applications SET status = 'rejected', reviewed_at = :now WHERE id = :id",
+        {"now": datetime.now(timezone.utc).isoformat(), "id": application_id}
+    )
+
+    logger.info("acn_application_rejected", app_id=application_id, agent_name=app["agent_name"])
+
+    return {"status": "rejected", "application_id": application_id, "agent_name": app["agent_name"]}
+
+
 # ========== PUBLIC (no auth) ==========
 
 @router.get("/health")

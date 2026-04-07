@@ -84,6 +84,13 @@ async def lifespan(app: FastAPI):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_used_at TIMESTAMP, revoked_at TIMESTAMP, revoked_by TEXT)""",
+            """CREATE TABLE IF NOT EXISTS pending_applications (
+                id TEXT PRIMARY KEY, agent_name TEXT NOT NULL,
+                data TEXT NOT NULL, client_ip TEXT,
+                status TEXT DEFAULT 'pending',
+                api_key_value TEXT,
+                reviewed_by TEXT, reviewed_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             db.execute(ddl)
