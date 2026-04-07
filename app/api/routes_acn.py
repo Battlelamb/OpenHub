@@ -536,3 +536,34 @@ async def acn_health(
 ) -> Dict[str, Any]:
     """ACN network health - public, no auth required."""
     return service.get_network_health()
+
+
+@router.get("/status")
+async def acn_status(
+    service: RemoteAgentService = Depends(get_remote_agent_service),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Detailed ACN status with task stats - public."""
+    health = service.get_network_health()
+    agents = service.get_remote_agents()
+
+    # Task counts by status
+    task_stats = {}
+    for status_val in ["queued", "claimed", "running", "completed", "failed"]:
+        try:
+            rows = task_service.task_repo.find_by_status(status_val)
+            task_stats[status_val] = len(rows)
+        except Exception:
+            task_stats[status_val] = 0
+
+    return {
+        "hub": "OpenHub",
+        "version": "0.1.0",
+        "turso": "connected",
+        "nodes": health["total_nodes"],
+        "agents": {
+            "total": len(agents),
+            "list": [{"name": a["agent_name"], "status": a["status"], "capabilities": a["capabilities"]} for a in agents],
+        },
+        "tasks": task_stats,
+    }
