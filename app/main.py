@@ -136,6 +136,24 @@ async def lifespan(app: FastAPI):
                 created_by TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS artifacts (
+                id TEXT PRIMARY KEY, filename TEXT NOT NULL, content_type TEXT,
+                content TEXT, encoding TEXT DEFAULT 'text', size_bytes INTEGER,
+                task_id TEXT, description TEXT, tags TEXT DEFAULT '[]',
+                uploaded_by TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS resource_locks (
+                id TEXT PRIMARY KEY, resource TEXT NOT NULL, locked_by TEXT,
+                reason TEXT, ttl_seconds INTEGER, expires_at TIMESTAMP,
+                released_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS trace_events (
+                id TEXT PRIMARY KEY, trace_id TEXT NOT NULL, agent_id TEXT,
+                event_type TEXT, name TEXT NOT NULL, data TEXT DEFAULT '{}',
+                task_id TEXT, duration_ms REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS cost_tracking (
+                id TEXT PRIMARY KEY, agent_id TEXT, task_id TEXT,
+                model TEXT NOT NULL, input_tokens INTEGER, output_tokens INTEGER,
+                cost_usd REAL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             try:
@@ -230,6 +248,16 @@ app.include_router(memory_router)
 # Import and include workflow engine router
 from .api.routes_workflow import router as workflow_engine_router
 app.include_router(workflow_engine_router)
+
+# Import and include artifact router
+from .api.routes_artifacts import router as artifacts_router
+app.include_router(artifacts_router)
+
+# Import and include P1 routers (locks, tracing, costs)
+from .api.routes_p1 import lock_router, trace_router, cost_router
+app.include_router(lock_router)
+app.include_router(trace_router)
+app.include_router(cost_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
