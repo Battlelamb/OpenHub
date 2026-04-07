@@ -854,6 +854,39 @@ async def admin_create_task(
     }
 
 
+@router.post("/admin/tasks/{task_id}/cancel")
+async def admin_cancel_task(
+    task_id: str,
+    _: bool = Depends(_require_admin_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Cancel a task. Requires X-Admin-Key."""
+    success = task_service.cancel_task(task_id, reason="Cancelled by admin")
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot cancel task")
+    return {"status": "cancelled", "task_id": task_id}
+
+
+@router.post("/admin/agents/{agent_id}/remove")
+async def admin_remove_agent(
+    agent_id: str,
+    _: bool = Depends(_require_admin_key),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
+    database: Database = Depends(get_database),
+) -> Dict[str, Any]:
+    """Remove an agent from the system. Requires X-Admin-Key."""
+    agent = service.agent_repo.get_by_id(agent_id)
+    if not agent:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
+
+    # Delete mapping, then agent
+    database.execute("DELETE FROM remote_agent_mappings WHERE local_agent_id = :id", {"id": agent_id})
+    service.agent_repo.delete(agent_id)
+
+    logger.info("admin_agent_removed", agent_id=agent_id, agent_name=agent.agent_name)
+    return {"status": "removed", "agent_id": agent_id, "agent_name": agent.agent_name}
+
+
 @router.post("/admin/applications/{application_id}/reject")
 async def reject_application(
     application_id: str,

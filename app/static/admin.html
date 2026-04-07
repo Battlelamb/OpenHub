@@ -5,77 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenHub Admin</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; }
-
-/* Login */
-.login-overlay { position: fixed; inset: 0; background: #0a0a0f; display: flex; align-items: center; justify-content: center; z-index: 200; }
-.login-box { background: #12121a; border: 1px solid #2a2a3a; border-radius: 16px; padding: 40px; width: 400px; text-align: center; }
-.login-box h1 { font-size: 24px; color: #fff; margin-bottom: 8px; }
-.login-box p { color: #6b6b7b; font-size: 13px; margin-bottom: 24px; }
-.login-box input { width: 100%; background: #1e1e2e; border: 1px solid #3a3a4a; color: #fff; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 14px; margin-bottom: 16px; }
-.login-box input:focus { outline: none; border-color: #3b82f6; }
-.login-box button { width: 100%; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; }
-.login-box button:hover { background: #2563eb; }
-.login-error { color: #ef4444; font-size: 13px; margin-top: 8px; display: none; }
-
-/* Main */
-.header { background: #12121a; border-bottom: 1px solid #2a2a3a; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 20px; color: #fff; }
-.header-right { display: flex; align-items: center; gap: 16px; }
-.header .status { font-size: 13px; color: #6b6b7b; }
-.header .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
-.logout-btn { background: none; border: 1px solid #3a3a4a; color: #8b8b9b; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-.logout-btn:hover { border-color: #ef4444; color: #ef4444; }
-
-.app { display: none; }
-.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-.tabs { display: flex; gap: 4px; margin-bottom: 24px; }
-.tab { padding: 10px 20px; background: #16161f; border: 1px solid #2a2a3a; border-radius: 8px; cursor: pointer; font-size: 14px; color: #8b8b9b; }
-.tab.active { background: #1e1e2e; color: #fff; border-color: #3b82f6; }
-.section { display: none; }
-.section.active { display: block; }
-.card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.card-title { font-size: 16px; font-weight: 600; color: #fff; }
-.badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-.badge-online { background: #052e16; color: #22c55e; }
-.badge-offline { background: #1c1917; color: #a8a29e; }
-.badge-busy { background: #1e1b4b; color: #818cf8; }
-.badge-pending { background: #422006; color: #f59e0b; }
-.badge-approved { background: #052e16; color: #22c55e; }
-.badge-rejected { background: #450a0a; color: #ef4444; }
-.badge-queued { background: #1e1b4b; color: #818cf8; }
-.badge-claimed { background: #422006; color: #f59e0b; }
-.badge-running { background: #0c4a6e; color: #38bdf8; }
-.badge-completed { background: #052e16; color: #22c55e; }
-.badge-failed { background: #450a0a; color: #ef4444; }
-.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-.info-item { font-size: 12px; }
-.info-label { color: #6b6b7b; }
-.info-value { color: #c0c0d0; font-family: monospace; }
-.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.tag { background: #1e1e2e; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #8b8b9b; }
-.actions { display: flex; gap: 8px; margin-top: 12px; }
-.btn { padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
-.btn-approve { background: #22c55e; color: #000; }
-.btn-approve:hover { background: #16a34a; }
-.btn-reject { background: #ef4444; color: #fff; }
-.btn-reject:hover { background: #dc2626; }
-.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
-.stat-card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 10px; padding: 16px; text-align: center; }
-.stat-value { font-size: 28px; font-weight: 700; color: #fff; }
-.stat-label { font-size: 12px; color: #6b6b7b; margin-top: 4px; }
-.empty { text-align: center; padding: 40px; color: #6b6b7b; }
-.refresh-btn { position: fixed; bottom: 24px; right: 24px; background: #3b82f6; color: #fff; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 20px; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
-.toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-weight: 500; display: none; z-index: 100; }
-.toast-success { background: #22c55e; color: #000; }
-.toast-error { background: #ef4444; color: #fff; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e0e0e0}
+.login-overlay{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:200}
+.login-box{background:#12121a;border:1px solid #2a2a3a;border-radius:16px;padding:40px;width:400px;text-align:center}
+.login-box h1{font-size:24px;color:#fff;margin-bottom:8px}
+.login-box p{color:#6b6b7b;font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:12px 16px;border-radius:8px;font-family:monospace;font-size:14px;margin-bottom:16px}
+.login-box input:focus{outline:none;border-color:#3b82f6}
+.login-box button{width:100%;background:#3b82f6;color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:15px;font-weight:600}
+.login-box button:hover{background:#2563eb}
+.login-error{color:#ef4444;font-size:13px;margin-top:8px;display:none}
+.header{background:#12121a;border-bottom:1px solid #2a2a3a;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;color:#fff}
+.header-r{display:flex;align-items:center;gap:16px}
+.status{font-size:13px;color:#6b6b7b}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px}
+.logout{background:none;border:1px solid #3a3a4a;color:#8b8b9b;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.logout:hover{border-color:#ef4444;color:#ef4444}
+.app{display:none}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:4px;margin-bottom:24px}
+.tab{padding:10px 20px;background:#16161f;border:1px solid #2a2a3a;border-radius:8px;cursor:pointer;font-size:14px;color:#8b8b9b}
+.tab.active{background:#1e1e2e;color:#fff;border-color:#3b82f6}
+.section{display:none}.section.active{display:block}
+.card{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:16px;margin-bottom:12px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card-title{font-size:16px;font-weight:600;color:#fff}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase}
+.badge-online{background:#052e16;color:#22c55e}.badge-offline{background:#1c1917;color:#a8a29e}
+.badge-busy{background:#1e1b4b;color:#818cf8}.badge-pending{background:#422006;color:#f59e0b}
+.badge-approved{background:#052e16;color:#22c55e}.badge-rejected{background:#450a0a;color:#ef4444}
+.badge-queued{background:#1e1b4b;color:#818cf8}.badge-claimed{background:#422006;color:#f59e0b}
+.badge-running{background:#0c4a6e;color:#38bdf8}.badge-completed{background:#052e16;color:#22c55e}
+.badge-failed{background:#450a0a;color:#ef4444}.badge-cancelled{background:#1c1917;color:#a8a29e}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.info-item{font-size:12px}.info-label{color:#6b6b7b}.info-value{color:#c0c0d0;font-family:monospace}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{background:#1e1e2e;padding:2px 8px;border-radius:4px;font-size:11px;color:#8b8b9b}
+.actions{display:flex;gap:8px;margin-top:12px}
+.btn{padding:6px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500}
+.btn-approve{background:#22c55e;color:#000}.btn-approve:hover{background:#16a34a}
+.btn-reject{background:#ef4444;color:#fff}.btn-reject:hover{background:#dc2626}
+.btn-sm{padding:4px 10px;font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:16px;text-align:center}
+.stat-value{font-size:28px;font-weight:700;color:#fff}
+.stat-label{font-size:12px;color:#6b6b7b;margin-top:4px}
+.empty{text-align:center;padding:40px;color:#6b6b7b}
+.refresh-btn{position:fixed;bottom:24px;right:24px;background:#3b82f6;color:#fff;border:none;width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;font-weight:500;display:none;z-index:100}
+.toast-success{background:#22c55e;color:#000}.toast-error{background:#ef4444;color:#fff}
+.loading{text-align:center;padding:20px;color:#6b6b7b}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-
-<!-- LOGIN SCREEN -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <h1>OpenHub</h1>
@@ -86,16 +72,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div class="app" id="mainApp">
   <div class="header">
     <h1>OpenHub Admin</h1>
-    <div class="header-right">
+    <div class="header-r">
       <div class="status"><span class="dot" id="hubDot"></span><span id="hubStatus">...</span></div>
-      <button class="logout-btn" onclick="logout()">Cikis</button>
+      <button class="logout" onclick="logout()">Cikis</button>
     </div>
   </div>
-
   <div class="container">
     <div class="stats" id="stats"></div>
     <div class="tabs">
@@ -103,126 +87,74 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="tab" onclick="showTab(this,'agents')">Agents</div>
       <div class="tab" onclick="showTab(this,'tasks')">Tasks</div>
     </div>
-    <div class="section active" id="sec-applications"></div>
-    <div class="section" id="sec-agents"></div>
-    <div class="section" id="sec-tasks"></div>
+    <div class="section active" id="sec-applications"><div class="loading"><span class="spin">&#x21bb;</span> Yukleniyor...</div></div>
+    <div class="section" id="sec-agents"><div class="loading"><span class="spin">&#x21bb;</span> Yukleniyor...</div></div>
+    <div class="section" id="sec-tasks"><div class="loading"><span class="spin">&#x21bb;</span> Yukleniyor...</div></div>
   </div>
-
   <button class="refresh-btn" onclick="refresh()" title="Yenile">&#x21bb;</button>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const BASE = window.location.origin;
-let AK = '';
+const B=window.location.origin;
+let AK='';
+const s=localStorage.getItem('openhub_ak');
+if(s){AK=s;tryAuto()}
 
-// Check saved session
-const saved = localStorage.getItem('openhub_ak');
-if (saved) { AK = saved; tryAutoLogin(); }
-
-async function login() {
-  AK = document.getElementById('loginKey').value.trim();
-  if (!AK) return;
-
-  // Verify admin key by calling admin endpoint
-  try {
-    const r = await fetch(BASE + '/v1/acn/admin/applications', {
-      headers: { 'X-Admin-Key': AK }
-    });
-    if (r.ok) {
-      localStorage.setItem('openhub_ak', AK);
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      refresh();
-    } else {
-      document.getElementById('loginError').style.display = 'block';
-      setTimeout(() => document.getElementById('loginError').style.display = 'none', 3000);
-    }
-  } catch(e) {
-    document.getElementById('loginError').textContent = 'Baglanti hatasi';
-    document.getElementById('loginError').style.display = 'block';
-  }
+async function login(){
+  AK=document.getElementById('loginKey').value.trim();
+  if(!AK)return;
+  try{
+    const r=await fetch(B+'/v1/acn/admin/applications',{headers:{'X-Admin-Key':AK}});
+    if(r.ok){localStorage.setItem('openhub_ak',AK);show();refresh()}
+    else{document.getElementById('loginError').style.display='block';setTimeout(()=>document.getElementById('loginError').style.display='none',3000)}
+  }catch(e){document.getElementById('loginError').textContent='Baglanti hatasi';document.getElementById('loginError').style.display='block'}
 }
-
-async function tryAutoLogin() {
-  try {
-    const r = await fetch(BASE + '/v1/acn/admin/applications', {
-      headers: { 'X-Admin-Key': saved }
-    });
-    if (r.ok) {
-      AK = saved;
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      refresh();
-    } else {
-      localStorage.removeItem('openhub_ak');
-    }
-  } catch(e) {
-    localStorage.removeItem('openhub_ak');
-  }
+async function tryAuto(){
+  try{const r=await fetch(B+'/v1/acn/admin/applications',{headers:{'X-Admin-Key':s}});
+  if(r.ok){AK=s;show();refresh()}else localStorage.removeItem('openhub_ak')}
+  catch(e){localStorage.removeItem('openhub_ak')}
 }
+function show(){document.getElementById('loginOverlay').style.display='none';document.getElementById('mainApp').style.display='block'}
+function logout(){localStorage.removeItem('openhub_ak');AK='';document.getElementById('mainApp').style.display='none';document.getElementById('loginOverlay').style.display='flex'}
+function showTab(el,n){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));el.classList.add('active');document.getElementById('sec-'+n).classList.add('active')}
+function toast(m,t='success'){const e=document.getElementById('toast');e.textContent=m;e.className='toast toast-'+t;e.style.display='block';setTimeout(()=>e.style.display='none',4000)}
+async function api(p,o={}){return(await fetch(B+p,{...o,headers:{'Content-Type':'application/json','X-Admin-Key':AK,...(o.headers||{})}})).json()}
 
-function logout() {
-  localStorage.removeItem('openhub_ak');
-  AK = '';
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginOverlay').style.display = 'flex';
-  document.getElementById('loginKey').value = '';
-}
+async function refresh(){
+  try{
+    // Single call for full status (optimized)
+    const[full,apps,tasks]=await Promise.all([
+      api('/v1/acn/admin/full-status'),
+      api('/v1/acn/admin/applications'),
+      api('/v1/acn/admin/tasks'),
+    ]);
 
-function showTab(el, name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('sec-' + name).classList.add('active');
-}
+    document.getElementById('hubStatus').textContent='Turso Connected';
+    document.getElementById('hubDot').style.background='#22c55e';
 
-function toast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast toast-' + type;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 4000);
-}
-
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': AK };
-  return (await fetch(BASE + path, { ...opts, headers })).json();
-}
-
-async function refresh() {
-  try {
-    // Public status (no sensitive info)
-    const status = await (await fetch(BASE + '/v1/acn/health')).json();
-    document.getElementById('hubStatus').textContent = 'Turso Connected';
-    document.getElementById('hubDot').style.background = '#22c55e';
-
-    // Admin: full agent details
-    const agentsResp = await api('/v1/acn/admin/applications?status_filter=all');
-
-    // Get agents from status endpoint with admin key
-    const fullStatus = await api('/v1/acn/admin/full-status');
-
-    const agents = fullStatus.agents || { total: 0, list: [] };
-    const tasks = fullStatus.tasks || {};
+    const ag=full.agents||{total:0,list:[]};
+    const tk=full.tasks||{};
 
     // Stats
-    document.getElementById('stats').innerHTML = `
-      <div class="stat-card"><div class="stat-value">${agents.total}</div><div class="stat-label">Agents</div></div>
-      <div class="stat-card"><div class="stat-value">${status.total_nodes || 0}</div><div class="stat-label">Nodes</div></div>
-      <div class="stat-card"><div class="stat-value">${tasks.queued || 0}</div><div class="stat-label">Queued</div></div>
-      <div class="stat-card"><div class="stat-value">${tasks.running || 0}</div><div class="stat-label">Running</div></div>
-      <div class="stat-card"><div class="stat-value">${tasks.completed || 0}</div><div class="stat-label">Completed</div></div>
+    document.getElementById('stats').innerHTML=`
+      <div class="stat-card"><div class="stat-value">${ag.total}</div><div class="stat-label">Agents</div></div>
+      <div class="stat-card"><div class="stat-value">${full.nodes||0}</div><div class="stat-label">Nodes</div></div>
+      <div class="stat-card"><div class="stat-value">${tk.queued||0}</div><div class="stat-label">Queued</div></div>
+      <div class="stat-card"><div class="stat-value">${tk.running||0}</div><div class="stat-label">Running</div></div>
+      <div class="stat-card"><div class="stat-value">${tk.completed||0}</div><div class="stat-label">Completed</div></div>
     `;
 
     // Agents
-    const agentList = agents.list || [];
-    document.getElementById('sec-agents').innerHTML = agentList.length ? agentList.map(a => `
+    const al=ag.list||[];
+    document.getElementById('sec-agents').innerHTML=al.length?al.map(a=>`
       <div class="card">
         <div class="card-header">
           <span class="card-title">${a.name}</span>
-          <span class="badge badge-${a.status}">${a.status}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-${a.status}">${a.status}</span>
+            <button class="btn btn-reject btn-sm" onclick="removeAgent('${a.name}')">Sil</button>
+          </div>
         </div>
         <div class="info-grid">
           <div class="info-item"><span class="info-label">Model</span><br><span class="info-value">${a.model||'-'}</span></div>
@@ -230,24 +162,19 @@ async function refresh() {
           <div class="info-item"><span class="info-label">OS</span><br><span class="info-value">${a.os||'-'}</span></div>
           <div class="info-item"><span class="info-label">Context</span><br><span class="info-value">${a.context_window?(a.context_window/1000)+'K':'-'}</span></div>
           <div class="info-item"><span class="info-label">IP</span><br><span class="info-value">${a.ip||'-'}</span></div>
-          <div class="info-item"><span class="info-label">Hostname</span><br><span class="info-value">${a.hostname||'-'}</span></div>
           <div class="info-item"><span class="info-label">Skills</span><br><span class="info-value">${a.skills_count||0}</span></div>
           <div class="info-item"><span class="info-label">MCP</span><br><span class="info-value">${(a.mcp_servers||[]).length}</span></div>
+          <div class="info-item"><span class="info-label">Heartbeat</span><br><span class="info-value">${a.last_heartbeat?new Date(a.last_heartbeat).toLocaleTimeString('tr'):'-'}</span></div>
         </div>
         <div class="tags">${(a.capabilities||[]).map(c=>'<span class="tag">'+c+'</span>').join('')}</div>
         ${(a.channels||[]).length?'<div class="tags" style="margin-top:4px">'+a.channels.map(c=>'<span class="tag" style="background:#0c4a6e">'+c+'</span>').join('')+'</div>':''}
-      </div>
-    `).join('') : '<div class="empty">Kayitli agent yok</div>';
+      </div>`).join(''):'<div class="empty">Agent yok</div>';
 
     // Applications
-    const apps = await api('/v1/acn/admin/applications');
-    const appList = apps.applications || [];
-    document.getElementById('sec-applications').innerHTML = appList.length ? appList.map(a => `
+    const apl=apps.applications||[];
+    document.getElementById('sec-applications').innerHTML=apl.length?apl.map(a=>`
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">${a.agent_name}</span>
-          <span class="badge badge-${a.status}">${a.status}</span>
-        </div>
+        <div class="card-header"><span class="card-title">${a.agent_name}</span><span class="badge badge-${a.status}">${a.status}</span></div>
         <div class="info-grid">
           <div class="info-item"><span class="info-label">Model</span><br><span class="info-value">${a.model||'-'}</span></div>
           <div class="info-item"><span class="info-label">Platform</span><br><span class="info-value">${a.platform||'-'}</span></div>
@@ -255,103 +182,75 @@ async function refresh() {
           <div class="info-item"><span class="info-label">Tarih</span><br><span class="info-value">${a.created_at?new Date(a.created_at).toLocaleString('tr'):'-'}</span></div>
         </div>
         <div class="tags">${(a.capabilities||[]).map(c=>'<span class="tag">'+c+'</span>').join('')}</div>
-        ${a.status==='pending'?`<div class="actions">
-          <button class="btn btn-approve" onclick="approveApp('${a.application_id}')">Onayla</button>
-          <button class="btn btn-reject" onclick="rejectApp('${a.application_id}')">Reddet</button>
-        </div>`:''}
-      </div>
-    `).join('') : '<div class="empty">Basvuru yok</div>';
+        ${a.status==='pending'?'<div class="actions"><button class="btn btn-approve" onclick="approveApp(\''+a.application_id+'\')">Onayla</button><button class="btn btn-reject" onclick="rejectApp(\''+a.application_id+'\')">Reddet</button></div>':''}
+      </div>`).join(''):'<div class="empty">Basvuru yok</div>';
 
-    // Tasks - detailed list + create form
-    const taskData = await api('/v1/acn/admin/tasks');
-    const taskList = taskData.tasks || [];
-    const createForm = `
-      <div class="card" style="border-color:#3b82f6">
-        <div class="card-title" style="margin-bottom:12px">Yeni Task Olustur</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <input id="taskTitle" placeholder="Baslik" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px" />
-          <select id="taskType" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px">
-            <option value="code_edit">Code Edit</option><option value="code_review">Code Review</option>
-            <option value="testing">Testing</option><option value="research">Research</option>
-            <option value="bug_fix">Bug Fix</option><option value="documentation">Documentation</option>
-            <option value="analysis">Analysis</option><option value="refactoring">Refactoring</option>
-          </select>
-        </div>
-        <textarea id="taskDesc" placeholder="Aciklama" rows="2" style="width:100%;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px;margin-top:8px;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-          <input id="taskCaps" placeholder="Yetenekler (virgul ile: code_review, testing)" style="flex:1;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px" />
-          <button class="btn btn-approve" onclick="createTask()">Olustur</button>
-        </div>
+    // Tasks
+    const tl=tasks.tasks||[];
+    const pri={0:'CRITICAL',25:'HIGH',50:'NORMAL',75:'LOW',100:'MINIMAL'};
+    const createForm=`<div class="card" style="border-color:#3b82f6">
+      <div class="card-title" style="margin-bottom:12px">Yeni Task</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input id="tTitle" placeholder="Baslik" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px"/>
+        <select id="tType" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px">
+          <option value="code_edit">Code Edit</option><option value="code_review">Code Review</option>
+          <option value="testing">Testing</option><option value="research">Research</option>
+          <option value="bug_fix">Bug Fix</option><option value="documentation">Documentation</option>
+        </select>
       </div>
-    `;
-    const pri = {0:'CRITICAL',25:'HIGH',50:'NORMAL',75:'LOW',100:'MINIMAL'};
-    const taskCards = taskList.length ? taskList.map(t => `
+      <textarea id="tDesc" placeholder="Aciklama" rows="2" style="width:100%;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px;margin-top:8px;resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="tCaps" placeholder="Yetenekler (code_review, testing)" style="flex:1;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px"/>
+        <button class="btn btn-approve" onclick="createTask()">Olustur</button>
+      </div>
+    </div>`;
+    document.getElementById('sec-tasks').innerHTML=createForm+(tl.length?tl.map(t=>`
       <div class="card">
         <div class="card-header">
           <span class="card-title">${t.title}</span>
-          <div><span class="badge badge-${t.status}">${t.status}</span></div>
+          <span class="badge badge-${t.status}">${t.status}</span>
         </div>
         <div class="info-grid">
           <div class="info-item"><span class="info-label">Tip</span><br><span class="info-value">${t.task_type}</span></div>
           <div class="info-item"><span class="info-label">Oncelik</span><br><span class="info-value">${pri[t.priority]||t.priority}</span></div>
           <div class="info-item"><span class="info-label">Atanan</span><br><span class="info-value">${t.assigned_to?t.assigned_to.slice(0,8)+'...':'kuyrukta'}</span></div>
-          <div class="info-item"><span class="info-label">Olusturuldu</span><br><span class="info-value">${t.created_at?new Date(t.created_at).toLocaleString('tr'):'-'}</span></div>
-          ${t.completed_at?'<div class="info-item"><span class="info-label">Tamamlandi</span><br><span class="info-value">'+new Date(t.completed_at).toLocaleString('tr')+'</span></div>':''}
+          <div class="info-item"><span class="info-label">Tarih</span><br><span class="info-value">${t.created_at?new Date(t.created_at).toLocaleString('tr'):'-'}</span></div>
         </div>
-        ${t.description?'<div style="font-size:12px;color:#8b8b9b;margin-top:8px">'+t.description+'</div>':''}
+        ${t.description?'<div style="font-size:12px;color:#8b8b9b;margin-top:6px">'+t.description+'</div>':''}
         ${t.result_summary?'<div style="font-size:12px;color:#22c55e;margin-top:6px;padding:6px 10px;background:#052e16;border-radius:6px">'+t.result_summary+'</div>':''}
-        ${['queued','claimed','running'].includes(t.status)?'<div class="actions"><button class="btn btn-reject" onclick="cancelTask(\''+t.task_id+'\')">Iptal Et</button></div>':''}
-      </div>
-    `).join('') : '<div class="empty">Task yok</div>';
-    document.getElementById('sec-tasks').innerHTML = createForm + taskCards;
+        ${['queued','claimed','running'].includes(t.status)?'<div class="actions"><button class="btn btn-reject btn-sm" onclick="cancelTask(\''+t.task_id+'\')">Iptal</button></div>':''}
+      </div>`).join(''):'<div class="empty">Task yok</div>');
 
-  } catch(e) {
-    document.getElementById('hubStatus').textContent = 'Hata: ' + e.message;
-    document.getElementById('hubDot').style.background = '#ef4444';
+  }catch(e){
+    document.getElementById('hubStatus').textContent='Hata';
+    document.getElementById('hubDot').style.background='#ef4444';
   }
 }
 
-async function cancelTask(id) {
-  if(!confirm('Bu task iptal edilsin mi?')) return;
-  // Use task cancel endpoint
-  const r = await fetch(BASE+'/v1/tasks/'+id+'/cancel',{method:'POST',headers:{'X-Admin-Key':AK}});
-  toast(r.ok?'Task iptal edildi':'Iptal basarisiz', r.ok?'success':'error');
-  refresh();
+async function approveApp(id){const r=await api('/v1/acn/admin/applications/'+id+'/approve',{method:'POST'});if(r.status==='approved')toast('Onaylandi: '+r.agent_name+' | Key: '+r.api_key);else toast('Hata','error');refresh()}
+async function rejectApp(id){await api('/v1/acn/admin/applications/'+id+'/reject',{method:'POST'});toast('Reddedildi');refresh()}
+async function cancelTask(id){if(!confirm('Task iptal edilsin mi?'))return;const r=await api('/v1/acn/admin/tasks/'+id+'/cancel',{method:'POST'});toast(r.status==='cancelled'?'Iptal edildi':'Hata','error');refresh()}
+async function removeAgent(name){if(!confirm(name+' silinsin mi?'))return;
+  // Find agent ID from full status
+  const f=await api('/v1/acn/admin/full-status');
+  const ag=(f.agents?.list||[]).find(a=>a.name===name);
+  if(!ag){toast('Agent bulunamadi','error');return}
+  // Need agent_id - get from agents endpoint
+  const agents=await api('/v1/acn/agents',{headers:{'X-API-Key':AK}});
+  const found=(agents.remote_agents||[]).find(a=>a.agent_name===name);
+  if(!found){toast('Agent ID bulunamadi','error');return}
+  const r=await api('/v1/acn/admin/agents/'+found.agent_id+'/remove',{method:'POST'});
+  toast(r.status==='removed'?name+' silindi':'Hata',r.status==='removed'?'success':'error');refresh()
 }
-
-async function createTask() {
-  const title = document.getElementById('taskTitle').value.trim();
-  const desc = document.getElementById('taskDesc').value.trim();
-  const type = document.getElementById('taskType').value;
-  const caps = document.getElementById('taskCaps').value.trim().split(',').map(c=>c.trim()).filter(c=>c);
-  if(!title||!desc) { toast('Baslik ve aciklama zorunlu','error'); return; }
-  const r = await api('/v1/acn/admin/tasks/create',{method:'POST',body:JSON.stringify({
-    title, description:desc, task_type:type, priority:50,
-    required_capabilities: caps.length ? caps : [type]
-  })});
-  if(r.task_id) {
-    toast('Task olusturuldu'+(r.assigned_to?' - agent atandi':''));
-    document.getElementById('taskTitle').value='';
-    document.getElementById('taskDesc').value='';
-    document.getElementById('taskCaps').value='';
-    refresh();
-  } else toast('Hata: '+(r.error||'unknown'),'error');
+async function createTask(){
+  const t=document.getElementById('tTitle').value.trim(),d=document.getElementById('tDesc').value.trim(),
+    tp=document.getElementById('tType').value,c=document.getElementById('tCaps').value.trim().split(',').map(s=>s.trim()).filter(s=>s);
+  if(!t||!d){toast('Baslik ve aciklama zorunlu','error');return}
+  const r=await api('/v1/acn/admin/tasks/create',{method:'POST',body:JSON.stringify({title:t,description:d,task_type:tp,priority:50,required_capabilities:c.length?c:[tp]})});
+  if(r.task_id){toast('Task olusturuldu'+(r.assigned_to?' - atandi':''));document.getElementById('tTitle').value='';document.getElementById('tDesc').value='';document.getElementById('tCaps').value='';refresh()}
+  else toast('Hata','error')
 }
-
-async function approveApp(id) {
-  const r = await api('/v1/acn/admin/applications/'+id+'/approve',{method:'POST'});
-  if(r.status==='approved') toast('Onaylandi: '+r.agent_name);
-  else toast('Hata: '+(r.error||'unknown'),'error');
-  refresh();
-}
-
-async function rejectApp(id) {
-  const r = await api('/v1/acn/admin/applications/'+id+'/reject',{method:'POST'});
-  toast(r.status==='rejected'?'Reddedildi':'Hata','error');
-  refresh();
-}
-
-setInterval(()=>{ if(AK) refresh(); }, 30000);
+setInterval(()=>{if(AK)refresh()},30000);
 </script>
 </body>
 </html>
