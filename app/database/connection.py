@@ -59,17 +59,15 @@ class Database:
         """Get thread-local database connection (Turso or SQLite)"""
         if not hasattr(self._local, 'connection'):
             if self._use_turso:
+                # Use remote-only mode (no embedded replica issues)
+                turso_url = self._turso_url
+                if turso_url.startswith("libsql://"):
+                    turso_url = turso_url.replace("libsql://", "https://")
                 conn = libsql.connect(
-                    str(self.db_path),
-                    sync_url=self._turso_url,
+                    turso_url,
                     auth_token=self._turso_token,
                 )
-                # Initial sync from Turso cloud
-                try:
-                    conn.sync()
-                    logger.debug("turso_initial_sync_complete")
-                except Exception as e:
-                    logger.warning("turso_initial_sync_failed", error=str(e))
+                logger.debug("turso_remote_connected")
             else:
                 conn = sqlite3.connect(
                     str(self.db_path),
