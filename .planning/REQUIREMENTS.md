@@ -127,6 +127,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | HARD-08 | Phase 1 | Pending |
 | HARD-09 | Phase 1 | Pending |
 | HARD-10 | Phase 1 | Pending |
+| OSS-02 | Phase 1 | Pending |
+| PROD-01 | Phase 1 | Pending |
+| PROD-02 | Phase 1 | Pending |
+| PROD-04 | Phase 1 | Pending |
 | WS-01 | Phase 2 | Pending |
 | WS-02 | Phase 2 | Pending |
 | WS-03 | Phase 2 | Pending |
@@ -138,7 +142,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-03 | Phase 2 | Pending |
 | TEST-04 | Phase 2 | Pending |
 | TEST-05 | Phase 2 | Pending |
-| TEST-06 | Phase 5 | Pending |
+| VEC-01 | Phase 3 | Pending |
+| VEC-02 | Phase 3 | Pending |
+| VEC-03 | Phase 3 | Pending |
+| VEC-04 | Phase 3 | Pending |
+| VEC-05 | Phase 3 | Pending |
+| VEC-06 | Phase 3 | Pending |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
@@ -155,28 +164,19 @@ Deferred to future release. Tracked but not in current roadmap.
 | UI-14 | Phase 4 | Pending |
 | UI-15 | Phase 4 | Pending |
 | UI-16 | Phase 4 | Pending |
-| VEC-01 | Phase 3 | Pending |
-| VEC-02 | Phase 3 | Pending |
-| VEC-03 | Phase 3 | Pending |
-| VEC-04 | Phase 3 | Pending |
-| VEC-05 | Phase 3 | Pending |
-| VEC-06 | Phase 3 | Pending |
 | OSS-01 | Phase 5 | Pending |
-| OSS-02 | Phase 1 | Pending |
 | OSS-03 | Phase 5 | Pending |
 | OSS-04 | Phase 5 | Pending |
 | OSS-05 | Phase 5 | Pending |
 | OSS-06 | Phase 5 | Pending |
-| PROD-01 | Phase 1 | Pending |
-| PROD-02 | Phase 1 | Pending |
 | PROD-03 | Phase 5 | Pending |
-| PROD-04 | Phase 1 | Pending |
+| TEST-06 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
+- v1 requirements: 54 total
+- Mapped to phases: 54
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-07*
-*Last updated: 2026-04-07 after initial definition*
+*Last updated: 2026-04-07 after roadmap creation*
