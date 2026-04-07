@@ -262,20 +262,69 @@ async function refresh() {
       </div>
     `).join('') : '<div class="empty">Basvuru yok</div>';
 
-    // Tasks
-    const totalTasks = Object.values(tasks).reduce((s,v)=>s+v,0);
-    document.getElementById('sec-tasks').innerHTML = totalTasks > 0 ?
-      Object.entries(tasks).filter(([,c])=>c>0).map(([s,c])=>`
-        <div class="card"><div class="card-header">
-          <span class="card-title">${s}</span>
-          <span class="badge badge-${s}">${c}</span>
-        </div></div>
-      `).join('') : '<div class="empty">Task yok</div>';
+    // Tasks - detailed list + create form
+    const taskData = await api('/v1/acn/admin/tasks');
+    const taskList = taskData.tasks || [];
+    const createForm = `
+      <div class="card" style="border-color:#3b82f6">
+        <div class="card-title" style="margin-bottom:12px">Yeni Task Olustur</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="taskTitle" placeholder="Baslik" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px" />
+          <select id="taskType" style="background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px">
+            <option value="code_edit">Code Edit</option><option value="code_review">Code Review</option>
+            <option value="testing">Testing</option><option value="research">Research</option>
+            <option value="bug_fix">Bug Fix</option><option value="documentation">Documentation</option>
+            <option value="analysis">Analysis</option><option value="refactoring">Refactoring</option>
+          </select>
+        </div>
+        <textarea id="taskDesc" placeholder="Aciklama" rows="2" style="width:100%;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px;margin-top:8px;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <input id="taskCaps" placeholder="Yetenekler (virgul ile: code_review, testing)" style="flex:1;background:#1e1e2e;border:1px solid #3a3a4a;color:#fff;padding:8px;border-radius:6px;font-size:13px" />
+          <button class="btn btn-approve" onclick="createTask()">Olustur</button>
+        </div>
+      </div>
+    `;
+    const taskCards = taskList.length ? taskList.map(t => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${t.title}</span>
+          <span class="badge badge-${t.status}">${t.status}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">Tip</span><br><span class="info-value">${t.task_type}</span></div>
+          <div class="info-item"><span class="info-label">Oncelik</span><br><span class="info-value">${t.priority}</span></div>
+          <div class="info-item"><span class="info-label">Atanan</span><br><span class="info-value">${t.assigned_to||'kuyrukta'}</span></div>
+          <div class="info-item"><span class="info-label">Tarih</span><br><span class="info-value">${t.created_at?new Date(t.created_at).toLocaleString('tr'):'-'}</span></div>
+        </div>
+        ${t.description?'<div style="font-size:12px;color:#8b8b9b;margin-top:6px">'+t.description+'</div>':''}
+        ${t.result_summary?'<div style="font-size:12px;color:#22c55e;margin-top:6px">Sonuc: '+t.result_summary+'</div>':''}
+      </div>
+    `).join('') : '<div class="empty">Task yok</div>';
+    document.getElementById('sec-tasks').innerHTML = createForm + taskCards;
 
   } catch(e) {
     document.getElementById('hubStatus').textContent = 'Hata: ' + e.message;
     document.getElementById('hubDot').style.background = '#ef4444';
   }
+}
+
+async function createTask() {
+  const title = document.getElementById('taskTitle').value.trim();
+  const desc = document.getElementById('taskDesc').value.trim();
+  const type = document.getElementById('taskType').value;
+  const caps = document.getElementById('taskCaps').value.trim().split(',').map(c=>c.trim()).filter(c=>c);
+  if(!title||!desc) { toast('Baslik ve aciklama zorunlu','error'); return; }
+  const r = await api('/v1/acn/admin/tasks/create',{method:'POST',body:JSON.stringify({
+    title, description:desc, task_type:type, priority:50,
+    required_capabilities: caps.length ? caps : [type]
+  })});
+  if(r.task_id) {
+    toast('Task olusturuldu'+(r.assigned_to?' - agent atandi':''));
+    document.getElementById('taskTitle').value='';
+    document.getElementById('taskDesc').value='';
+    document.getElementById('taskCaps').value='';
+    refresh();
+  } else toast('Hata: '+(r.error||'unknown'),'error');
 }
 
 async function approveApp(id) {

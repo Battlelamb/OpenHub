@@ -781,6 +781,56 @@ async def admin_full_status(
     }
 
 
+@router.get("/admin/tasks")
+async def admin_list_tasks(
+    _: bool = Depends(_require_admin_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """List all tasks with details - admin only."""
+    all_tasks = task_service.task_repo.list_all()
+    tasks = []
+    for t in all_tasks:
+        tasks.append({
+            "task_id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
+            "priority": t.priority,
+            "status": t.status if isinstance(t.status, str) else t.status.value,
+            "assigned_to": t.owner_agent_id,
+            "result_summary": t.result_summary,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+        })
+    return {"tasks": tasks, "total": len(tasks)}
+
+
+@router.post("/admin/tasks/create")
+async def admin_create_task(
+    body: ACNTaskCreate,
+    _: bool = Depends(_require_admin_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Create a task from admin dashboard."""
+    task_data = TaskCreate(
+        title=body.title,
+        description=body.description,
+        task_type=TaskType(body.task_type) if body.task_type in [t.value for t in TaskType] else TaskType.FEATURE,
+        priority=body.priority,
+        required_capabilities=body.required_capabilities,
+        payload=body.payload or {},
+        labels={},
+        max_retries=3,
+    )
+    new_task = task_service.create_task(task_data, created_by="admin")
+    return {
+        "task_id": new_task.id,
+        "title": new_task.title,
+        "status": new_task.status if isinstance(new_task.status, str) else new_task.status.value,
+        "assigned_to": new_task.owner_agent_id,
+    }
+
+
 @router.post("/admin/applications/{application_id}/reject")
 async def reject_application(
     application_id: str,
