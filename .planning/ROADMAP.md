@@ -30,16 +30,17 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An agent registered with a list of capabilities can be matched to a task - json.loads() on stored capabilities succeeds
   4. Offline agents are detected automatically - the heartbeat monitor starts with the application and marks agents offline after missing heartbeats
   5. The /docs endpoint is accessible and all endpoints show correct auth requirements and structured error response shapes
-**Plans**: 7 plans
+**Plans**: 8 plans
 
 Plans:
-- [ ] 01-00-PLAN.md - Test scaffold: pytest infrastructure, conftest.py, shared fixtures
-- [ ] 01-01-PLAN.md - Auth stub removal, shared API key dep, admin credential env vars
-- [ ] 01-02-PLAN.md - Capabilities JSON fix, heartbeat monitor wiring
-- [ ] 01-03-PLAN.md - CORS lockdown, datetime.utcnow() unification
+- [ ] 01-00-PLAN.md - Test scaffold: pytest infrastructure, conftest.py, shared fixtures, stub tests
+- [ ] 01-01-PLAN.md - Auth stub removal, shared API key dep, capabilities JSON fix, admin credential env vars
+- [ ] 01-02-PLAN.md - Heartbeat monitor wiring into lifespan
+- [ ] 01-03-PLAN.md - CORS lockdown, datetime.utcnow() partial fix (4 high-impact files)
 - [ ] 01-04-PLAN.md - Alembic schema migration consolidation
 - [ ] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
-- [ ] 01-06-PLAN.md - slowapi rate limiting, Prometheus metrics, structlog enhancement
+- [ ] 01-06-PLAN.md - slowapi rate limiting (app/limiter.py), Prometheus metrics, structlog enhancement
+- [ ] 01-07-PLAN.md - Codebase-wide datetime.utcnow() sweep (10 remaining files, 29 occurrences)
 
 ### Phase 2: WebSocket + Test Suite
 **Goal**: Dashboard clients can connect to a stable WebSocket endpoint and receive live events, and the backend has a test suite covering auth, capability matching, and the task/agent lifecycle
