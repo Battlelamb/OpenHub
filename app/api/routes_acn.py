@@ -652,8 +652,8 @@ async def list_applications(
             "model": data.get("model"),
             "platform": data.get("platform"),
             "capabilities": data.get("capabilities", []),
-            "skills_count": len(data.get("skills", [])),
-            "mcp_servers_count": len(data.get("mcp_servers", [])),
+            "skills_count": len(data.get("skills") or []),
+            "mcp_servers_count": len(data.get("mcp_servers") or []),
         })
 
     return {"applications": apps, "total": len(apps)}
