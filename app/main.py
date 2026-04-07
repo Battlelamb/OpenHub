@@ -196,6 +196,10 @@ from .api.routes_messaging import router as messaging_router, thread_router
 app.include_router(messaging_router)
 app.include_router(thread_router)
 
+# Import and include WebSocket router
+from .api.routes_websocket import router as ws_router
+app.include_router(ws_router)
+
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
 import os as _os
