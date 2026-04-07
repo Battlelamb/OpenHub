@@ -60,37 +60,33 @@ class ACNNodeCreate(BaseModel):
 
 
 class RemoteAgentRegister(BaseModel):
-    """Model for registering a remote agent"""
+    """Model for registering a remote agent - all details collected at join time"""
 
-    agent_name: str = Field(
-        description="Agent name",
-        min_length=1,
-        max_length=100
-    )
+    # Required
+    agent_name: str = Field(description="Agent name", min_length=1, max_length=100)
+    capabilities: List[str] = Field(description="Agent capabilities", min_length=1, max_length=50)
+    node_name: str = Field(description="ACN node name", min_length=1, max_length=100)
 
-    capabilities: List[str] = Field(
-        description="List of agent capabilities",
-        min_length=1,
-        max_length=50
-    )
+    # Identity
+    description: Optional[str] = Field(default=None, max_length=500)
+    model: Optional[str] = Field(default=None, max_length=100, description="AI model (gpt-5.3-codex, claude-opus-4-6)")
+    platform: Optional[str] = Field(default=None, max_length=100, description="Platform (openclaw, claude-code, qwen-code)")
+    version: Optional[str] = Field(default=None, max_length=50, description="Agent version")
 
-    node_name: str = Field(
-        description="Name of the ACN node this agent belongs to",
-        min_length=1,
-        max_length=100
-    )
+    # Location
+    hostname: Optional[str] = Field(default=None, max_length=200)
+    os_info: Optional[str] = Field(default=None, max_length=100, description="OS (debian-13, wsl2-ubuntu)")
+    workspace_path: Optional[str] = Field(default=None, max_length=500)
 
-    description: Optional[str] = Field(
-        default=None,
-        max_length=500,
-        description="Agent description"
-    )
+    # Communication
+    callback_url: Optional[str] = Field(default=None, max_length=500, description="Webhook callback URL")
+    channels: Optional[List[str]] = Field(default=None, description="Communication channels (telegram, discord, terminal)")
 
-    callback_url: Optional[str] = Field(
-        default=None,
-        max_length=500,
-        description="Callback URL for task results"
-    )
+    # Extended capabilities
+    skills: Optional[List[str]] = Field(default=None, description="Installed skills")
+    mcp_servers: Optional[List[str]] = Field(default=None, description="Connected MCP servers")
+    languages: Optional[List[str]] = Field(default=None, description="Programming languages")
+    context_window: Optional[int] = Field(default=None, description="Max context window size")
 
 
 class RemoteAgentMapping(IDMixin, TimestampMixin):

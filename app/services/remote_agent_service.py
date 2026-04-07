@@ -73,7 +73,7 @@ class RemoteAgentService:
         logger.debug("acn_node_heartbeat_received", node_id=node_id)
         return self.node_repo.update_heartbeat(node_id)
 
-    def register_remote_agent(self, data: RemoteAgentRegister) -> Agent:
+    def register_remote_agent(self, data: RemoteAgentRegister, client_ip: Optional[str] = None) -> Agent:
         """Register a remote agent - creates local Agent record + mapping"""
 
         logger.info("remote_agent_registration_started",
@@ -90,7 +90,29 @@ class RemoteAgentService:
         if existing_agent:
             raise ValueError(f"Agent name '{data.agent_name}' already exists")
 
-        # Create local Agent record (same pattern as AgentService.register_agent)
+        # Build rich metadata from registration data
+        agent_metadata = {
+            "is_remote": True,
+            "node_name": data.node_name,
+            "model": data.model,
+            "platform": data.platform,
+            "version": data.version,
+            "hostname": data.hostname,
+            "os_info": data.os_info,
+            "workspace_path": data.workspace_path,
+            "channels": data.channels or [],
+            "skills": data.skills or [],
+            "mcp_servers": data.mcp_servers or [],
+            "languages": data.languages or [],
+            "context_window": data.context_window,
+            "callback_url": data.callback_url,
+            "ip_address": client_ip,
+            "registered_at": datetime.utcnow().isoformat(),
+        }
+        # Remove None values
+        agent_metadata = {k: v for k, v in agent_metadata.items() if v is not None}
+
+        # Create local Agent record
         new_agent = Agent(
             id=str(uuid4()),
             agent_name=data.agent_name,
@@ -98,6 +120,7 @@ class RemoteAgentService:
             capabilities=data.capabilities,
             status=AgentStatus.ONLINE,
             labels={"acn_node": data.node_name, "remote": "true"},
+            metadata=agent_metadata,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             last_heartbeat=datetime.utcnow(),

@@ -250,9 +250,10 @@ async def join_acn(
     except ValueError:
         pass  # Node already exists
 
-    # Register the agent
+    # Register the agent (with client IP)
+    client_ip = request.client.host if request.client else None
     try:
-        new_agent = service.register_remote_agent(agent_data)
+        new_agent = service.register_remote_agent(agent_data, client_ip=client_ip)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
@@ -556,6 +557,30 @@ async def acn_status(
         except Exception:
             task_stats[status_val] = 0
 
+    # Get detailed agent info from DB
+    agent_details = []
+    for a in agents:
+        agent_obj = service.agent_repo.get_by_id(a["agent_id"])
+        meta = agent_obj.metadata if agent_obj and hasattr(agent_obj, 'metadata') else {}
+        agent_details.append({
+            "name": a["agent_name"],
+            "status": a["status"],
+            "capabilities": a["capabilities"],
+            "model": meta.get("model"),
+            "platform": meta.get("platform"),
+            "version": meta.get("version"),
+            "hostname": meta.get("hostname"),
+            "os": meta.get("os_info"),
+            "workspace": meta.get("workspace_path"),
+            "channels": meta.get("channels", []),
+            "skills_count": len(meta.get("skills", [])),
+            "mcp_servers": meta.get("mcp_servers", []),
+            "context_window": meta.get("context_window"),
+            "ip": meta.get("ip_address"),
+            "callback_url": a.get("callback_url"),
+            "last_heartbeat": a.get("last_heartbeat"),
+        })
+
     return {
         "hub": "OpenHub",
         "version": "0.1.0",
@@ -563,7 +588,7 @@ async def acn_status(
         "nodes": health["total_nodes"],
         "agents": {
             "total": len(agents),
-            "list": [{"name": a["agent_name"], "status": a["status"], "capabilities": a["capabilities"]} for a in agents],
+            "list": agent_details,
         },
         "tasks": task_stats,
     }
