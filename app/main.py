@@ -154,6 +154,17 @@ async def lifespan(app: FastAPI):
                 id TEXT PRIMARY KEY, agent_id TEXT, task_id TEXT,
                 model TEXT NOT NULL, input_tokens INTEGER, output_tokens INTEGER,
                 cost_usd REAL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS shared_tools (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
+                tool_type TEXT DEFAULT 'mcp', endpoint TEXT,
+                config TEXT DEFAULT '{}', tags TEXT DEFAULT '[]',
+                registered_by TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS agent_templates (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
+                capabilities TEXT DEFAULT '[]', skills TEXT DEFAULT '[]',
+                mcp_servers TEXT DEFAULT '[]', model TEXT, platform TEXT,
+                config TEXT DEFAULT '{}', created_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             try:
@@ -258,6 +269,12 @@ from .api.routes_p1 import lock_router, trace_router, cost_router
 app.include_router(lock_router)
 app.include_router(trace_router)
 app.include_router(cost_router)
+
+# Import and include P2 routers (tools, templates, DLQ)
+from .api.routes_p2 import tools_router, templates_router, dlq_router
+app.include_router(tools_router)
+app.include_router(templates_router)
+app.include_router(dlq_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
