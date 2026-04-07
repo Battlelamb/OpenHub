@@ -69,14 +69,13 @@ class TaskRepository(BaseRepository[Task]):
             "deadline_at": task.deadline_at,
             "idempotency_key": task.idempotency_key,
             "labels": json.dumps(task.labels),
-            "metadata": "{}",
             "payload": json.dumps(task.payload),
             "result_summary": task.result_summary,
             "output": json.dumps(task.output),
             "artifact_ids": json.dumps(task.artifact_ids),
             "duration_seconds": task.duration_seconds,
-            "created_at": task.created_at,
-            "updated_at": task.updated_at,
+            "created_at": task.created_at if task.created_at else None,
+            "updated_at": task.updated_at if task.updated_at else None,
         }
 
     def find_by_status(self, status: str) -> List[Task]:
