@@ -44,13 +44,17 @@ async def lifespan(app: FastAPI):
                 if sql_file.endswith(".sql"):
                     sql_path = os.path.join(migrations_dir, sql_file)
                     with open(sql_path) as f:
-                        for stmt in f.read().split(";"):
-                            stmt = stmt.strip()
-                            if stmt:
-                                try:
-                                    db.execute(stmt)
-                                except Exception:
-                                    pass  # Table already exists
+                        content = f.read()
+                    # Remove SQL comments and split by semicolons
+                    lines = [l for l in content.split("\n") if not l.strip().startswith("--")]
+                    clean_sql = "\n".join(lines)
+                    for stmt in clean_sql.split(";"):
+                        stmt = stmt.strip()
+                        if stmt and len(stmt) > 5:
+                            try:
+                                db.execute(stmt)
+                            except Exception:
+                                pass  # Table/index already exists
                     logger.info("migration_applied", file=sql_file)
 
         # Ensure api_keys table exists (not in migrations yet)
