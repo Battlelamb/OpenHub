@@ -68,10 +68,24 @@ class RemoteAgentService:
         return self.node_repo.list_all()
 
     def heartbeat_node(self, node_id: str) -> bool:
-        """Update node heartbeat"""
+        """Update node heartbeat + refresh agents on this node"""
 
         logger.debug("acn_node_heartbeat_received", node_id=node_id)
-        return self.node_repo.update_heartbeat(node_id)
+        success = self.node_repo.update_heartbeat(node_id)
+
+        # Also update all agents on this node
+        if success:
+            mappings = self.mapping_repo.find_by_node_id(node_id)
+            for mapping in mappings:
+                try:
+                    self.agent_repo.update(mapping.local_agent_id, {
+                        "status": "online",
+                        "last_heartbeat": datetime.utcnow(),
+                    })
+                except Exception:
+                    pass
+
+        return success
 
     def register_remote_agent(self, data: RemoteAgentRegister, client_ip: Optional[str] = None) -> Agent:
         """Register a remote agent - creates local Agent record + mapping"""
