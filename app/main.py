@@ -93,6 +93,26 @@ async def lifespan(app: FastAPI):
                 api_key_value TEXT,
                 reviewed_by TEXT, reviewed_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS messages (
+                id TEXT PRIMARY KEY,
+                from_agent_id TEXT NOT NULL,
+                to_agent_id TEXT,
+                thread_id TEXT,
+                message_type TEXT DEFAULT 'text',
+                content TEXT NOT NULL,
+                metadata TEXT DEFAULT '{}',
+                read_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS threads (
+                id TEXT PRIMARY KEY,
+                title TEXT,
+                thread_type TEXT DEFAULT 'conversation',
+                task_id TEXT,
+                participants TEXT DEFAULT '[]',
+                status TEXT DEFAULT 'open',
+                created_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             try:
@@ -170,6 +190,11 @@ app.include_router(coordination_router)
 # Import and include ACN router
 from .api.routes_acn import router as acn_router
 app.include_router(acn_router)
+
+# Import and include messaging routers
+from .api.routes_messaging import router as messaging_router, thread_router
+app.include_router(messaging_router)
+app.include_router(thread_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
