@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenHub Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; }
+
+.header { background: #12121a; border-bottom: 1px solid #2a2a3a; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; color: #fff; }
+.header .status { font-size: 13px; color: #6b6b7b; }
+.header .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
+
+.auth-bar { background: #16161f; padding: 12px 24px; border-bottom: 1px solid #2a2a3a; display: flex; gap: 12px; align-items: center; }
+.auth-bar input { background: #1e1e2e; border: 1px solid #3a3a4a; color: #fff; padding: 8px 12px; border-radius: 6px; flex: 1; max-width: 500px; font-family: monospace; font-size: 13px; }
+.auth-bar button { background: #3b82f6; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.auth-bar button:hover { background: #2563eb; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+.tab { padding: 10px 20px; background: #16161f; border: 1px solid #2a2a3a; border-radius: 8px; cursor: pointer; font-size: 14px; color: #8b8b9b; }
+.tab.active { background: #1e1e2e; color: #fff; border-color: #3b82f6; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.card-title { font-size: 16px; font-weight: 600; color: #fff; }
+.badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.badge-online { background: #052e16; color: #22c55e; }
+.badge-offline { background: #1c1917; color: #a8a29e; }
+.badge-busy { background: #1e1b4b; color: #818cf8; }
+.badge-pending { background: #422006; color: #f59e0b; }
+.badge-approved { background: #052e16; color: #22c55e; }
+.badge-rejected { background: #450a0a; color: #ef4444; }
+.badge-queued { background: #1e1b4b; color: #818cf8; }
+.badge-claimed { background: #422006; color: #f59e0b; }
+.badge-running { background: #0c4a6e; color: #38bdf8; }
+.badge-completed { background: #052e16; color: #22c55e; }
+.badge-failed { background: #450a0a; color: #ef4444; }
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.info-item { font-size: 12px; }
+.info-label { color: #6b6b7b; }
+.info-value { color: #c0c0d0; font-family: monospace; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tag { background: #1e1e2e; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #8b8b9b; }
+
+.actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn { padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+.btn-approve { background: #22c55e; color: #000; }
+.btn-approve:hover { background: #16a34a; }
+.btn-reject { background: #ef4444; color: #fff; }
+.btn-reject:hover { background: #dc2626; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: #12121a; border: 1px solid #2a2a3a; border-radius: 10px; padding: 16px; text-align: center; }
+.stat-value { font-size: 28px; font-weight: 700; color: #fff; }
+.stat-label { font-size: 12px; color: #6b6b7b; margin-top: 4px; }
+
+.empty { text-align: center; padding: 40px; color: #6b6b7b; }
+.refresh-btn { position: fixed; bottom: 24px; right: 24px; background: #3b82f6; color: #fff; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 20px; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+.toast { position: fixed; top: 20px; right: 20px; background: #22c55e; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 500; display: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>OpenHub Admin</h1>
+  <div class="status"><span class="dot" id="hubDot"></span><span id="hubStatus">Connecting...</span></div>
+</div>
+
+<div class="auth-bar">
+  <input type="password" id="adminKey" placeholder="Admin Key (ak_...)" />
+  <button onclick="connect()">Connect</button>
+</div>
+
+<div class="container">
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('applications')">Basvurular</div>
+    <div class="tab" onclick="showTab('agents')">Agents</div>
+    <div class="tab" onclick="showTab('tasks')">Tasks</div>
+  </div>
+
+  <div class="section active" id="sec-applications"></div>
+  <div class="section" id="sec-agents"></div>
+  <div class="section" id="sec-tasks"></div>
+</div>
+
+<button class="refresh-btn" onclick="refresh()" title="Refresh">&#x21bb;</button>
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = window.location.origin;
+let AK = localStorage.getItem('openhub_admin_key') || '';
+
+document.getElementById('adminKey').value = AK;
+
+function connect() {
+  AK = document.getElementById('adminKey').value.trim();
+  localStorage.setItem('openhub_admin_key', AK);
+  refresh();
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('sec-' + name).classList.add('active');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (AK) headers['X-Admin-Key'] = AK;
+  const r = await fetch(BASE + path, { ...opts, headers });
+  return r.json();
+}
+
+async function apiKey(path, key, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', 'X-API-Key': key };
+  const r = await fetch(BASE + path, { ...opts, headers });
+  return r.json();
+}
+
+async function refresh() {
+  // Status
+  const status = await api('/v1/acn/status');
+  document.getElementById('hubStatus').textContent = status.turso ? 'Connected - Turso ' + status.turso : 'Error';
+  document.getElementById('hubDot').style.background = status.turso ? '#22c55e' : '#ef4444';
+
+  // Stats
+  const agents = status.agents || { total: 0 };
+  const tasks = status.tasks || {};
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${agents.total}</div><div class="stat-label">Agents</div></div>
+    <div class="stat-card"><div class="stat-value">${status.nodes || 0}</div><div class="stat-label">Nodes</div></div>
+    <div class="stat-card"><div class="stat-value">${tasks.queued || 0}</div><div class="stat-label">Queued</div></div>
+    <div class="stat-card"><div class="stat-value">${tasks.running || 0}</div><div class="stat-label">Running</div></div>
+    <div class="stat-card"><div class="stat-value">${tasks.completed || 0}</div><div class="stat-label">Completed</div></div>
+  `;
+
+  // Agents
+  const agentList = (agents.list || []);
+  document.getElementById('sec-agents').innerHTML = agentList.length ? agentList.map(a => `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">${a.name}</span>
+        <span class="badge badge-${a.status}">${a.status}</span>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><span class="info-label">Model</span><br><span class="info-value">${a.model || '-'}</span></div>
+        <div class="info-item"><span class="info-label">Platform</span><br><span class="info-value">${a.platform || '-'}</span></div>
+        <div class="info-item"><span class="info-label">OS</span><br><span class="info-value">${a.os || '-'}</span></div>
+        <div class="info-item"><span class="info-label">Context</span><br><span class="info-value">${a.context_window ? (a.context_window/1000)+'K' : '-'}</span></div>
+        <div class="info-item"><span class="info-label">IP</span><br><span class="info-value">${a.ip || '-'}</span></div>
+        <div class="info-item"><span class="info-label">Hostname</span><br><span class="info-value">${a.hostname || '-'}</span></div>
+        <div class="info-item"><span class="info-label">Skills</span><br><span class="info-value">${a.skills_count || 0}</span></div>
+        <div class="info-item"><span class="info-label">MCP Servers</span><br><span class="info-value">${(a.mcp_servers||[]).length}</span></div>
+      </div>
+      <div class="tags">
+        ${(a.capabilities||[]).map(c => '<span class="tag">'+c+'</span>').join('')}
+      </div>
+      ${(a.channels||[]).length ? '<div class="tags" style="margin-top:4px">' + a.channels.map(c => '<span class="tag" style="background:#0c4a6e">'+c+'</span>').join('') + '</div>' : ''}
+    </div>
+  `).join('') : '<div class="empty">No agents registered</div>';
+
+  // Applications
+  if (AK) {
+    const apps = await api('/v1/acn/admin/applications');
+    const appList = apps.applications || [];
+    document.getElementById('sec-applications').innerHTML = appList.length ? appList.map(a => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${a.agent_name}</span>
+          <span class="badge badge-${a.status}">${a.status}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">Model</span><br><span class="info-value">${a.model || '-'}</span></div>
+          <div class="info-item"><span class="info-label">Platform</span><br><span class="info-value">${a.platform || '-'}</span></div>
+          <div class="info-item"><span class="info-label">IP</span><br><span class="info-value">${a.client_ip || '-'}</span></div>
+          <div class="info-item"><span class="info-label">Skills</span><br><span class="info-value">${a.skills_count || 0}</span></div>
+          <div class="info-item"><span class="info-label">MCP</span><br><span class="info-value">${a.mcp_servers_count || 0}</span></div>
+        </div>
+        <div class="tags">${(a.capabilities||[]).map(c => '<span class="tag">'+c+'</span>').join('')}</div>
+        ${a.status === 'pending' ? `
+          <div class="actions">
+            <button class="btn btn-approve" onclick="approveApp('${a.application_id}')">Onayla</button>
+            <button class="btn btn-reject" onclick="rejectApp('${a.application_id}')">Reddet</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('') : '<div class="empty">No pending applications</div>';
+  } else {
+    document.getElementById('sec-applications').innerHTML = '<div class="empty">Enter admin key to view applications</div>';
+  }
+
+  // Tasks
+  const taskData = status.tasks || {};
+  const totalTasks = Object.values(taskData).reduce((s,v) => s+v, 0);
+  if (totalTasks > 0) {
+    document.getElementById('sec-tasks').innerHTML = Object.entries(taskData).map(([s,c]) => c > 0 ? `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${s}</span>
+          <span class="badge badge-${s}">${c} task${c>1?'s':''}</span>
+        </div>
+      </div>
+    ` : '').join('');
+  } else {
+    document.getElementById('sec-tasks').innerHTML = '<div class="empty">No tasks</div>';
+  }
+}
+
+async function approveApp(id) {
+  const r = await api('/v1/acn/admin/applications/' + id + '/approve', { method: 'POST' });
+  if (r.status === 'approved') {
+    toast('Onaylandi: ' + r.agent_name + ' - Key: ' + r.api_key);
+  } else {
+    toast('Hata: ' + (r.error || r.detail || 'unknown'));
+  }
+  refresh();
+}
+
+async function rejectApp(id) {
+  const r = await api('/v1/acn/admin/applications/' + id + '/reject', { method: 'POST' });
+  toast(r.status === 'rejected' ? 'Reddedildi' : 'Hata');
+  refresh();
+}
+
+// Auto-refresh
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

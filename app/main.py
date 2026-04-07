@@ -161,6 +161,16 @@ app.include_router(coordination_router)
 from .api.routes_acn import router as acn_router
 app.include_router(acn_router)
 
+# Admin dashboard (static HTML)
+from fastapi.responses import FileResponse
+import os as _os
+_static_dir = _os.path.join(_os.path.dirname(__file__), "static")
+
+@app.get("/admin")
+async def admin_dashboard():
+    """Admin dashboard UI"""
+    return FileResponse(_os.path.join(_static_dir, "admin.html"))
+
 # Root endpoint
 @app.get("/")
 async def root():
