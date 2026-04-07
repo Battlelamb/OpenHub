@@ -80,6 +80,10 @@ class Settings(BaseSettings):
     heartbeat_check_interval_sec: int = Field(default=30, description="Heartbeat check interval in seconds")
     agent_offline_threshold_sec: int = Field(default=300, description="Consider agent offline after this timeout")
     
+    # Turso Database (libSQL cloud)
+    turso_database_url: Optional[str] = Field(default=None, description="Turso DB URL (libsql://...)")
+    turso_auth_token: Optional[str] = Field(default=None, description="Turso auth token")
+
     # ACN Configuration
     acn_enabled: bool = Field(default=True, description="Enable ACN")
     acn_node_id: str = Field(default="openhub-primary", description="This node's ID")

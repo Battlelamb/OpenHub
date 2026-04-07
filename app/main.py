@@ -33,7 +33,43 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.artifact_dir, exist_ok=True)
     os.makedirs(os.path.dirname(settings.db_path), exist_ok=True)
     os.makedirs(settings.zvec_path, exist_ok=True)
-    
+
+    # Auto-create database tables on startup
+    from .database.connection import get_database
+    try:
+        db = get_database()
+        migrations_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "migrations")
+        if os.path.isdir(migrations_dir):
+            for sql_file in sorted(os.listdir(migrations_dir)):
+                if sql_file.endswith(".sql"):
+                    sql_path = os.path.join(migrations_dir, sql_file)
+                    with open(sql_path) as f:
+                        for stmt in f.read().split(";"):
+                            stmt = stmt.strip()
+                            if stmt:
+                                try:
+                                    db.execute(stmt)
+                                except Exception:
+                                    pass  # Table already exists
+                    logger.info("migration_applied", file=sql_file)
+
+        # Ensure api_keys table exists (not in migrations yet)
+        db.execute("""CREATE TABLE IF NOT EXISTS api_keys (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL, key_type TEXT NOT NULL,
+            key_hash TEXT NOT NULL, salt TEXT NOT NULL, scopes TEXT DEFAULT '[]',
+            description TEXT, expires_at TIMESTAMP, created_by TEXT,
+            metadata TEXT DEFAULT '{}', is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TIMESTAMP, revoked_at TIMESTAMP, revoked_by TEXT
+        )""")
+
+        # Sync to Turso if configured
+        db.sync()
+        logger.info("database_tables_ready")
+    except Exception as e:
+        logger.error("database_init_failed", error=str(e))
+
     logger.info("agent_hub_started", version=__version__)
     
     yield
