@@ -38,6 +38,8 @@ async def lifespan(app: FastAPI):
     from .database.connection import get_database
     try:
         db = get_database()
+        # Sync from Turso first to get existing tables
+        db.sync()
         tables = [
             """CREATE TABLE IF NOT EXISTS agents (
                 id TEXT PRIMARY KEY, agent_name TEXT NOT NULL UNIQUE, description TEXT,
@@ -93,7 +95,15 @@ async def lifespan(app: FastAPI):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
-            db.execute(ddl)
+            try:
+                db.execute(ddl)
+            except Exception:
+                pass
+        # Force sync to pull tables into local replica
+        db.sync()
+        # Re-sync to ensure local has all tables
+        import time
+        time.sleep(1)
         db.sync()
         logger.info("database_tables_ready")
     except Exception as e:
