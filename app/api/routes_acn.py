@@ -611,7 +611,17 @@ async def check_application_status(
 
     if app["status"] == "approved" and app.get("api_key_value"):
         result["api_key"] = app["api_key_value"]
-        result["message"] = "Approved! Use this API key in X-API-Key header for all requests."
+        result["message"] = "Approved! Save this API key - it will only be shown ONCE."
+        # Clear api_key_value from DB after delivery (one-time view)
+        try:
+            database.execute(
+                "UPDATE pending_applications SET api_key_value = NULL WHERE id = :id",
+                {"id": application_id}
+            )
+        except Exception:
+            pass
+    elif app["status"] == "approved":
+        result["message"] = "Approved. API key was already delivered."
     elif app["status"] == "rejected":
         result["message"] = "Application rejected."
     else:
@@ -727,6 +737,50 @@ async def approve_application(
     }
 
 
+@router.get("/admin/full-status")
+async def admin_full_status(
+    _: bool = Depends(_require_admin_key),
+    service: RemoteAgentService = Depends(get_remote_agent_service),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Full status with sensitive info - admin only."""
+    health = service.get_network_health()
+    agents = service.get_remote_agents()
+
+    agent_details = []
+    for a in agents:
+        agent_obj = service.agent_repo.get_by_id(a["agent_id"])
+        meta = agent_obj.metadata if agent_obj and hasattr(agent_obj, 'metadata') else {}
+        agent_details.append({
+            "name": a["agent_name"], "status": a["status"],
+            "capabilities": a["capabilities"],
+            "model": meta.get("model"), "platform": meta.get("platform"),
+            "version": meta.get("version"), "hostname": meta.get("hostname"),
+            "os": meta.get("os_info"), "workspace": meta.get("workspace_path"),
+            "channels": meta.get("channels", []),
+            "skills_count": len(meta.get("skills") or []),
+            "mcp_servers": meta.get("mcp_servers", []),
+            "context_window": meta.get("context_window"),
+            "ip": meta.get("ip_address"),
+            "callback_url": a.get("callback_url"),
+            "last_heartbeat": a.get("last_heartbeat"),
+        })
+
+    task_stats = {}
+    for sv in ["queued", "claimed", "running", "completed", "failed"]:
+        try:
+            rows = task_service.task_repo.find_by_status(sv)
+            task_stats[sv] = len(rows)
+        except Exception:
+            task_stats[sv] = 0
+
+    return {
+        "nodes": health["total_nodes"],
+        "agents": {"total": len(agents), "list": agent_details},
+        "tasks": task_stats,
+    }
+
+
 @router.post("/admin/applications/{application_id}/reject")
 async def reject_application(
     application_id: str,
@@ -769,51 +823,14 @@ async def acn_status(
     service: RemoteAgentService = Depends(get_remote_agent_service),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
-    """Detailed ACN status with task stats - public."""
+    """Public status - no sensitive info. Use /admin/full-status for details."""
     health = service.get_network_health()
     agents = service.get_remote_agents()
-
-    # Task counts by status
-    task_stats = {}
-    for status_val in ["queued", "claimed", "running", "completed", "failed"]:
-        try:
-            rows = task_service.task_repo.find_by_status(status_val)
-            task_stats[status_val] = len(rows)
-        except Exception:
-            task_stats[status_val] = 0
-
-    # Get detailed agent info from DB
-    agent_details = []
-    for a in agents:
-        agent_obj = service.agent_repo.get_by_id(a["agent_id"])
-        meta = agent_obj.metadata if agent_obj and hasattr(agent_obj, 'metadata') else {}
-        agent_details.append({
-            "name": a["agent_name"],
-            "status": a["status"],
-            "capabilities": a["capabilities"],
-            "model": meta.get("model"),
-            "platform": meta.get("platform"),
-            "version": meta.get("version"),
-            "hostname": meta.get("hostname"),
-            "os": meta.get("os_info"),
-            "workspace": meta.get("workspace_path"),
-            "channels": meta.get("channels", []),
-            "skills_count": len(meta.get("skills", [])),
-            "mcp_servers": meta.get("mcp_servers", []),
-            "context_window": meta.get("context_window"),
-            "ip": meta.get("ip_address"),
-            "callback_url": a.get("callback_url"),
-            "last_heartbeat": a.get("last_heartbeat"),
-        })
 
     return {
         "hub": "OpenHub",
         "version": "0.1.0",
-        "turso": "connected",
         "nodes": health["total_nodes"],
-        "agents": {
-            "total": len(agents),
-            "list": agent_details,
-        },
-        "tasks": task_stats,
+        "total_agents": len(agents),
+        "agents": [{"name": a["agent_name"], "status": a["status"]} for a in agents],
     }
