@@ -127,14 +127,28 @@ class Database:
             return query, params
 
         import re
+        from datetime import datetime as _dt
+
+        # Convert unsupported types
+        clean_params = {}
+        for k, v in params.items():
+            if isinstance(v, _dt):
+                clean_params[k] = v.isoformat()
+            elif isinstance(v, bool):
+                clean_params[k] = 1 if v else 0
+            elif v is None:
+                clean_params[k] = None
+            else:
+                clean_params[k] = v
+
         # Find all :param_name in order
         param_names = re.findall(r':(\w+)', query)
         if not param_names:
-            return query, params
+            return query, clean_params
 
         # Replace :param_name with ? and build tuple
         new_query = re.sub(r':(\w+)', '?', query)
-        param_tuple = tuple(params.get(name) for name in param_names)
+        param_tuple = tuple(clean_params.get(name) for name in param_names)
         return new_query, param_tuple
 
     def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
