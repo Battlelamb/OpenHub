@@ -113,6 +113,18 @@ async def lifespan(app: FastAPI):
                 created_by TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
+            """CREATE TABLE IF NOT EXISTS shared_memory (
+                id TEXT PRIMARY KEY,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                value_type TEXT DEFAULT 'text',
+                tags TEXT DEFAULT '[]',
+                created_by TEXT,
+                access_level TEXT DEFAULT 'public',
+                ttl_seconds INTEGER,
+                expires_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
         ]
         for ddl in tables:
             try:
@@ -199,6 +211,10 @@ app.include_router(thread_router)
 # Import and include WebSocket router
 from .api.routes_websocket import router as ws_router
 app.include_router(ws_router)
+
+# Import and include memory router
+from .api.routes_memory import router as memory_router
+app.include_router(memory_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
