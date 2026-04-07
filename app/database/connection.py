@@ -121,9 +121,26 @@ class Database:
             logger.error("database_error", error=str(e))
             raise
 
+    def _adapt_params(self, query: str, params: Optional[Dict[str, Any]] = None):
+        """Convert named params (:key) to positional (?) for libsql compatibility"""
+        if not params or not self._use_turso:
+            return query, params
+
+        import re
+        # Find all :param_name in order
+        param_names = re.findall(r':(\w+)', query)
+        if not param_names:
+            return query, params
+
+        # Replace :param_name with ? and build tuple
+        new_query = re.sub(r':(\w+)', '?', query)
+        param_tuple = tuple(params.get(name) for name in param_names)
+        return new_query, param_tuple
+
     def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
         """Execute a query synchronously"""
         with self.get_sync_connection() as conn:
+            query, params = self._adapt_params(query, params)
             if params:
                 return conn.execute(query, params)
             else:
