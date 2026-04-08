@@ -1,7 +1,7 @@
 """
 Health check and system status endpoints
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Annotated
 from fastapi import APIRouter, Depends
 import psutil
@@ -37,7 +37,7 @@ async def health_check(
     health_data = {
         "status": "healthy",
         "version": "0.1.0",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "request_id": request_id,
     }
     
@@ -140,12 +140,12 @@ async def health_check(
 async def simple_health_check() -> Dict[str, str]:
     """
     Simple health check for load balancers and monitoring
-    
+
     Returns minimal response for quick health verification
     """
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
 

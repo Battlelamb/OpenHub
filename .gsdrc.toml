@@ -31,12 +31,12 @@ verify = [
 # token_ceiling = 1000000
 
 [model]
-# Model routing - Using Qwen models
+# Qwen models via DashScope API
 default = "qwen3.5-plus"
 research = "qwen3.5-plus"
-planning = "qwen3.5-plus"
+planning = "qwen3-max-2026-01-23"
 implementation = "qwen3.5-plus"
-verification = "qwen3.5-plus"
+verification = "qwen3-coder-plus"
 
 [paths]
 # GSD-2 directory structure

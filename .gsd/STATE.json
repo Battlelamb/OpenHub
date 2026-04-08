@@ -39,7 +39,8 @@
               "id": "t3",
               "name": "Heartbeat monitor wiring",
               "plan": "01-02-PLAN.md",
-              "status": "pending"
+              "status": "completed",
+              "completed_at": "2026-04-08"
             },
             {
               "id": "t4",
