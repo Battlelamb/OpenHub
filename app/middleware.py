@@ -6,7 +6,7 @@ import traceback
 from typing import Dict, Any, Callable, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, Request, Response, HTTPException, status
+from fastapi import FastAPI, Request, Response, HTTPException, status, Depends
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,6 +19,11 @@ from .logging import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+
+async def get_request_id(request: Request) -> str:
+    """Extract or generate a request ID for tracing."""
+    return getattr(request.state, "request_id", str(uuid4()))
 
 
 class RequestTimingMiddleware(BaseHTTPMiddleware):

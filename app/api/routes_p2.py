@@ -8,11 +8,12 @@ from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from collections import defaultdict
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
-from ..auth.api_keys import APIKeyManager
+from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from fastapi import Header
 
 logger = get_logger(__name__)
 
@@ -24,32 +25,6 @@ dlq_router = APIRouter(prefix="/v1/dlq", tags=["dead-letter-queue"])
 _rate_limits: Dict[str, List[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 60  # seconds
 _RATE_LIMIT_MAX = 60  # requests per window
-
-
-def _auth(x_api_key: str = Header(None, alias="X-API-Key"), database: Database = Depends(get_database)) -> Dict:
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key required")
-    info = APIKeyManager(database).validate_api_key(x_api_key)
-    if not info:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-    # P2.4: Rate limiting
-    key_id = info.get("key_id", "unknown")
-    now = time.time()
-    _rate_limits[key_id] = [t for t in _rate_limits[key_id] if now - t < _RATE_LIMIT_WINDOW]
-    if len(_rate_limits[key_id]) >= _RATE_LIMIT_MAX:
-        raise HTTPException(status_code=429, detail=f"Rate limit exceeded ({_RATE_LIMIT_MAX}/min)")
-    _rate_limits[key_id].append(now)
-
-    return info
-
-
-def _sender(ki: Dict, db: Database) -> str:
-    n = ki.get("name", "")
-    if n.startswith("acn-agent-"):
-        r = db.fetch_one("SELECT id FROM agents WHERE agent_name = :n", {"n": n.replace("acn-agent-", "")})
-        if r: return r["id"] if isinstance(r, dict) else r[0]
-    return "unknown"
 
 
 def _admin(x_admin_key: str = Header(..., alias="X-Admin-Key")):
@@ -75,11 +50,19 @@ class ToolRegister(PydanticBaseModel):
 @tools_router.post("/register")
 async def register_tool(
     body: ToolRegister,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Register a tool/MCP server for sharing with other agents."""
-    agent_id = _sender(key_info, database)
+    # Rate limiting
+    key_id = key_info.get("key_id", "unknown")
+    now = time.time()
+    _rate_limits[key_id] = [t for t in _rate_limits[key_id] if now - t < _RATE_LIMIT_WINDOW]
+    if len(_rate_limits[key_id]) >= _RATE_LIMIT_MAX:
+        raise HTTPException(status_code=429, detail=f"Rate limit exceeded ({_RATE_LIMIT_MAX}/min)")
+    _rate_limits[key_id].append(now)
+    
+    agent_id = resolve_agent_id(key_info, database)
     tool_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
@@ -101,7 +84,7 @@ async def register_tool(
 async def discover_tools(
     tag: Optional[str] = None,
     tool_type: Optional[str] = None,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Discover available tools shared by agents."""
@@ -154,13 +137,13 @@ class AgentTemplate(PydanticBaseModel):
 @templates_router.post("/create")
 async def create_template(
     body: AgentTemplate,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Create an agent template for quick deployment."""
     tmpl_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
 
     database.execute(
         """INSERT INTO agent_templates (id, name, description, capabilities, skills, mcp_servers,
@@ -181,7 +164,7 @@ async def create_template(
 
 @templates_router.get("/")
 async def list_templates(
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List available agent templates."""
@@ -201,7 +184,7 @@ async def list_templates(
 @templates_router.get("/{template_id}")
 async def get_template(
     template_id: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Get template details."""

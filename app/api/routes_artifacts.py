@@ -8,32 +8,14 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from typing import Dict, Any, Optional
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
-from ..auth.api_keys import APIKeyManager
+from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/v1/artifacts", tags=["artifacts"])
-
-
-def _auth(x_api_key: str = Header(None, alias="X-API-Key"), database: Database = Depends(get_database)) -> Dict:
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key required")
-    info = APIKeyManager(database).validate_api_key(x_api_key)
-    if not info:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    return info
-
-
-def _sender(key_info: Dict, db: Database) -> str:
-    name = key_info.get("name", "")
-    if name.startswith("acn-agent-"):
-        row = db.fetch_one("SELECT id FROM agents WHERE agent_name = :n", {"n": name.replace("acn-agent-", "")})
-        if row:
-            return row["id"] if isinstance(row, dict) else row[0]
-    return "unknown"
 
 
 class ArtifactUpload(PydanticBaseModel):
@@ -49,11 +31,11 @@ class ArtifactUpload(PydanticBaseModel):
 @router.post("/upload")
 async def upload_artifact(
     body: ArtifactUpload,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Upload an artifact (file). Max 500KB for inline storage."""
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
     art_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
@@ -78,7 +60,7 @@ async def upload_artifact(
 @router.get("/{artifact_id}")
 async def get_artifact(
     artifact_id: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Download an artifact."""
@@ -105,7 +87,7 @@ async def get_artifact(
 async def list_artifacts(
     task_id: Optional[str] = None,
     limit: int = 20,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List artifacts (metadata only, no content)."""
@@ -134,7 +116,7 @@ async def list_artifacts(
 @router.delete("/{artifact_id}")
 async def delete_artifact(
     artifact_id: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, str]:
     database.execute("DELETE FROM artifacts WHERE id = :id", {"id": artifact_id})

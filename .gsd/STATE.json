@@ -1,0 +1,123 @@
+# GSD-2 State File
+# This file tracks the current state of GSD-2 workflows
+
+{
+  "version": "2.0",
+  "project": {
+    "name": "OpenHub",
+    "description": "Multi-agent coordination platform for local development environments",
+    "url": "https://github.com/Battlelamb/OpenHub.git"
+  },
+  "milestones": [
+    {
+      "id": "m1",
+      "name": "v1.0 - Production Ready",
+      "status": "in_progress",
+      "description": "Open source release with command center UI, production-grade backend, and responsive mobile web support",
+      "slices": [
+        {
+          "id": "s1",
+          "name": "Backend Hardening",
+          "status": "pending",
+          "phase": 1,
+          "tasks": [
+            {
+              "id": "t1",
+              "name": "Test scaffold: pytest infrastructure",
+              "plan": "01-00-PLAN.md",
+              "status": "completed",
+              "completed_at": "2026-04-08"
+            },
+            {
+              "id": "t2",
+              "name": "Auth stub removal, API key dep, capabilities JSON fix",
+              "plan": "01-01-PLAN.md",
+              "status": "completed",
+              "completed_at": "2026-04-08"
+            },
+            {
+              "id": "t3",
+              "name": "Heartbeat monitor wiring",
+              "plan": "01-02-PLAN.md",
+              "status": "pending"
+            },
+            {
+              "id": "t4",
+              "name": "CORS lockdown, datetime.utcnow() partial fix",
+              "plan": "01-03-PLAN.md",
+              "status": "pending"
+            },
+            {
+              "id": "t5",
+              "name": "Alembic schema migration consolidation",
+              "plan": "01-04-PLAN.md",
+              "status": "pending"
+            },
+            {
+              "id": "t6",
+              "name": "RFC 7807 error format, OpenAPI /docs enabled",
+              "plan": "01-05-PLAN.md",
+              "status": "pending"
+            },
+            {
+              "id": "t7",
+              "name": "slowapi rate limiting, Prometheus metrics, structlog",
+              "plan": "01-06-PLAN.md",
+              "status": "pending"
+            },
+            {
+              "id": "t8",
+              "name": "Codebase-wide datetime.utcnow() sweep",
+              "plan": "01-07-PLAN.md",
+              "status": "pending"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "name": "WebSocket + Test Suite",
+          "status": "pending",
+          "phase": 2,
+          "depends_on": ["s1"]
+        },
+        {
+          "id": "s3",
+          "name": "Vector Database",
+          "status": "pending",
+          "phase": 3,
+          "depends_on": ["s1"]
+        },
+        {
+          "id": "s4",
+          "name": "Command Center UI",
+          "status": "pending",
+          "phase": 4,
+          "depends_on": ["s2"]
+        },
+        {
+          "id": "s5",
+          "name": "Release Readiness",
+          "status": "pending",
+          "phase": 5,
+          "depends_on": ["s4"]
+        }
+      ]
+    }
+  ],
+  "context": {
+    "stack": "Python 3.11+ / FastAPI / SQLite / Pydantic v2 / JWT + Casbin RBAC / Redis / Docker",
+    "deployment": "hub.brunhilde.cloud (production), Docker Compose, pip install",
+    "live_agents": 4
+  },
+  "preferences": {
+    "verify_commands": ["pytest", "mypy app/", "flake8 app/", "black --check app/"],
+    "branch_pattern": "feature/{slice-name}",
+    "worktree_enabled": true,
+    "merge_strategy": "squash"
+  },
+  "migration": {
+    "source": ".planning/",
+    "migrated_at": "2026-04-08",
+    "notes": "Migrated from GSD v1 conventions to GSD-2 CLI format"
+  }
+}

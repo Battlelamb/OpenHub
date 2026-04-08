@@ -1,15 +1,17 @@
 """
 Health check and system status endpoints
 """
-from fastapi import APIRouter, Depends
 from datetime import datetime
+from typing import Dict, Any, Annotated
+from fastapi import APIRouter, Depends
 import psutil
 import os
-from typing import Dict, Any
 
 from ..config import get_settings, Settings
-from ..dependencies import RequestIdDep
+from ..middleware import get_request_id
 from ..logging import get_logger
+
+RequestIdDep = Annotated[str, Depends(get_request_id)]
 
 router = APIRouter(prefix="/v1", tags=["health"])
 logger = get_logger(__name__)

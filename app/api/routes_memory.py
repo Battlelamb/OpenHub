@@ -6,38 +6,15 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
-from ..auth.api_keys import APIKeyManager
+from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/v1/memory", tags=["memory"])
-
-
-def _require_api_key(
-    x_api_key: str = Header(None, alias="X-API-Key"),
-    database: Database = Depends(get_database),
-) -> Dict[str, Any]:
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key required")
-    mgr = APIKeyManager(database)
-    info = mgr.validate_api_key(x_api_key)
-    if not info:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    return info
-
-
-def _resolve_sender(key_info: Dict, database: Database) -> str:
-    key_name = key_info.get("name", "")
-    if key_name.startswith("acn-agent-"):
-        agent_name = key_name.replace("acn-agent-", "")
-        row = database.fetch_one("SELECT id FROM agents WHERE agent_name = :name", {"name": agent_name})
-        if row:
-            return row["id"] if isinstance(row, dict) else row[0]
-    return "unknown"
 
 
 class MemoryWrite(PydanticBaseModel):
@@ -52,11 +29,11 @@ class MemoryWrite(PydanticBaseModel):
 @router.post("/write")
 async def write_memory(
     body: MemoryWrite,
-    key_info: Dict = Depends(_require_api_key),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Write to shared memory. Overwrites if key exists."""
-    agent_id = _resolve_sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
 
     expires_at = None
     if body.ttl_seconds:
@@ -99,7 +76,7 @@ async def write_memory(
 @router.get("/read")
 async def read_memory(
     key: str,
-    key_info: Dict = Depends(_require_api_key),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Read from shared memory by key."""
@@ -131,8 +108,8 @@ async def read_memory(
 async def search_memory(
     q: Optional[str] = None,
     tag: Optional[str] = None,
+    key_info: ApiKeyAuth = None,
     limit: int = Query(20, ge=1, le=100),
-    key_info: Dict = Depends(_require_api_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Search shared memory by text or tag."""
@@ -169,7 +146,7 @@ async def search_memory(
 @router.delete("/delete")
 async def delete_memory(
     key: str,
-    key_info: Dict = Depends(_require_api_key),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, str]:
     """Delete a key from shared memory."""
@@ -180,7 +157,7 @@ async def delete_memory(
 @router.get("/keys")
 async def list_keys(
     limit: int = Query(50, ge=1, le=200),
-    key_info: Dict = Depends(_require_api_key),
+    key_info: ApiKeyAuth = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List all keys in shared memory."""

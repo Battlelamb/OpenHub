@@ -6,34 +6,17 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
-from ..auth.api_keys import APIKeyManager
+from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
 
 logger = get_logger(__name__)
 
 lock_router = APIRouter(prefix="/v1/locks", tags=["locks"])
 trace_router = APIRouter(prefix="/v1/traces", tags=["tracing"])
 cost_router = APIRouter(prefix="/v1/costs", tags=["costs"])
-
-
-def _auth(x_api_key: str = Header(None, alias="X-API-Key"), database: Database = Depends(get_database)) -> Dict:
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key required")
-    info = APIKeyManager(database).validate_api_key(x_api_key)
-    if not info:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    return info
-
-
-def _sender(ki: Dict, db: Database) -> str:
-    n = ki.get("name", "")
-    if n.startswith("acn-agent-"):
-        r = db.fetch_one("SELECT id FROM agents WHERE agent_name = :n", {"n": n.replace("acn-agent-", "")})
-        if r: return r["id"] if isinstance(r, dict) else r[0]
-    return "unknown"
 
 
 # ========== RESOURCE LOCKING ==========
@@ -47,11 +30,11 @@ class LockAcquire(PydanticBaseModel):
 @lock_router.post("/acquire")
 async def acquire_lock(
     body: LockAcquire,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Acquire a lock on a resource. Returns conflict if already locked."""
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
     now = datetime.now(timezone.utc)
 
     # Check existing lock
@@ -95,7 +78,7 @@ async def acquire_lock(
 @lock_router.post("/release")
 async def release_lock(
     resource: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, str]:
     """Release a lock on a resource."""
@@ -110,7 +93,7 @@ async def release_lock(
 @lock_router.get("/status")
 async def lock_status(
     resource: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Check if a resource is locked."""
@@ -139,11 +122,11 @@ class TraceEvent(PydanticBaseModel):
 @trace_router.post("/event")
 async def log_trace_event(
     body: TraceEvent,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Log a trace event."""
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
     trace_id = body.trace_id or str(uuid4())
     event_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -165,7 +148,7 @@ async def log_trace_event(
 @trace_router.get("/{trace_id}")
 async def get_trace(
     trace_id: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Get all events for a trace."""
@@ -207,11 +190,11 @@ _MODEL_COSTS = {
 @cost_router.post("/log")
 async def log_cost(
     body: CostEntry,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Log token usage and cost for an agent."""
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
     cost_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
@@ -237,7 +220,7 @@ async def log_cost(
 @cost_router.get("/summary")
 async def cost_summary(
     days: int = Query(7, ge=1, le=90),
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Get cost summary for last N days."""

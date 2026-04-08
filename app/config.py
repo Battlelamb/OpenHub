@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Security Configuration
     secret_key: str = Field(default="your-secret-key-change-in-production", description="Secret key for tokens")
     api_keys_file: str = Field(default="./data/state/api_keys.json", description="API keys file path")
+
+    # Admin Credentials (required - no defaults, per D-06/D-07)
+    admin_user: str = Field(default=..., description="Admin username (required - set AGENTHUB_ADMIN_USER)")
+    admin_password: str = Field(default=..., description="Admin password (required - set AGENTHUB_ADMIN_PASSWORD)")
     
     # Logging Configuration
     log_level: str = Field(default="INFO", description="Log level")

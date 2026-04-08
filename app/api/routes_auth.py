@@ -1,7 +1,8 @@
 """
 Authentication and authorization endpoints
 """
-from datetime import datetime, timedelta
+import json
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
@@ -75,7 +76,7 @@ async def register_agent(
         
         database.execute("""
             INSERT INTO agents (
-                id, agent_name, description, capabilities, status, 
+                id, agent_name, description, capabilities, status,
                 labels, created_at, updated_at, last_heartbeat
             ) VALUES (
                 :id, :agent_name, :description, :capabilities, :status,
@@ -85,12 +86,12 @@ async def register_agent(
             "id": agent_id,
             "agent_name": agent_data.agent_name,
             "description": agent_data.description,
-            "capabilities": str(agent_data.capabilities),  # JSON string
+            "capabilities": json.dumps(agent_data.capabilities if agent_data.capabilities is not None else []),
             "status": "online",
-            "labels": str(agent_data.labels) if agent_data.labels else "{}",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "last_heartbeat": datetime.utcnow()
+            "labels": json.dumps(agent_data.labels if agent_data.labels is not None else {}),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "last_heartbeat": datetime.now(timezone.utc).isoformat()
         })
         
         # Create authentication tokens
@@ -231,20 +232,19 @@ async def admin_login(
 ) -> TokenResponse:
     """
     Admin login using username/password
-    
-    For demo purposes, this creates a default admin account.
-    In production, admins should be pre-configured.
+
+    Admin credentials configured via AGENTHUB_ADMIN_USER and AGENTHUB_ADMIN_PASSWORD env vars.
     """
     database = get_database()
-    
-    logger.info("admin_login_attempt", 
+
+    logger.info("admin_login_attempt",
                username=form_data.username,
                client_ip=request.client.host if request.client else None)
-    
-    # For now, use a hardcoded admin account
-    # TODO: Implement proper admin user management
-    if form_data.username != "admin" or form_data.password != "admin123":
-        logger.warning("admin_login_invalid_credentials", 
+
+    # Validate against configured admin credentials
+    _settings = get_settings()
+    if form_data.username != _settings.admin_user or form_data.password != _settings.admin_password:
+        logger.warning("admin_login_invalid_credentials",
                       username=form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
