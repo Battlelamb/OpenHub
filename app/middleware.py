@@ -16,6 +16,7 @@ import structlog
 
 from .config import get_settings
 from .logging import get_logger
+from .models.errors import ProblemDetail, FieldError
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -115,42 +116,43 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """Handle validation errors with structured response"""
-    
+    """Handle validation errors with RFC 7807 Problem Details format"""
+
     request_id = getattr(request.state, "request_id", str(uuid4()))
-    
+    instance = request.url.path
+
+    # Convert validation errors to FieldError list
+    field_errors = []
+    for error in exc.errors():
+        field_path = ".".join(str(loc) for loc in error["loc"])
+        field_errors.append(FieldError(field=field_path, message=error["msg"]))
+
     logger.warning(
         "validation_error",
-        errors=[{
-            "field": ".".join(str(loc) for loc in error["loc"]),
-            "message": error["msg"],
-            "type": error["type"]
-        } for error in exc.errors()],
+        errors=[{"field": e.field, "message": e.message} for e in field_errors],
         request_id=request_id
     )
-    
+
+    problem = problem_validation(
+        detail="Request validation failed",
+        instance=instance,
+        trace_id=request_id,
+        errors=field_errors
+    )
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "success": False,
-            "error": "Validation error",
-            "error_code": "VALIDATION_ERROR",
-            "validation_errors": [{
-                "field": ".".join(str(loc) for loc in error["loc"]),
-                "message": error["msg"],
-                "type": error["type"]
-            } for error in exc.errors()],
-            "request_id": request_id
-        },
+        content=problem.model_dump(exclude_none=True),
         headers={"X-Request-ID": request_id}
     )
 
 
 async def http_exception_handler_custom(request: Request, exc: HTTPException) -> JSONResponse:
-    """Handle HTTP exceptions with structured response"""
-    
+    """Handle HTTP exceptions with RFC 7807 Problem Details format"""
+
     request_id = getattr(request.state, "request_id", str(uuid4()))
-    
+    instance = request.url.path
+
     # Log error if status code >= 500
     if exc.status_code >= 500:
         logger.error(
@@ -166,24 +168,47 @@ async def http_exception_handler_custom(request: Request, exc: HTTPException) ->
             detail=exc.detail,
             request_id=request_id
         )
-    
+
+    # Map status codes to RFC 7807 problem types
+    problem_type_map = {
+        400: ("Bad Request", lambda d: ProblemDetail(title="Bad Request", status=400, detail=d)),
+        401: ("Unauthorized", lambda d: ProblemDetail(title="Unauthorized", status=401, detail=d)),
+        403: ("Forbidden", lambda d: ProblemDetail(title="Forbidden", status=403, detail=d)),
+        404: ("Not Found", lambda d: ProblemDetail(title="Not Found", status=404, detail=d)),
+        405: ("Method Not Allowed", lambda d: ProblemDetail(title="Method Not Allowed", status=405, detail=d)),
+        409: ("Conflict", lambda d: ProblemDetail(title="Conflict", status=409, detail=d)),
+        429: ("Too Many Requests", lambda d: ProblemDetail(title="Too Many Requests", status=429, detail=d)),
+    }
+
+    if exc.status_code in problem_type_map:
+        title, problem_fn = problem_type_map[exc.status_code]
+        problem = problem_fn(exc.detail)
+        problem.instance = instance
+        problem.trace_id = request_id
+    else:
+        # Generic error for other status codes
+        problem = ProblemDetail(
+            type="about:blank",
+            title=f"HTTP {exc.status_code}",
+            status=exc.status_code,
+            detail=exc.detail,
+            instance=instance,
+            trace_id=request_id
+        )
+
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "success": False,
-            "error": exc.detail,
-            "error_code": get_error_code_from_status(exc.status_code),
-            "request_id": request_id
-        },
+        content=problem.model_dump(exclude_none=True),
         headers={"X-Request-ID": request_id}
     )
 
 
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle general exceptions with structured response"""
-    
+    """Handle general exceptions with RFC 7807 Problem Details format"""
+
     request_id = getattr(request.state, "request_id", str(uuid4()))
-    
+    instance = request.url.path
+
     logger.error(
         "unhandled_exception",
         error=str(exc),
@@ -191,19 +216,19 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         traceback=traceback.format_exc(),
         request_id=request_id
     )
-    
+
     # Don't expose internal error details in production
-    error_message = str(exc) if settings.debug else "Internal server error"
-    
+    detail = str(exc) if settings.debug else "An unexpected error occurred"
+
+    problem = problem_internal(
+        detail=detail,
+        instance=instance,
+        trace_id=request_id
+    )
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "success": False,
-            "error": error_message,
-            "error_code": "INTERNAL_ERROR",
-            "request_id": request_id,
-            "trace_id": request_id if settings.debug else None
-        },
+        content=problem.model_dump(exclude_none=True),
         headers={"X-Request-ID": request_id}
     )
 

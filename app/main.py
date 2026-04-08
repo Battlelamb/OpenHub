@@ -74,8 +74,8 @@ app = FastAPI(
     title="Agent Hub API",
     description="Multi-agent coordination system for local development",
     version=__version__,
-    docs_url=None,
-    redoc_url=None,
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
