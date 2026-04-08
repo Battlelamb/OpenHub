@@ -173,19 +173,23 @@ async def lifespan(app: FastAPI):
                 pass
         # Force sync to pull tables into local replica
         db.sync()
-        # Re-sync to ensure local has all tables
-        import time
-        time.sleep(1)
-        db.sync()
         logger.info("database_tables_ready")
     except Exception as e:
         logger.error("database_init_failed", error=str(e))
 
+    # Wire heartbeat monitor to detect offline agents (HARD-04)
+    from .services.heartbeat_service import HeartbeatService
+    heartbeat_service = HeartbeatService(db)
+    await heartbeat_service.start_monitoring()
+    logger.info("heartbeat_monitor_started")
+
     logger.info("agent_hub_started", version=__version__)
-    
+
     yield
-    
+
     # Shutdown
+    await heartbeat_service.stop_monitoring()
+    logger.info("heartbeat_monitor_stopped")
     logger.info("agent_hub_shutting_down")
 
 
