@@ -2,14 +2,17 @@
 Agent Hub Main Application Entry Point
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 import uvicorn
 
 from .config import get_settings
 from .logging import setup_logging, get_logger
 from .middleware import setup_error_handlers, setup_middleware
 from .api.routes_health import router as health_router
+from .api.routes_metrics import router as metrics_router
 
 # Version info
 __version__ = "0.1.0"
@@ -20,6 +23,9 @@ settings = get_settings()
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
+
+# Initialize slowapi rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -82,6 +88,10 @@ app = FastAPI(
 # Setup error handlers and middleware
 setup_error_handlers(app)
 setup_middleware(app)
+
+# Wire slowapi rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
 # Add CORS middleware
 app.add_middleware(
@@ -155,6 +165,9 @@ from .api.routes_p2 import tools_router, templates_router, dlq_router
 app.include_router(tools_router)
 app.include_router(templates_router)
 app.include_router(dlq_router)
+
+# Import and include metrics router (Prometheus)
+app.include_router(metrics_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse

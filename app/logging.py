@@ -25,6 +25,8 @@ def setup_logging(log_level: Optional[str] = None, log_file: Optional[str] = Non
     # Configure structlog
     structlog.configure(
         processors=[
+            # Merge context vars (adds trace_id from middleware)
+            structlog.contextvars.merge_contextvars,
             # Add timestamp
             structlog.processors.TimeStamper(fmt="iso"),
             # Add log level
