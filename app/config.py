@@ -46,10 +46,20 @@ class Settings(BaseSettings):
     event_retention_days: int = Field(default=30, description="Event retention in days")
     message_retention_days: int = Field(default=90, description="Message retention in days")
     
-    # CORS Configuration
-    cors_origins: List[str] = Field(default=["*"], description="CORS allowed origins")
-    cors_methods: List[str] = Field(default=["*"], description="CORS allowed methods")
-    cors_headers: List[str] = Field(default=["*"], description="CORS allowed headers")
+    # CORS Configuration - per HARD-05: no wildcard in production
+    # Override via AGENTHUB_CORS_ORIGINS='["https://yourdomain.com"]' in production
+    cors_origins: List[str] = Field(
+        default=["http://localhost:3000", "http://localhost:7788"],
+        description="CORS allowed origins - set to your domain in production"
+    )
+    cors_methods: List[str] = Field(
+        default=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        description="CORS allowed methods"
+    )
+    cors_headers: List[str] = Field(
+        default=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
+        description="CORS allowed request headers"
+    )
     
     # JWT Authentication Configuration
     jwt_secret_key: str = Field(default="your-super-secret-jwt-key-change-in-production", description="JWT secret key")
