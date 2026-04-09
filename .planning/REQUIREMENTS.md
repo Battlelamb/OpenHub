@@ -15,8 +15,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **HARD-04**: Heartbeat monitor wired into app lifespan and actually runs to detect offline agents
 - [x] **HARD-05**: CORS defaults locked down (no wildcard in production)
 - [x] **HARD-06**: Schema DDL consolidated from inline main.py into versioned migration files
-- [ ] **HARD-07**: OpenAPI /docs endpoint enabled and accessible
-- [ ] **HARD-08**: Structured error responses with consistent error format across all endpoints
+- [x] **HARD-07**: OpenAPI /docs endpoint enabled and accessible
+- [x] **HARD-08**: Structured error responses with consistent error format across all endpoints
 - [x] **HARD-09**: datetime.utcnow() calls unified to timezone-aware datetime handling
 - [ ] **HARD-10**: Duplicate auth helper modules consolidated into single source of truth
 
@@ -69,7 +69,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Open Source Readiness
 
 - [ ] **OSS-01**: README with 5-minute quickstart covering both Docker and pip install paths
-- [ ] **OSS-02**: API documentation via exposed OpenAPI /docs with endpoint descriptions
+- [x] **OSS-02**: API documentation via exposed OpenAPI /docs with endpoint descriptions
 - [ ] **OSS-03**: License file (MIT or Apache 2.0) clearly stated in repo root
 - [ ] **OSS-04**: Contributing guide with development setup, code style, and PR process
 - [ ] **OSS-05**: pip install path (pip install openhub && openhub start) as alternative to Docker
@@ -123,11 +123,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | HARD-04 | Phase 1 | Pending |
 | HARD-05 | Phase 1 | Complete |
 | HARD-06 | Phase 1 | Complete |
-| HARD-07 | Phase 1 | Pending |
-| HARD-08 | Phase 1 | Pending |
+| HARD-07 | Phase 1 | Complete |
+| HARD-08 | Phase 1 | Complete |
 | HARD-09 | Phase 1 | Complete |
 | HARD-10 | Phase 1 | Pending |
-| OSS-02 | Phase 1 | Pending |
+| OSS-02 | Phase 1 | Complete |
 | PROD-01 | Phase 1 | Pending |
 | PROD-02 | Phase 1 | Pending |
 | PROD-04 | Phase 1 | Pending |

@@ -38,7 +38,7 @@ Plans:
 - [x] 01-02-PLAN.md - Heartbeat monitor wiring into lifespan
 - [x] 01-03-PLAN.md - CORS lockdown, datetime.utcnow() partial fix (4 high-impact files)
 - [x] 01-04-PLAN.md - Alembic schema migration consolidation
-- [ ] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
+- [x] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
 - [ ] 01-06-PLAN.md - slowapi rate limiting (app/limiter.py), Prometheus metrics, structlog enhancement
 - [x] 01-07-PLAN.md - Codebase-wide datetime.utcnow() sweep (10 remaining files, 29 occurrences)
 
