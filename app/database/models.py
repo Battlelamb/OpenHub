@@ -4,9 +4,10 @@ These models are used by Alembic for migration autogenerate.
 The existing raw SQL Database class in connection.py remains unchanged.
 """
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, Text, DateTime,
+    Column, String, Integer, Float, Boolean, Text, DateTime, BigInteger
 )
 from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime, timezone
 
 
 class Base(DeclarativeBase):
@@ -115,7 +116,6 @@ class PendingApplicationModel(Base):
     data = Column(Text, nullable=False)
     client_ip = Column(String)
     status = Column(String, default="pending")
-    source = Column(String, default="acn")
     api_key_value = Column(Text)
     reviewed_by = Column(String)
     reviewed_at = Column(DateTime)

@@ -45,7 +45,8 @@ async def lifespan(app: FastAPI):
     from alembic import command as alembic_command
     import os as _lifespan_os
     alembic_ini = _lifespan_os.path.join(
-        _lifespan_os.path.dirname(_lifespan_os.path.dirname(__file__)), "alembic.ini"
+        _lifespan_os.path.dirname(_lifespan_os.path.dirname(_lifespan_os.path.abspath(__file__))),
+        "alembic.ini",
     )
     alembic_cfg = AlembicConfig(alembic_ini)
     alembic_command.upgrade(alembic_cfg, "head")

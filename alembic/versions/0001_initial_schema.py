@@ -2,11 +2,12 @@
 
 Revision ID: 0001
 Revises:
-Create Date: 2026-04-08
+Create Date: 2026-04-07
 """
 from alembic import op
+import sqlalchemy as sa
 
-revision = "0001"
+revision = '0001'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -176,10 +177,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Drop in reverse dependency order
     for table in [
         "agent_templates", "shared_tools", "cost_tracking", "trace_events",
         "resource_locks", "artifacts", "workflows", "shared_memory",
         "threads", "messages", "pending_applications", "api_keys",
-        "remote_agent_mappings", "acn_nodes", "tasks", "agents",
+        "remote_agent_mappings", "acn_nodes", "tasks", "agents"
     ]:
         op.execute(f"DROP TABLE IF EXISTS {table}")
