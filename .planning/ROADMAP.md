@@ -40,7 +40,7 @@ Plans:
 - [x] 01-04-PLAN.md - Alembic schema migration consolidation
 - [ ] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
 - [ ] 01-06-PLAN.md - slowapi rate limiting (app/limiter.py), Prometheus metrics, structlog enhancement
-- [ ] 01-07-PLAN.md - Codebase-wide datetime.utcnow() sweep (10 remaining files, 29 occurrences)
+- [x] 01-07-PLAN.md - Codebase-wide datetime.utcnow() sweep (10 remaining files, 29 occurrences)
 
 ### Phase 2: WebSocket + Test Suite
 **Goal**: Dashboard clients can connect to a stable WebSocket endpoint and receive live events, and the backend has a test suite covering auth, capability matching, and the task/agent lifecycle
