@@ -66,9 +66,9 @@ async def register_tool(
 
 @tools_router.get("/discover")
 async def discover_tools(
+    key_info: ApiKeyAuth,
     tag: Optional[str] = None,
     tool_type: Optional[str] = None,
-    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Discover available tools shared by agents."""
