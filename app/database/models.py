@@ -115,6 +115,7 @@ class PendingApplicationModel(Base):
     data = Column(Text, nullable=False)
     client_ip = Column(String)
     status = Column(String, default="pending")
+    source = Column(String, default="acn")
     api_key_value = Column(Text)
     reviewed_by = Column(String)
     reviewed_at = Column(DateTime)

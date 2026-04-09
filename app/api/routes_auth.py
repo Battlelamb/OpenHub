@@ -37,99 +37,141 @@ settings = get_settings()
 router = APIRouter(prefix="/v1/auth", tags=["authentication"])
 
 
-@router.post("/agent/register", response_model=TokenResponse)
+@router.post("/agent/register", status_code=202)
 async def register_agent(
     agent_data: AgentCreate,
     request: Request
-) -> TokenResponse:
+) -> Dict[str, Any]:
     """
-    Register a new agent and return authentication tokens
-    
-    This endpoint allows new agents to register themselves in the system.
-    Returns JWT tokens for immediate authentication.
+    Submit agent registration for admin approval.
+
+    Creates a pending application that the admin can approve or reject
+    via the dashboard. Returns an application_id to poll for status.
     """
+    from uuid import uuid4
+
     database = get_database()
-    
-    logger.info("agent_registration_attempt", 
+    client_ip = request.client.host if request.client else None
+
+    logger.info("agent_registration_attempt",
                agent_name=agent_data.agent_name,
                capabilities=agent_data.capabilities,
-               client_ip=request.client.host if request.client else None)
-    
+               client_ip=client_ip)
+
     try:
-        # Check if agent name already exists
+        # Check if agent name already registered
         existing_agent = database.fetch_one(
             "SELECT id FROM agents WHERE agent_name = :agent_name",
             {"agent_name": agent_data.agent_name}
         )
-        
         if existing_agent:
-            logger.warning("agent_registration_duplicate", 
+            logger.warning("agent_registration_duplicate",
                           agent_name=agent_data.agent_name)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Agent name already exists"
             )
-        
-        # Create new agent in database
-        from uuid import uuid4
-        agent_id = str(uuid4())
-        
-        database.execute("""
-            INSERT INTO agents (
-                id, agent_name, description, capabilities, status,
-                labels, created_at, updated_at, last_heartbeat
-            ) VALUES (
-                :id, :agent_name, :description, :capabilities, :status,
-                :labels, :created_at, :updated_at, :last_heartbeat
+
+        # Check if a pending application already exists
+        existing_app = database.fetch_one(
+            "SELECT id FROM pending_applications WHERE agent_name = :name AND status = 'pending'",
+            {"name": agent_data.agent_name}
+        )
+        if existing_app:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Application for '{agent_data.agent_name}' already pending"
             )
-        """, {
-            "id": agent_id,
+
+        # Create pending application
+        app_id = str(uuid4())
+        database.execute(
+            """INSERT INTO pending_applications (id, agent_name, data, client_ip, status, source, created_at)
+               VALUES (:id, :name, :data, :ip, 'pending', 'direct', :now)""",
+            {
+                "id": app_id,
+                "name": agent_data.agent_name,
+                "data": json.dumps(agent_data.model_dump()),
+                "ip": client_ip,
+                "now": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+        logger.info("agent_registration_pending",
+                   app_id=app_id, agent_name=agent_data.agent_name, client_ip=client_ip)
+
+        return {
+            "application_id": app_id,
             "agent_name": agent_data.agent_name,
-            "description": agent_data.description,
-            "capabilities": json.dumps(agent_data.capabilities if agent_data.capabilities is not None else []),
-            "status": "online",
-            "labels": json.dumps(agent_data.labels if agent_data.labels is not None else {}),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "last_heartbeat": datetime.now(timezone.utc).isoformat()
-        })
-        
-        # Create authentication tokens
-        tokens = create_agent_tokens(
-            agent_id=agent_id,
-            agent_name=agent_data.agent_name,
-            role="agent"
-        )
-        
-        logger.info("agent_registered_successfully", 
-                   agent_id=agent_id,
-                   agent_name=agent_data.agent_name)
-        
-        return TokenResponse(
-            access_token=tokens["access_token"],
-            refresh_token=tokens["refresh_token"],
-            token_type=tokens["token_type"],
-            expires_in=settings.jwt_access_token_expire_minutes * 60,
-            agent_id=agent_id,
-            role="agent",
-            permissions=[
-                "tasks:claim", "tasks:update_progress", "tasks:complete",
-                "artifacts:upload", "artifacts:download_own",
-                "events:create", "events:read_own",
-                "communication:send_message", "communication:join_thread"
-            ]
-        )
-    
+            "status": "pending",
+            "message": "Application received. Waiting for admin approval. "
+                       f"Check status at GET /v1/auth/agent/register/{app_id}/status"
+        }
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("agent_registration_failed", 
+        logger.error("agent_registration_failed",
                     agent_name=agent_data.agent_name,
                     error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Agent registration failed"
         )
+
+
+@router.get("/agent/register/{application_id}/status")
+async def check_registration_status(
+    application_id: str,
+) -> Dict[str, Any]:
+    """
+    Check registration application status. No auth required - agent polls this.
+
+    On approval, returns the API key (one-time delivery).
+    Agent should then use POST /v1/auth/agent/login to get JWT tokens.
+    """
+    database = get_database()
+    row = database.fetch_one(
+        "SELECT * FROM pending_applications WHERE id = :id",
+        {"id": application_id}
+    )
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found"
+        )
+
+    app = dict(row) if isinstance(row, dict) else row
+
+    result = {
+        "application_id": app["id"],
+        "agent_name": app["agent_name"],
+        "status": app["status"],
+        "created_at": app.get("created_at"),
+    }
+
+    if app["status"] == "approved" and app.get("api_key_value"):
+        result["api_key"] = app["api_key_value"]
+        result["message"] = (
+            "Approved! Save this API key - it will only be shown ONCE. "
+            "Use POST /v1/auth/agent/login with your agent_name to get JWT tokens."
+        )
+        # Clear api_key_value after delivery (one-time view)
+        try:
+            database.execute(
+                "UPDATE pending_applications SET api_key_value = NULL WHERE id = :id",
+                {"id": application_id}
+            )
+        except Exception:
+            pass
+    elif app["status"] == "approved":
+        result["message"] = "Approved. API key was already delivered."
+    elif app["status"] == "rejected":
+        result["message"] = "Application rejected."
+    else:
+        result["message"] = "Pending admin review."
+
+    return result
 
 
 @router.post("/agent/login", response_model=TokenResponse)

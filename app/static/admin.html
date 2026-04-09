@@ -39,6 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge-queued{background:#1e1b4b;color:#818cf8}.badge-claimed{background:#422006;color:#f59e0b}
 .badge-running{background:#0c4a6e;color:#38bdf8}.badge-completed{background:#052e16;color:#22c55e}
 .badge-failed{background:#450a0a;color:#ef4444}.badge-cancelled{background:#1c1917;color:#a8a29e}
+.badge-direct{background:#1e1b4b;color:#a78bfa}.badge-acn{background:#0c4a6e;color:#38bdf8}
 .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
 .info-item{font-size:12px}.info-label{color:#6b6b7b}.info-value{color:#c0c0d0;font-family:monospace}
 .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -174,7 +175,8 @@ async function refresh(){
     const apl=apps.applications||[];
     document.getElementById('sec-applications').innerHTML=apl.length?apl.map(a=>`
       <div class="card">
-        <div class="card-header"><span class="card-title">${a.agent_name}</span><span class="badge badge-${a.status}">${a.status}</span></div>
+        <div class="card-header"><span class="card-title">${a.agent_name}</span><div style="display:flex;gap:6px"><span class="badge badge-${a.source||'acn'}">${a.source||'acn'}</span><span class="badge badge-${a.status}">${a.status}</span></div></div>
+        ${a.description?'<div style="font-size:12px;color:#8b8b9b;margin-bottom:8px">'+a.description+'</div>':''}
         <div class="info-grid">
           <div class="info-item"><span class="info-label">Model</span><br><span class="info-value">${a.model||'-'}</span></div>
           <div class="info-item"><span class="info-label">Platform</span><br><span class="info-value">${a.platform||'-'}</span></div>
