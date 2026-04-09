@@ -78,8 +78,11 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app with lifespan management
 app = FastAPI(
-    title="Agent Hub API",
-    description="Multi-agent coordination system for local development",
+    title="OpenHub API",
+    description=(
+        "Multi-agent coordination platform. "
+        "All endpoints require JWT Bearer token or X-API-Key header unless marked public."
+    ),
     version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
