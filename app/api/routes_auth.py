@@ -1,7 +1,7 @@
 """
 Authentication and authorization endpoints
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
@@ -88,9 +88,9 @@ async def register_agent(
             "capabilities": str(agent_data.capabilities),  # JSON string
             "status": "online",
             "labels": str(agent_data.labels) if agent_data.labels else "{}",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "last_heartbeat": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "last_heartbeat": datetime.now(timezone.utc)
         })
         
         # Create authentication tokens

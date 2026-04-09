@@ -3,7 +3,7 @@ Agent-Workflow Coordination Service - clean bridge between agents and Hatchet wo
 """
 import uuid
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -198,7 +198,7 @@ class WorkflowCoordinator:
                     agent_id=step.agent_id,
                     step_id=step.step_id,
                     status="assigned",
-                    assigned_at=datetime.utcnow()
+                    assigned_at=datetime.now(timezone.utc)
                 )
                 coordinations.append(coordination)
                 self._active_coordinations[coordination.coordination_id] = coordination
@@ -507,16 +507,16 @@ class WorkflowCoordinator:
                 if step_result:
                     if step_result.get("status") == "completed":
                         coord.status = "completed"
-                        coord.completed_at = datetime.utcnow()
+                        coord.completed_at = datetime.now(timezone.utc)
                         coord.result = step_result.get("result")
                     elif step_result.get("status") == "failed":
                         coord.status = "failed"
-                        coord.completed_at = datetime.utcnow()
+                        coord.completed_at = datetime.now(timezone.utc)
                         coord.error = step_result.get("error")
                 elif coord.status == "assigned":
                     # If step hasn't started yet but coordination exists, mark as executing
                     coord.status = "executing"
-                    coord.started_at = datetime.utcnow()
+                    coord.started_at = datetime.now(timezone.utc)
         
         except Exception as e:
             logger.error("coordination_status_update_failed",

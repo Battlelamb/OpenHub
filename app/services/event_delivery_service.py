@@ -2,7 +2,7 @@
 Event delivery service - webhook notifications to remote agents
 """
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 import httpx
@@ -34,7 +34,7 @@ class EventDeliveryService:
 
         payload = {
             "event": "task_assigned",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": task_data,
         }
 
@@ -48,7 +48,7 @@ class EventDeliveryService:
 
         payload = {
             "event": "task_completed",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": {"task_id": task_id, "result_summary": result},
         }
 
@@ -63,7 +63,7 @@ class EventDeliveryService:
         delivered = 0
         payload = {
             "event": event_type,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": data,
         }
 

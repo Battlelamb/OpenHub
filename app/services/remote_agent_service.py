@@ -1,7 +1,7 @@
 """
 Remote agent service - ACN federation business logic
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from uuid import uuid4
 
@@ -46,9 +46,9 @@ class RemoteAgentService:
             node_name=data.node_name,
             node_url=data.node_url,
             status=ACNNodeStatus.ONLINE,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc),
         )
 
         created_node = self.node_repo.create(new_node)
@@ -80,7 +80,7 @@ class RemoteAgentService:
                 try:
                     self.agent_repo.update(mapping.local_agent_id, {
                         "status": "online",
-                        "last_heartbeat": datetime.utcnow(),
+                        "last_heartbeat": datetime.now(timezone.utc),
                     })
                 except Exception:
                     pass
@@ -121,7 +121,7 @@ class RemoteAgentService:
             "context_window": data.context_window,
             "callback_url": data.callback_url,
             "ip_address": client_ip,
-            "registered_at": datetime.utcnow().isoformat(),
+            "registered_at": datetime.now(timezone.utc).isoformat(),
         }
         # Remove None values
         agent_metadata = {k: v for k, v in agent_metadata.items() if v is not None}
@@ -135,9 +135,9 @@ class RemoteAgentService:
             status=AgentStatus.ONLINE,
             labels={"acn_node": data.node_name, "remote": "true"},
             metadata=agent_metadata,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc),
             tasks_completed=0,
             tasks_failed=0,
         )
@@ -155,8 +155,8 @@ class RemoteAgentService:
                 "node_name": data.node_name,
                 "node_url": node.node_url,
             },
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
 
         self.mapping_repo.create(mapping)
@@ -173,7 +173,7 @@ class RemoteAgentService:
 
         mappings = self.mapping_repo.list_all()
         result = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         offline_threshold = 300  # 5 minutes
 
         for mapping in mappings:

@@ -1,7 +1,7 @@
 """
 Agent business logic service - clean and simple
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
@@ -40,9 +40,9 @@ class AgentService:
             capabilities=agent_data.capabilities,
             status=AgentStatus.ONLINE,
             labels=agent_data.labels,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc),
             tasks_completed=0,
             tasks_failed=0
         )
