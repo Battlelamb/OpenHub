@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **HARD-03**: Capabilities stored as proper JSON (not Python str()) so json.loads() works for task matching
 - [ ] **HARD-04**: Heartbeat monitor wired into app lifespan and actually runs to detect offline agents
 - [ ] **HARD-05**: CORS defaults locked down (no wildcard in production)
-- [ ] **HARD-06**: Schema DDL consolidated from inline main.py into versioned migration files
+- [x] **HARD-06**: Schema DDL consolidated from inline main.py into versioned migration files
 - [ ] **HARD-07**: OpenAPI /docs endpoint enabled and accessible
 - [ ] **HARD-08**: Structured error responses with consistent error format across all endpoints
 - [ ] **HARD-09**: datetime.utcnow() calls unified to timezone-aware datetime handling
@@ -122,7 +122,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | HARD-03 | Phase 1 | Pending |
 | HARD-04 | Phase 1 | Pending |
 | HARD-05 | Phase 1 | Pending |
-| HARD-06 | Phase 1 | Pending |
+| HARD-06 | Phase 1 | Complete |
 | HARD-07 | Phase 1 | Pending |
 | HARD-08 | Phase 1 | Pending |
 | HARD-09 | Phase 1 | Pending |
