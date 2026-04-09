@@ -16,6 +16,7 @@ import structlog
 
 from .config import get_settings
 from .logging import get_logger
+from .api.routes_metrics import REQUESTS_TOTAL, REQUEST_DURATION_SECONDS
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -34,7 +35,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
         
         # Add request ID to logs context
         structlog.contextvars.clear_contextvars()
-        structlog.contextvars.bind_contextvars(request_id=request_id)
+        structlog.contextvars.bind_contextvars(trace_id=request_id)
         
         # Log request start
         logger.info(
@@ -59,7 +60,20 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
                 status_code=response.status_code,
                 duration_ms=round(duration_ms, 2)
             )
-            
+
+            # Record Prometheus metrics
+            try:
+                REQUESTS_TOTAL.labels(
+                    method=request.method,
+                    endpoint=request.url.path,
+                    status=str(response.status_code),
+                ).inc()
+                REQUEST_DURATION_SECONDS.labels(
+                    endpoint=request.url.path,
+                ).observe(duration_ms / 1000)
+            except Exception:
+                pass  # Never let metrics collection crash the request
+
             # Add request ID to response headers
             response.headers["X-Request-ID"] = request_id
             response.headers["X-Response-Time"] = f"{duration_ms:.2f}ms"
