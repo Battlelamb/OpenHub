@@ -13,11 +13,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **HARD-02**: Hardcoded admin credentials (admin/admin123) replaced with env-configurable or first-run setup
 - [ ] **HARD-03**: Capabilities stored as proper JSON (not Python str()) so json.loads() works for task matching
 - [ ] **HARD-04**: Heartbeat monitor wired into app lifespan and actually runs to detect offline agents
-- [ ] **HARD-05**: CORS defaults locked down (no wildcard in production)
+- [x] **HARD-05**: CORS defaults locked down (no wildcard in production)
 - [x] **HARD-06**: Schema DDL consolidated from inline main.py into versioned migration files
 - [ ] **HARD-07**: OpenAPI /docs endpoint enabled and accessible
 - [ ] **HARD-08**: Structured error responses with consistent error format across all endpoints
-- [ ] **HARD-09**: datetime.utcnow() calls unified to timezone-aware datetime handling
+- [x] **HARD-09**: datetime.utcnow() calls unified to timezone-aware datetime handling
 - [ ] **HARD-10**: Duplicate auth helper modules consolidated into single source of truth
 
 ### WebSocket Real-time
@@ -121,11 +121,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | HARD-02 | Phase 1 | Pending |
 | HARD-03 | Phase 1 | Pending |
 | HARD-04 | Phase 1 | Pending |
-| HARD-05 | Phase 1 | Pending |
+| HARD-05 | Phase 1 | Complete |
 | HARD-06 | Phase 1 | Complete |
 | HARD-07 | Phase 1 | Pending |
 | HARD-08 | Phase 1 | Pending |
-| HARD-09 | Phase 1 | Pending |
+| HARD-09 | Phase 1 | Complete |
 | HARD-10 | Phase 1 | Pending |
 | OSS-02 | Phase 1 | Pending |
 | PROD-01 | Phase 1 | Pending |
