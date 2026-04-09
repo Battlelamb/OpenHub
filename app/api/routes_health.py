@@ -2,7 +2,7 @@
 Health check and system status endpoints
 """
 from fastapi import APIRouter, Depends
-from datetime import datetime
+from datetime import datetime, timezone
 import psutil
 import os
 from typing import Dict, Any
@@ -35,7 +35,7 @@ async def health_check(
     health_data = {
         "status": "healthy",
         "version": "0.1.0",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "request_id": request_id,
     }
     
@@ -143,7 +143,7 @@ async def simple_health_check() -> Dict[str, str]:
     """
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
