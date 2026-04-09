@@ -93,3 +93,4 @@ target/
 vendor/
 coverage/
 .cache/
+.claude/worktrees/

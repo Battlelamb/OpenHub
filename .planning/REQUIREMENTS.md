@@ -18,7 +18,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **HARD-07**: OpenAPI /docs endpoint enabled and accessible
 - [x] **HARD-08**: Structured error responses with consistent error format across all endpoints
 - [x] **HARD-09**: datetime.utcnow() calls unified to timezone-aware datetime handling
-- [ ] **HARD-10**: Duplicate auth helper modules consolidated into single source of truth
+- [x] **HARD-10**: Duplicate auth helper modules consolidated into single source of truth
 
 ### WebSocket Real-time
 
@@ -77,10 +77,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Deployment & Production
 
-- [ ] **PROD-01**: slowapi rate limiting wired into middleware for API protection
-- [ ] **PROD-02**: prometheus-client metrics endpoint for monitoring
+- [x] **PROD-01**: slowapi rate limiting wired into middleware for API protection
+- [x] **PROD-02**: prometheus-client metrics endpoint for monitoring
 - [ ] **PROD-03**: Graceful shutdown handling for in-flight tasks and WebSocket connections
-- [ ] **PROD-04**: Production logging configuration with structured JSON output
+- [x] **PROD-04**: Production logging configuration with structured JSON output
 
 ## v2 Requirements
 
@@ -126,11 +126,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | HARD-07 | Phase 1 | Complete |
 | HARD-08 | Phase 1 | Complete |
 | HARD-09 | Phase 1 | Complete |
-| HARD-10 | Phase 1 | Pending |
+| HARD-10 | Phase 1 | Complete |
 | OSS-02 | Phase 1 | Complete |
-| PROD-01 | Phase 1 | Pending |
-| PROD-02 | Phase 1 | Pending |
-| PROD-04 | Phase 1 | Pending |
+| PROD-01 | Phase 1 | Complete |
+| PROD-02 | Phase 1 | Complete |
+| PROD-04 | Phase 1 | Complete |
 | WS-01 | Phase 2 | Pending |
 | WS-02 | Phase 2 | Pending |
 | WS-03 | Phase 2 | Pending |
