@@ -2,13 +2,16 @@
 Agent Hub Main Application Entry Point
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 
 from .config import get_settings
 from .logging import setup_logging, get_logger
 from .middleware import setup_error_handlers, setup_middleware
+from .limiter import limiter
 from .api.routes_health import router as health_router
 
 # Version info
@@ -203,6 +206,33 @@ app = FastAPI(
 setup_error_handlers(app)
 setup_middleware(app)
 
+# Wire slowapi rate limiter
+app.state.limiter = limiter
+
+
+async def rfc7807_rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """RFC 7807 handler for rate limit exceeded (PROD-01)."""
+    retry_after = getattr(exc, "retry_after", 60)
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=429,
+        content={
+            "type": "urn:openhub:error:rate-limit-exceeded",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": f"Rate limit exceeded. Retry after {retry_after} seconds.",
+            "instance": str(request.url.path),
+            "trace_id": request_id,
+        },
+        headers={
+            "Retry-After": str(retry_after),
+            "X-RateLimit-Remaining": "0",
+        },
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, rfc7807_rate_limit_handler)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -275,6 +305,10 @@ from .api.routes_p2 import tools_router, templates_router, dlq_router
 app.include_router(tools_router)
 app.include_router(templates_router)
 app.include_router(dlq_router)
+
+# Import and include metrics router (Prometheus)
+from .api.routes_metrics import router as metrics_router
+app.include_router(metrics_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse

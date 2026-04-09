@@ -29,6 +29,7 @@ from ..auth.dependencies import (
     CurrentAdmin
 )
 from ..models.agents import AgentCreate
+from ..limiter import limiter
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -37,6 +38,7 @@ router = APIRouter(prefix="/v1/auth", tags=["authentication"])
 
 
 @router.post("/agent/register", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def register_agent(
     agent_data: AgentCreate,
     request: Request
@@ -132,6 +134,7 @@ async def register_agent(
 
 
 @router.post("/agent/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def agent_login(
     login_data: AgentLogin,
     request: Request
@@ -225,6 +228,7 @@ async def agent_login(
 
 
 @router.post("/admin/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def admin_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     request: Request = None

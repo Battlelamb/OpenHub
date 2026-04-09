@@ -6,7 +6,6 @@ import time
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
-from collections import defaultdict
 from pydantic import BaseModel as PydanticBaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 
@@ -20,27 +19,13 @@ tools_router = APIRouter(prefix="/v1/tools", tags=["mcp-tools"])
 templates_router = APIRouter(prefix="/v1/templates", tags=["templates"])
 dlq_router = APIRouter(prefix="/v1/dlq", tags=["dead-letter-queue"])
 
-# Rate limiter state (in-memory)
-_rate_limits: Dict[str, List[float]] = defaultdict(list)
-_RATE_LIMIT_WINDOW = 60  # seconds
-_RATE_LIMIT_MAX = 60  # requests per window
-
-
 def _auth(x_api_key: str = Header(None, alias="X-API-Key"), database: Database = Depends(get_database)) -> Dict:
+    """Validate API key. Rate limiting is now handled globally by slowapi."""
     if not x_api_key:
         raise HTTPException(status_code=401, detail="X-API-Key required")
     info = APIKeyManager(database).validate_api_key(x_api_key)
     if not info:
         raise HTTPException(status_code=401, detail="Invalid API key")
-
-    # P2.4: Rate limiting
-    key_id = info.get("key_id", "unknown")
-    now = time.time()
-    _rate_limits[key_id] = [t for t in _rate_limits[key_id] if now - t < _RATE_LIMIT_WINDOW]
-    if len(_rate_limits[key_id]) >= _RATE_LIMIT_MAX:
-        raise HTTPException(status_code=429, detail=f"Rate limit exceeded ({_RATE_LIMIT_MAX}/min)")
-    _rate_limits[key_id].append(now)
-
     return info
 
 
