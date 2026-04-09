@@ -17,6 +17,7 @@ import structlog
 from .config import get_settings
 from .logging import get_logger
 from .models.errors import ProblemDetail, FieldError, problem_validation, problem_internal
+from .api.routes_metrics import REQUESTS_TOTAL, REQUEST_DURATION_SECONDS
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -40,7 +41,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
         
         # Add request ID to logs context
         structlog.contextvars.clear_contextvars()
-        structlog.contextvars.bind_contextvars(request_id=request_id)
+        structlog.contextvars.bind_contextvars(trace_id=request_id)
         
         # Log request start
         logger.info(
@@ -58,7 +59,17 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
             
             # Calculate duration
             duration_ms = (time.time() - start_time) * 1000
-            
+
+            # Record Prometheus metrics
+            REQUESTS_TOTAL.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status=str(response.status_code)
+            ).inc()
+            REQUEST_DURATION_SECONDS.labels(
+                endpoint=request.url.path
+            ).observe(duration_ms / 1000)
+
             # Log response
             logger.info(
                 "request_completed",
@@ -74,7 +85,7 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
             
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            
+
             logger.error(
                 "request_failed",
                 error=str(e),
@@ -82,16 +93,20 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
                 duration_ms=round(duration_ms, 2),
                 traceback=traceback.format_exc()
             )
-            
-            # Return generic error response
+
+            # Record Prometheus metrics for error path
+            REQUESTS_TOTAL.labels(method=request.method, endpoint=request.url.path, status="500").inc()
+            REQUEST_DURATION_SECONDS.labels(endpoint=request.url.path).observe(duration_ms / 1000)
+
+            # Return RFC 7807 Problem Details error response
+            problem = problem_internal(
+                detail="An unexpected error occurred" if not settings.debug else str(e),
+                instance=request.url.path,
+                trace_id=request_id
+            )
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "success": False,
-                    "error": "Internal server error",
-                    "request_id": request_id,
-                    "error_code": "INTERNAL_ERROR"
-                },
+                content=problem.model_dump(exclude_none=True),
                 headers={
                     "X-Request-ID": request_id,
                     "X-Response-Time": f"{duration_ms:.2f}ms"
@@ -231,25 +246,6 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         content=problem.model_dump(exclude_none=True),
         headers={"X-Request-ID": request_id}
     )
-
-
-def get_error_code_from_status(status_code: int) -> str:
-    """Get error code from HTTP status code"""
-    error_codes = {
-        400: "BAD_REQUEST",
-        401: "UNAUTHORIZED",
-        403: "FORBIDDEN",
-        404: "NOT_FOUND",
-        405: "METHOD_NOT_ALLOWED",
-        409: "CONFLICT",
-        422: "VALIDATION_ERROR",
-        429: "RATE_LIMITED",
-        500: "INTERNAL_ERROR",
-        502: "BAD_GATEWAY",
-        503: "SERVICE_UNAVAILABLE",
-        504: "GATEWAY_TIMEOUT"
-    }
-    return error_codes.get(status_code, "UNKNOWN_ERROR")
 
 
 class APIKeyValidationError(HTTPException):
