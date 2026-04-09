@@ -16,6 +16,7 @@ import structlog
 
 from .config import get_settings
 from .logging import get_logger
+from .models.errors import ProblemDetail, FieldError
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -77,19 +78,21 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
                 traceback=traceback.format_exc()
             )
             
-            # Return generic error response
+            # Return RFC 7807 error response
+            problem = ProblemDetail(
+                title="Internal Server Error",
+                status=500,
+                detail="An unexpected error occurred. Check server logs for details.",
+                instance=str(request.url.path),
+                trace_id=request_id,
+            )
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "success": False,
-                    "error": "Internal server error",
-                    "request_id": request_id,
-                    "error_code": "INTERNAL_ERROR"
-                },
+                content=problem.to_dict(),
                 headers={
                     "X-Request-ID": request_id,
-                    "X-Response-Time": f"{duration_ms:.2f}ms"
-                }
+                    "X-Response-Time": f"{duration_ms:.2f}ms",
+                },
             )
 
 
@@ -124,20 +127,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         request_id=request_id
     )
     
+    field_errors = [
+        FieldError(
+            field=".".join(str(loc) for loc in error["loc"]),
+            message=error["msg"],
+            type=error.get("type"),
+        )
+        for error in exc.errors()
+    ]
+    problem = ProblemDetail(
+        title="Unprocessable Entity",
+        status=422,
+        detail="Request validation failed",
+        instance=str(request.url.path),
+        trace_id=request_id,
+        errors=field_errors,
+    )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "success": False,
-            "error": "Validation error",
-            "error_code": "VALIDATION_ERROR",
-            "validation_errors": [{
-                "field": ".".join(str(loc) for loc in error["loc"]),
-                "message": error["msg"],
-                "type": error["type"]
-            } for error in exc.errors()],
-            "request_id": request_id
-        },
-        headers={"X-Request-ID": request_id}
+        content=problem.to_dict(),
+        headers={"X-Request-ID": request_id},
     )
 
 
@@ -162,15 +171,17 @@ async def http_exception_handler_custom(request: Request, exc: HTTPException) ->
             request_id=request_id
         )
     
+    problem = ProblemDetail(
+        title=get_title_from_status(exc.status_code),
+        status=exc.status_code,
+        detail=exc.detail if isinstance(exc.detail, str) else str(exc.detail),
+        instance=str(request.url.path),
+        trace_id=request_id,
+    )
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "success": False,
-            "error": exc.detail,
-            "error_code": get_error_code_from_status(exc.status_code),
-            "request_id": request_id
-        },
-        headers={"X-Request-ID": request_id}
+        content=problem.to_dict(),
+        headers={"X-Request-ID": request_id},
     )
 
 
@@ -188,38 +199,37 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
     
     # Don't expose internal error details in production
-    error_message = str(exc) if settings.debug else "Internal server error"
-    
+    problem = ProblemDetail(
+        title="Internal Server Error",
+        status=500,
+        detail="An unexpected error occurred. Check server logs for details.",
+        instance=str(request.url.path),
+        trace_id=request_id,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "success": False,
-            "error": error_message,
-            "error_code": "INTERNAL_ERROR",
-            "request_id": request_id,
-            "trace_id": request_id if settings.debug else None
-        },
-        headers={"X-Request-ID": request_id}
+        content=problem.to_dict(),
+        headers={"X-Request-ID": request_id},
     )
 
 
-def get_error_code_from_status(status_code: int) -> str:
-    """Get error code from HTTP status code"""
-    error_codes = {
-        400: "BAD_REQUEST",
-        401: "UNAUTHORIZED",
-        403: "FORBIDDEN",
-        404: "NOT_FOUND",
-        405: "METHOD_NOT_ALLOWED",
-        409: "CONFLICT",
-        422: "VALIDATION_ERROR",
-        429: "RATE_LIMITED",
-        500: "INTERNAL_ERROR",
-        502: "BAD_GATEWAY",
-        503: "SERVICE_UNAVAILABLE",
-        504: "GATEWAY_TIMEOUT"
+def get_title_from_status(status_code: int) -> str:
+    """Map HTTP status codes to RFC 7807 title strings."""
+    titles = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        405: "Method Not Allowed",
+        409: "Conflict",
+        410: "Gone",
+        422: "Unprocessable Entity",
+        429: "Too Many Requests",
+        500: "Internal Server Error",
+        502: "Bad Gateway",
+        503: "Service Unavailable",
     }
-    return error_codes.get(status_code, "UNKNOWN_ERROR")
+    return titles.get(status_code, f"HTTP Error {status_code}")
 
 
 class APIKeyValidationError(HTTPException):
