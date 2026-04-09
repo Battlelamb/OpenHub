@@ -2,7 +2,7 @@
 Agent heartbeat and status monitoring service - clean and simple
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 from asyncio import Task
 
@@ -77,7 +77,7 @@ class HeartbeatService:
             if not agents:
                 return
             
-            timeout_threshold = datetime.utcnow() - timedelta(seconds=self.heartbeat_timeout)
+            timeout_threshold = datetime.now(timezone.utc) - timedelta(seconds=self.heartbeat_timeout)
             expired_agents = []
             
             for agent in agents:
@@ -129,7 +129,7 @@ class HeartbeatService:
                 stats[f"{status.value}_agents"] = count
             
             # Count recently active (last 5 minutes)
-            recent_threshold = datetime.utcnow() - timedelta(minutes=5)
+            recent_threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
             recent_count = self.agent_repo.count(
                 where_clause="last_heartbeat > :threshold",
                 params={"threshold": recent_threshold}

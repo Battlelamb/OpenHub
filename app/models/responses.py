@@ -1,7 +1,7 @@
 """
 Standard API response models
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any, Dict, List
 from pydantic import Field
 
@@ -31,7 +31,7 @@ class SuccessResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.utcnow(),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Response timestamp"
     )
 
@@ -64,7 +64,7 @@ class ErrorResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.utcnow(),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Response timestamp"
     )
     

@@ -88,8 +88,10 @@ async def read_memory(
 
     # Check TTL
     if r.get("expires_at"):
-        exp = datetime.fromisoformat(str(r["expires_at"]).replace("Z", "+00:00").replace("+00:00", ""))
-        if datetime.utcnow() > exp:
+        exp = datetime.fromisoformat(str(r["expires_at"]).replace("Z", "+00:00"))
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > exp:
             database.execute("DELETE FROM shared_memory WHERE key = :key", {"key": key})
             raise HTTPException(status_code=404, detail=f"Key '{key}' expired")
 

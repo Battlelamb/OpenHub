@@ -2,7 +2,7 @@
 ACN node repository for database operations
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 from ...logging import get_logger
@@ -67,7 +67,7 @@ class ACNNodeRepository(BaseRepository[ACNNode]):
 
         try:
             updated = self.update(node_id, {
-                "last_heartbeat": datetime.utcnow(),
+                "last_heartbeat": datetime.now(timezone.utc),
                 "status": ACNNodeStatus.ONLINE.value
             })
 
