@@ -2,7 +2,7 @@
 Agent discovery and monitoring service - clean and simple
 """
 from typing import List, Dict, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from ..logging import get_logger
@@ -259,7 +259,7 @@ class DiscoveryService:
             status_score = status_scores.get(info.status, 0.5)
             
             # Freshness score (recent activity is better)
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             time_diff = (now - info.last_seen).total_seconds()
             freshness_score = max(0.1, 1.0 - (time_diff / 3600))  # Decay over 1 hour
             
@@ -287,7 +287,7 @@ class AgentMonitoringService:
             if not agent:
                 return {"error": f"Agent {agent_id} not found"}
             
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             last_seen = agent.last_heartbeat or agent.updated_at
             offline_duration = (now - last_seen).total_seconds()
             
@@ -322,7 +322,7 @@ class AgentMonitoringService:
         
         try:
             agents = self.agent_repo.list_all()
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             
             health_data = {
                 "total_agents": len(agents),
