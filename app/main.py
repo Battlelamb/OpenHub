@@ -4,13 +4,13 @@ Agent Hub Main Application Entry Point
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 
 from .config import get_settings
 from .logging import setup_logging, get_logger
 from .middleware import setup_error_handlers, setup_middleware
+from .limiter import limiter
 from .api.routes_health import router as health_router
 from .api.routes_metrics import router as metrics_router
 
@@ -23,10 +23,6 @@ settings = get_settings()
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
-
-# Initialize slowapi rate limiter
-limiter = Limiter(key_func=get_remote_address)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -93,9 +89,28 @@ app = FastAPI(
 setup_error_handlers(app)
 setup_middleware(app)
 
-# Wire slowapi rate limiter
+# Wire slowapi rate limiter with RFC 7807 handler
 app.state.limiter = limiter
-app.add_exception_handler(429, _rate_limit_exceeded_handler)
+
+
+async def rfc7807_rate_limit_handler(request, exc):
+    from .models.errors import problem_rate_limit
+    request_id = getattr(request.state, "request_id", str(__import__("uuid").uuid4()))
+    retry_after = getattr(exc, "retry_after", "60")
+    problem = problem_rate_limit(
+        detail=str(exc.detail) if hasattr(exc, "detail") else "Rate limit exceeded",
+        instance=request.url.path,
+        trace_id=request_id,
+    )
+    from starlette.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content=problem.model_dump(exclude_none=True),
+        headers={"Retry-After": str(retry_after), "X-Request-ID": request_id},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, rfc7807_rate_limit_handler)
 
 # Add CORS middleware
 app.add_middleware(

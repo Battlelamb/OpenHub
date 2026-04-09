@@ -11,31 +11,13 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
-from ..auth.api_keys import APIKeyManager
+from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
 
 logger = get_logger(__name__)
 
 tools_router = APIRouter(prefix="/v1/tools", tags=["mcp-tools"])
 templates_router = APIRouter(prefix="/v1/templates", tags=["templates"])
 dlq_router = APIRouter(prefix="/v1/dlq", tags=["dead-letter-queue"])
-
-def _auth(x_api_key: str = Header(None, alias="X-API-Key"), database: Database = Depends(get_database)) -> Dict:
-    """Validate API key. Rate limiting is now handled globally by slowapi."""
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key required")
-    info = APIKeyManager(database).validate_api_key(x_api_key)
-    if not info:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    return info
-
-
-def _sender(ki: Dict, db: Database) -> str:
-    n = ki.get("name", "")
-    if n.startswith("acn-agent-"):
-        r = db.fetch_one("SELECT id FROM agents WHERE agent_name = :n", {"n": n.replace("acn-agent-", "")})
-        if r: return r["id"] if isinstance(r, dict) else r[0]
-    return "unknown"
-
 
 def _admin(x_admin_key: str = Header(..., alias="X-Admin-Key")):
     from ..config import get_settings
@@ -60,11 +42,11 @@ class ToolRegister(PydanticBaseModel):
 @tools_router.post("/register")
 async def register_tool(
     body: ToolRegister,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Register a tool/MCP server for sharing with other agents."""
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
     tool_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
@@ -86,7 +68,7 @@ async def register_tool(
 async def discover_tools(
     tag: Optional[str] = None,
     tool_type: Optional[str] = None,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Discover available tools shared by agents."""
@@ -139,13 +121,13 @@ class AgentTemplate(PydanticBaseModel):
 @templates_router.post("/create")
 async def create_template(
     body: AgentTemplate,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Create an agent template for quick deployment."""
     tmpl_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
-    agent_id = _sender(key_info, database)
+    agent_id = resolve_agent_id(key_info, database)
 
     database.execute(
         """INSERT INTO agent_templates (id, name, description, capabilities, skills, mcp_servers,
@@ -166,7 +148,7 @@ async def create_template(
 
 @templates_router.get("/")
 async def list_templates(
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List available agent templates."""
@@ -186,7 +168,7 @@ async def list_templates(
 @templates_router.get("/{template_id}")
 async def get_template(
     template_id: str,
-    key_info: Dict = Depends(_auth),
+    key_info: ApiKeyAuth,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Get template details."""

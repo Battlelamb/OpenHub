@@ -30,6 +30,7 @@ from ..auth.dependencies import (
     CurrentAdmin
 )
 from ..models.agents import AgentCreate
+from ..limiter import limiter
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -38,9 +39,10 @@ router = APIRouter(prefix="/v1/auth", tags=["authentication"])
 
 
 @router.post("/agent/register", status_code=202)
+@limiter.limit("10/minute")
 async def register_agent(
-    agent_data: AgentCreate,
-    request: Request
+    request: Request,
+    agent_data: AgentCreate
 ) -> Dict[str, Any]:
     """
     Submit agent registration for admin approval.
@@ -175,9 +177,10 @@ async def check_registration_status(
 
 
 @router.post("/agent/login", response_model=TokenResponse)
+@limiter.limit("20/minute")
 async def agent_login(
-    login_data: AgentLogin,
-    request: Request
+    request: Request,
+    login_data: AgentLogin
 ) -> TokenResponse:
     """
     Authenticate existing agent and return tokens
