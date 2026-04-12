@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-11T16:34:29.722Z"
+status: Ready to execute
+stopped_at: Completed 02-websocket-test-suite/02-03-PLAN.md
+last_updated: "2026-04-12T11:37:40.963Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 15
+  completed_plans: 12
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Any developer can self-host OpenHub, connect their AI agents, and coordinate multi-agent workflows from a single command center - reliably and without conflicts.
-**Current focus:** Phase 01 — backend-hardening
+**Current focus:** Phase 02 — websocket-test-suite
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (websocket-test-suite) — EXECUTING
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -52,6 +52,8 @@ Plan: Not started
 | Phase 01-backend-hardening P05 | 3min | 2 tasks | 3 files |
 | Phase 01-backend-hardening P06 | 3min | 2 tasks | 7 files |
 | Phase 01-backend-hardening P08 | 3min | 2 tasks | 4 files |
+| Phase 02-websocket-test-suite P01 | 8min | 2 tasks | 3 files |
+| Phase 02-websocket-test-suite P03 | 6min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -71,6 +73,10 @@ Recent decisions affecting current work:
 - [Phase 01-backend-hardening]: RFC 7807 Problem Details as the standard error format - all errors use ProblemDetail model with type/title/status/detail/instance/trace_id
 - [Phase 01-backend-hardening]: Limiter in dedicated app/limiter.py to avoid circular imports; RFC 7807 JSON for 429 instead of plain text; trace_id as structlog contextvars key
 - [Phase 01-backend-hardening]: request parameter reordered to first position in auth routes for slowapi compatibility
+- [Phase 02-websocket-test-suite]: conftest uses tempfile DB path so app lifespan os.makedirs succeeds (fixed pre-existing :memory: blocker)
+- [Phase 02-websocket-test-suite]: admin_headers fixture returns real signed JWT; auth_token and agent_headers added for WS and agent-role tests
+- [Phase 02-websocket-test-suite]: Mint JWT per integration test with sub=<real agent id> because get_current_agent looks up sub in the agents table
+- [Phase 02-websocket-test-suite]: Rule 1 fix: TaskService fail/complete/cancel now json.dumps payload dict before sqlite update
 
 ### Pending Todos
 
@@ -83,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T16:34:29.716Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-websocket-test-suite/02-CONTEXT.md
+Last session: 2026-04-12T11:37:40.960Z
+Stopped at: Completed 02-websocket-test-suite/02-03-PLAN.md
+Resume file: None

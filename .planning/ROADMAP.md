@@ -57,9 +57,9 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 02-01-PLAN.md - Test infrastructure fix (real JWT fixtures) and auth unit tests (TEST-01)
-- [ ] 02-02-PLAN.md - ConnectionManager class with dual pools, tiered broadcasting, Prometheus metrics (WS-02, WS-03)
-- [ ] 02-03-PLAN.md - Capability matcher, task lifecycle, and agent lifecycle tests (TEST-02, TEST-03, TEST-04)
+- [x] 02-01-PLAN.md - Test infrastructure fix (real JWT fixtures) and auth unit tests (TEST-01)
+- [x] 02-02-PLAN.md - ConnectionManager class with dual pools, tiered broadcasting, Prometheus metrics (WS-02, WS-03)
+- [x] 02-03-PLAN.md - Capability matcher, task lifecycle, and agent lifecycle tests (TEST-02, TEST-03, TEST-04)
 - [ ] 02-04-PLAN.md - /v1/ws/ui endpoint with JWT auth via initial message frame (WS-01)
 - [ ] 02-05-PLAN.md - Service event hooks for broadcasting agent/task/workflow events (WS-04, WS-05, WS-06)
 - [ ] 02-06-PLAN.md - WebSocket integration tests and ConnectionManager unit tests (TEST-05)

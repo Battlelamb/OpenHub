@@ -31,10 +31,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Test Suite
 
-- [ ] **TEST-01**: Unit tests for auth system (JWT creation/validation, API key verification, RBAC enforcement)
-- [ ] **TEST-02**: Unit tests for capability matching (exact match, fuzzy match, scoring)
-- [ ] **TEST-03**: Integration tests for task lifecycle (create, claim, start, complete, fail, retry)
-- [ ] **TEST-04**: Integration tests for agent registration and heartbeat/offline detection
+- [x] **TEST-01**: Unit tests for auth system (JWT creation/validation, API key verification, RBAC enforcement)
+- [x] **TEST-02**: Unit tests for capability matching (exact match, fuzzy match, scoring)
+- [x] **TEST-03**: Integration tests for task lifecycle (create, claim, start, complete, fail, retry)
+- [x] **TEST-04**: Integration tests for agent registration and heartbeat/offline detection
 - [ ] **TEST-05**: Integration tests for WebSocket connections (auth, event broadcast, disconnect cleanup)
 - [ ] **TEST-06**: E2E tests with Playwright for critical UI flows (login, agent list, task create/cancel)
 
@@ -137,10 +137,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | WS-04 | Phase 2 | Pending |
 | WS-05 | Phase 2 | Pending |
 | WS-06 | Phase 2 | Pending |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
-| TEST-04 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Complete |
+| TEST-02 | Phase 2 | Complete |
+| TEST-03 | Phase 2 | Complete |
+| TEST-04 | Phase 2 | Complete |
 | TEST-05 | Phase 2 | Pending |
 | VEC-01 | Phase 3 | Pending |
 | VEC-02 | Phase 3 | Pending |
