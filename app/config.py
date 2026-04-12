@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     task_lease_ttl_sec: int = Field(default=300, description="Task lease TTL in seconds")
     max_agents: int = Field(default=100, description="Maximum concurrent agents")
     max_concurrent_tasks: int = Field(default=50, description="Maximum concurrent tasks")
+
+    # WebSocket Connection Limits (D-12)
+    max_ws_agents: int = Field(default=100, description="Maximum concurrent agent WebSocket connections")
+    max_ws_ui: int = Field(default=10, description="Maximum concurrent UI WebSocket connections")
     
     # Vector Search Configuration
     vector_batch_size: int = Field(default=1000, description="Vector operation batch size")
