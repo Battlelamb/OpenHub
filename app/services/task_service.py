@@ -316,7 +316,7 @@ class TaskService:
             if completion.metrics:
                 current_payload = task.payload or {}
                 current_payload["completion_metrics"] = completion.metrics
-                update_data["payload"] = current_payload
+                update_data["payload"] = _json.dumps(current_payload)
             
             updated_task = self.task_repo.update(task_id, update_data)
             if not updated_task:
@@ -395,8 +395,8 @@ class TaskService:
                     "error_details": failure.error_details,
                     "failed_at": datetime.now(timezone.utc).isoformat()
                 }
-                update_data["payload"] = current_payload
-                
+                update_data["payload"] = _json.dumps(current_payload)
+
                 self.task_repo.update(task_id, update_data)
                 
                 logger.warning("task_failed_permanently", 
@@ -443,7 +443,7 @@ class TaskService:
             if reason:
                 current_payload = task.payload or {}
                 current_payload["cancellation_reason"] = reason
-                update_data["payload"] = current_payload
+                update_data["payload"] = _json.dumps(current_payload)
             
             updated_task = self.task_repo.update(task_id, update_data)
             
