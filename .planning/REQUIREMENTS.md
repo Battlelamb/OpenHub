@@ -22,7 +22,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### WebSocket Real-time
 
-- [ ] **WS-01**: /v1/ws/ui endpoint for dashboard clients with JWT authentication via initial-message frame
+- [x] **WS-01**: /v1/ws/ui endpoint for dashboard clients with JWT authentication via initial-message frame
 - [ ] **WS-02**: ConnectionManager class replacing module-level _connections dict with proper connect/disconnect cleanup
 - [ ] **WS-03**: broadcast_to_ui() helper for pushing events to all connected dashboard clients
 - [ ] **WS-04**: Agent status change events (online/offline/idle) broadcast to UI clients in real-time
@@ -131,7 +131,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | PROD-01 | Phase 1 | Complete |
 | PROD-02 | Phase 1 | Complete |
 | PROD-04 | Phase 1 | Complete |
-| WS-01 | Phase 2 | Pending |
+| WS-01 | Phase 2 | Complete |
 | WS-02 | Phase 2 | Pending |
 | WS-03 | Phase 2 | Pending |
 | WS-04 | Phase 2 | Pending |

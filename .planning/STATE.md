@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-websocket-test-suite/02-03-PLAN.md
-last_updated: "2026-04-12T11:37:40.963Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-04-12T11:38:27.842Z"
 progress:
   total_phases: 5
   completed_phases: 1
@@ -54,6 +54,7 @@ Plan: 3 of 6
 | Phase 01-backend-hardening P08 | 3min | 2 tasks | 4 files |
 | Phase 02-websocket-test-suite P01 | 8min | 2 tasks | 3 files |
 | Phase 02-websocket-test-suite P03 | 6min | 2 tasks | 4 files |
+| Phase 02 P04 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - [Phase 02-websocket-test-suite]: admin_headers fixture returns real signed JWT; auth_token and agent_headers added for WS and agent-role tests
 - [Phase 02-websocket-test-suite]: Mint JWT per integration test with sub=<real agent id> because get_current_agent looks up sub in the agents table
 - [Phase 02-websocket-test-suite]: Rule 1 fix: TaskService fail/complete/cancel now json.dumps payload dict before sqlite update
+- [Phase 02]: Plan 02-04: WS UI endpoint uses first-frame JWT auth via app.state.connection_manager, welcome envelope carries client_id in data (not agent_id), refresh via cm.refresh_ui_expiry()
 
 ### Pending Todos
 
@@ -89,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T11:37:40.960Z
-Stopped at: Completed 02-websocket-test-suite/02-03-PLAN.md
+Last session: 2026-04-12T11:38:27.838Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
