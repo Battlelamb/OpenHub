@@ -58,17 +58,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("database_sync_skipped", reason=str(e))
 
-    # Wire heartbeat monitor to detect offline agents (HARD-04)
-    from .services.heartbeat_service import HeartbeatService
-    heartbeat_service = HeartbeatService(db)
-    await heartbeat_service.start_monitoring()
-    logger.info("heartbeat_monitor_started")
-
     # Wire ConnectionManager for WebSocket management (WS-02)
+    # Must be created BEFORE HeartbeatService so the broadcast callback can be
+    # injected into heartbeat monitoring (WS-04 offline detection events).
     connection_manager = ConnectionManager()
     await connection_manager.start()
     app.state.connection_manager = connection_manager
     logger.info("connection_manager_started")
+
+    # Wire heartbeat monitor to detect offline agents (HARD-04).
+    # Pass broadcast callback so offline detection emits agent_status_changed
+    # events to UI clients (WS-04).
+    from .services.heartbeat_service import HeartbeatService
+    heartbeat_service = HeartbeatService(db, on_event=connection_manager.broadcast_to_ui)
+    await heartbeat_service.start_monitoring()
+    logger.info("heartbeat_monitor_started")
 
     logger.info("agent_hub_started", version=__version__)
 
