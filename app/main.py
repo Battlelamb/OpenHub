@@ -11,8 +11,10 @@ from .config import get_settings
 from .logging import setup_logging, get_logger
 from .middleware import setup_error_handlers, setup_middleware
 from .limiter import limiter
+from .services.connection_manager import ConnectionManager
 from .api.routes_health import router as health_router
 from .api.routes_metrics import router as metrics_router
+from .api.routes_ws_ui import router as ws_ui_router
 
 # Version info
 __version__ = "0.1.0"
@@ -62,11 +64,21 @@ async def lifespan(app: FastAPI):
     await heartbeat_service.start_monitoring()
     logger.info("heartbeat_monitor_started")
 
+    # Wire ConnectionManager for WebSocket management (WS-02)
+    connection_manager = ConnectionManager()
+    await connection_manager.start()
+    app.state.connection_manager = connection_manager
+    logger.info("connection_manager_started")
+
     logger.info("agent_hub_started", version=__version__)
 
     yield
 
-    # Shutdown
+    # Shutdown - stop WebSocket manager before heartbeat so open sockets
+    # are closed cleanly while the rest of the runtime is still live.
+    await connection_manager.stop()
+    logger.info("connection_manager_stopped")
+
     await heartbeat_service.stop_monitoring()
     logger.info("heartbeat_monitor_stopped")
     logger.info("agent_hub_shutting_down")
@@ -160,6 +172,9 @@ app.include_router(thread_router)
 # Import and include WebSocket router
 from .api.routes_websocket import router as ws_router
 app.include_router(ws_router)
+
+# Include WebSocket UI router (WS-01) - module-level import at top of file
+app.include_router(ws_ui_router)
 
 # Import and include memory router
 from .api.routes_memory import router as memory_router
