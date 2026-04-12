@@ -59,19 +59,39 @@ class WorkflowExecutionPlan:
 
 class WorkflowCoordinator:
     """Clean coordination layer between agents and workflows"""
-    
-    def __init__(self, database: Database):
+
+    def __init__(self, database: Database, on_event=None):
+        """
+        Args:
+            database: Database instance.
+            on_event: Optional async callback with signature
+                ``async def on_event(event_type: str, data: dict, critical: bool = True)``.
+                Used to broadcast workflow_progress events (WS-06). Callback injection
+                is used here because workflow monitoring runs as a background asyncio
+                task (`_monitor_workflow_coordination`) with no request context, so
+                route-handler broadcasting is not possible for progress events.
+        """
         self.db = database
         self.task_repo = TaskRepository(database)
         self.agent_repo = AgentRepository(database)
         self.hatchet_service = HatchetService(database)
         self.capability_matcher = CapabilityMatcher(database)
-        
+        self._on_event = on_event
+
         # Active coordinations tracking
         self._active_coordinations: Dict[str, AgentWorkflowCoordination] = {}
         self._workflow_agent_assignments: Dict[str, List[str]] = {}  # workflow_id -> agent_ids
-        
+
         logger.info("workflow_coordinator_initialized")
+
+    async def _emit(self, event_type: str, data: dict, critical: bool = True) -> None:
+        """Safely emit an event via the injected callback; never raise."""
+        if self._on_event is None:
+            return
+        try:
+            await self._on_event(event_type, data, critical)
+        except Exception as e:
+            logger.warning("event_emit_failed", event_type=event_type, error=str(e))
     
     async def plan_workflow_execution(self, 
                                      workflow_name: str,
@@ -498,25 +518,62 @@ class WorkflowCoordinator:
         try:
             step_results = workflow_status.get("progress", {}).get("step_results", {})
             
+            total = 0
+            completed = 0
             for coord in self._active_coordinations.values():
                 if coord.workflow_run_id != workflow_run_id:
                     continue
-                
+                total += 1
+
                 step_result = step_results.get(coord.step_id)
-                
+                prev_status = coord.status
+                new_status = prev_status
+
                 if step_result:
                     if step_result.get("status") == "completed":
                         coord.status = "completed"
                         coord.completed_at = datetime.now(timezone.utc)
                         coord.result = step_result.get("result")
+                        new_status = "completed"
                     elif step_result.get("status") == "failed":
                         coord.status = "failed"
                         coord.completed_at = datetime.now(timezone.utc)
                         coord.error = step_result.get("error")
+                        new_status = "failed"
                 elif coord.status == "assigned":
                     # If step hasn't started yet but coordination exists, mark as executing
                     coord.status = "executing"
                     coord.started_at = datetime.now(timezone.utc)
+                    new_status = "executing"
+
+                if new_status in ("completed", "failed"):
+                    completed += 1
+
+                # Emit workflow_progress (WS-06) on status transitions
+                if new_status != prev_status:
+                    await self._emit(
+                        "workflow_progress",
+                        {
+                            "workflow_id": workflow_run_id,
+                            "step_name": coord.step_id,
+                            "step_status": new_status,
+                            "progress": None,  # filled after loop with aggregate
+                        },
+                        True,
+                    )
+
+            # Emit aggregate progress (percentage) once per cycle if any coordinations exist
+            if total > 0:
+                await self._emit(
+                    "workflow_progress",
+                    {
+                        "workflow_id": workflow_run_id,
+                        "step_name": None,
+                        "step_status": "aggregate",
+                        "progress": round((completed / total) * 100, 2),
+                    },
+                    True,
+                )
         
         except Exception as e:
             logger.error("coordination_status_update_failed",

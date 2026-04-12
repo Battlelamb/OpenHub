@@ -2,7 +2,7 @@
 Task management endpoints - clean and simple
 """
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 
 from ..config import get_settings
 from ..logging import get_logger
@@ -26,27 +26,73 @@ def get_task_service() -> TaskService:
     return TaskService(database)
 
 
+async def _broadcast_task_status(
+    request: Request,
+    task_id: str,
+    new_status: str,
+    previous_status: Optional[str],
+    agent_id: Optional[str],
+) -> None:
+    """
+    Broadcast task_status_changed (WS-05) to UI clients.
+
+    Guarded with getattr so tests without a wired ConnectionManager still pass.
+    Never raises - failures are logged only.
+    """
+    connection_manager = getattr(request.app.state, "connection_manager", None)
+    if connection_manager is None:
+        return
+    try:
+        await connection_manager.broadcast_to_ui(
+            "task_status_changed",
+            {
+                "task_id": task_id,
+                "status": new_status,
+                "previous_status": previous_status,
+                "agent_id": agent_id,
+            },
+            True,
+        )
+    except Exception as e:
+        logger.warning(
+            "ws_broadcast_failed",
+            event="task_status_changed",
+            task_id=task_id,
+            error=str(e),
+        )
+
+
 @router.post("/", response_model=TaskResponse)
 async def create_task(
     task_data: TaskCreate,
+    request: Request,
     current_agent: CurrentAgent = None,
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
     """
     Create a new task with automatic agent matching
     """
-    logger.info("task_creation_request", 
+    logger.info("task_creation_request",
                title=task_data.title,
                task_type=task_data.task_type,
                by_agent=current_agent.agent_id if current_agent else "system")
-    
+
     try:
         # Create task
         new_task = task_service.create_task(
-            task_data, 
+            task_data,
             created_by=current_agent.agent_id if current_agent else None
         )
-        
+
+        # Broadcast task_status_changed (WS-05) - newly queued
+        await _broadcast_task_status(
+            request,
+            task_id=new_task.id,
+            new_status=new_task.status.value if hasattr(new_task.status, "value") else str(new_task.status),
+            previous_status=None,
+            agent_id=new_task.owner_agent_id,
+        )
+
         # Convert to response model
         return _task_to_response(new_task)
     
@@ -108,49 +154,67 @@ async def update_task(
 @router.post("/{task_id}/claim")
 async def claim_task(
     task_id: str,
+    request: Request,
     current_agent: CurrentAgent,
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """
     Claim a task for execution
     """
-    logger.info("task_claim_request", 
+    logger.info("task_claim_request",
                task_id=task_id,
                agent_id=current_agent.agent_id)
-    
+
     claim_data = TaskClaim(agent_id=current_agent.agent_id)
     success = task_service.claim_task(task_id, claim_data)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to claim task - may not be available or agent not eligible"
         )
-    
+
+    await _broadcast_task_status(
+        request,
+        task_id=task_id,
+        new_status=TaskStatus.CLAIMED.value,
+        previous_status=TaskStatus.QUEUED.value,
+        agent_id=current_agent.agent_id,
+    )
+
     return {"status": "claimed", "message": "Task claimed successfully"}
 
 
 @router.post("/{task_id}/start")
 async def start_task(
     task_id: str,
+    request: Request,
     current_agent: CurrentAgent,
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """
     Start task execution
     """
-    logger.info("task_start_request", 
+    logger.info("task_start_request",
                task_id=task_id,
                agent_id=current_agent.agent_id)
-    
+
     success = task_service.start_task(task_id, current_agent.agent_id)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to start task - not claimed by this agent or invalid status"
         )
-    
+
+    await _broadcast_task_status(
+        request,
+        task_id=task_id,
+        new_status=TaskStatus.RUNNING.value,
+        previous_status=TaskStatus.CLAIMED.value,
+        agent_id=current_agent.agent_id,
+    )
+
     return {"status": "started", "message": "Task started successfully"}
 
 
@@ -179,24 +243,33 @@ async def update_progress(
 async def complete_task(
     task_id: str,
     completion: TaskComplete,
+    request: Request,
     current_agent: CurrentAgent,
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """
     Complete a task
     """
-    logger.info("task_completion_request", 
+    logger.info("task_completion_request",
                task_id=task_id,
                agent_id=current_agent.agent_id)
-    
+
     success = task_service.complete_task(task_id, current_agent.agent_id, completion)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to complete task - not owned by agent or invalid status"
         )
-    
+
+    await _broadcast_task_status(
+        request,
+        task_id=task_id,
+        new_status=TaskStatus.COMPLETED.value,
+        previous_status=TaskStatus.RUNNING.value,
+        agent_id=current_agent.agent_id,
+    )
+
     return {"status": "completed", "message": "Task completed successfully"}
 
 
@@ -204,25 +277,36 @@ async def complete_task(
 async def fail_task(
     task_id: str,
     failure: TaskFail,
+    request: Request,
     current_agent: CurrentAgent,
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """
     Fail a task with optional retry
     """
-    logger.info("task_failure_request", 
+    logger.info("task_failure_request",
                task_id=task_id,
                agent_id=current_agent.agent_id,
                retryable=failure.retryable)
-    
+
     success = task_service.fail_task(task_id, current_agent.agent_id, failure)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to process task failure"
         )
-    
+
+    # If retryable, task goes back to QUEUED; otherwise FAILED
+    broadcast_status = TaskStatus.QUEUED.value if failure.retryable else TaskStatus.FAILED.value
+    await _broadcast_task_status(
+        request,
+        task_id=task_id,
+        new_status=broadcast_status,
+        previous_status=TaskStatus.RUNNING.value,
+        agent_id=current_agent.agent_id,
+    )
+
     status_message = "queued for retry" if failure.retryable else "permanently failed"
     return {"status": "failed", "message": f"Task {status_message}"}
 
