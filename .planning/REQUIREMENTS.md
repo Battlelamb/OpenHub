@@ -27,7 +27,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **WS-03**: broadcast_to_ui() helper for pushing events to all connected dashboard clients
 - [ ] **WS-04**: Agent status change events (online/offline/idle) broadcast to UI clients in real-time
 - [ ] **WS-05**: Task lifecycle events (created/claimed/running/completed/failed) broadcast to UI clients
-- [ ] **WS-06**: Workflow step progress events broadcast to UI clients
+- [x] **WS-06**: Workflow step progress events broadcast to UI clients
 
 ### Test Suite
 
@@ -35,7 +35,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TEST-02**: Unit tests for capability matching (exact match, fuzzy match, scoring)
 - [x] **TEST-03**: Integration tests for task lifecycle (create, claim, start, complete, fail, retry)
 - [x] **TEST-04**: Integration tests for agent registration and heartbeat/offline detection
-- [ ] **TEST-05**: Integration tests for WebSocket connections (auth, event broadcast, disconnect cleanup)
+- [x] **TEST-05**: Integration tests for WebSocket connections (auth, event broadcast, disconnect cleanup)
 - [ ] **TEST-06**: E2E tests with Playwright for critical UI flows (login, agent list, task create/cancel)
 
 ### Command Center UI
@@ -136,12 +136,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | WS-03 | Phase 2 | Pending |
 | WS-04 | Phase 2 | Pending |
 | WS-05 | Phase 2 | Pending |
-| WS-06 | Phase 2 | Pending |
+| WS-06 | Phase 2 | Complete |
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 2 | Complete |
-| TEST-05 | Phase 2 | Pending |
+| TEST-05 | Phase 2 | Complete |
 | VEC-01 | Phase 3 | Pending |
 | VEC-02 | Phase 3 | Pending |
 | VEC-03 | Phase 3 | Pending |
