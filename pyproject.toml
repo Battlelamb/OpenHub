@@ -12,7 +12,6 @@ uvicorn = {extras = ["standard"], version = "^0.24.0"}
 websockets = "^12.0"
 sqlalchemy = "^2.0.23"
 alembic = "^1.12.1"
-zvec = "^0.1.0"
 redis = "^5.0.1"
 pydantic = "^2.4.2"
 pydantic-settings = "^2.0.3"
@@ -24,6 +23,13 @@ prometheus-client = "^0.19.0"
 python-dotenv = "^1.0.0"
 structlog = "^23.2.0"
 click = "^8.1.7"
+
+# Optional vector search backends (Phase 3) - install with `poetry install -E vector`
+sentence-transformers = {version = "^3.3.1", optional = true}
+openai = {version = "^1.54.0", optional = true}
+
+[tool.poetry.extras]
+vector = ["sentence-transformers", "openai"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
