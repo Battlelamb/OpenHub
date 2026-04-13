@@ -13,8 +13,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedWorkflowsIndexRouteImport } from './routes/_authed/workflows/index'
+import { Route as AuthedTasksIndexRouteImport } from './routes/_authed/tasks/index'
 import { Route as AuthedAgentsIndexRouteImport } from './routes/_authed/agents/index'
 import { Route as AuthedWorkflowsWorkflowIdRouteImport } from './routes/_authed/workflows/$workflowId'
+import { Route as AuthedTasksTaskIdRouteImport } from './routes/_authed/tasks/$taskId'
 import { Route as AuthedAgentsAgentIdRouteImport } from './routes/_authed/agents/$agentId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -36,6 +38,11 @@ const AuthedWorkflowsIndexRoute = AuthedWorkflowsIndexRouteImport.update({
   path: '/workflows/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedTasksIndexRoute = AuthedTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedAgentsIndexRoute = AuthedAgentsIndexRouteImport.update({
   id: '/agents/',
   path: '/agents/',
@@ -47,6 +54,11 @@ const AuthedWorkflowsWorkflowIdRoute =
     path: '/workflows/$workflowId',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedTasksTaskIdRoute = AuthedTasksTaskIdRouteImport.update({
+  id: '/tasks/$taskId',
+  path: '/tasks/$taskId',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedAgentsAgentIdRoute = AuthedAgentsAgentIdRouteImport.update({
   id: '/agents/$agentId',
   path: '/agents/$agentId',
@@ -57,16 +69,20 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
   '/agents/$agentId': typeof AuthedAgentsAgentIdRoute
+  '/tasks/$taskId': typeof AuthedTasksTaskIdRoute
   '/workflows/$workflowId': typeof AuthedWorkflowsWorkflowIdRoute
   '/agents/': typeof AuthedAgentsIndexRoute
+  '/tasks/': typeof AuthedTasksIndexRoute
   '/workflows/': typeof AuthedWorkflowsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthedIndexRoute
   '/agents/$agentId': typeof AuthedAgentsAgentIdRoute
+  '/tasks/$taskId': typeof AuthedTasksTaskIdRoute
   '/workflows/$workflowId': typeof AuthedWorkflowsWorkflowIdRoute
   '/agents': typeof AuthedAgentsIndexRoute
+  '/tasks': typeof AuthedTasksIndexRoute
   '/workflows': typeof AuthedWorkflowsIndexRoute
 }
 export interface FileRoutesById {
@@ -75,8 +91,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/agents/$agentId': typeof AuthedAgentsAgentIdRoute
+  '/_authed/tasks/$taskId': typeof AuthedTasksTaskIdRoute
   '/_authed/workflows/$workflowId': typeof AuthedWorkflowsWorkflowIdRoute
   '/_authed/agents/': typeof AuthedAgentsIndexRoute
+  '/_authed/tasks/': typeof AuthedTasksIndexRoute
   '/_authed/workflows/': typeof AuthedWorkflowsIndexRoute
 }
 export interface FileRouteTypes {
@@ -85,16 +103,20 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/agents/$agentId'
+    | '/tasks/$taskId'
     | '/workflows/$workflowId'
     | '/agents/'
+    | '/tasks/'
     | '/workflows/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/'
     | '/agents/$agentId'
+    | '/tasks/$taskId'
     | '/workflows/$workflowId'
     | '/agents'
+    | '/tasks'
     | '/workflows'
   id:
     | '__root__'
@@ -102,8 +124,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authed/'
     | '/_authed/agents/$agentId'
+    | '/_authed/tasks/$taskId'
     | '/_authed/workflows/$workflowId'
     | '/_authed/agents/'
+    | '/_authed/tasks/'
     | '/_authed/workflows/'
   fileRoutesById: FileRoutesById
 }
@@ -142,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedWorkflowsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/tasks/': {
+      id: '/_authed/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AuthedTasksIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/agents/': {
       id: '/_authed/agents/'
       path: '/agents'
@@ -154,6 +185,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows/$workflowId'
       fullPath: '/workflows/$workflowId'
       preLoaderRoute: typeof AuthedWorkflowsWorkflowIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/tasks/$taskId': {
+      id: '/_authed/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof AuthedTasksTaskIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/agents/$agentId': {
@@ -169,16 +207,20 @@ declare module '@tanstack/react-router' {
 interface AuthedRouteChildren {
   AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedAgentsAgentIdRoute: typeof AuthedAgentsAgentIdRoute
+  AuthedTasksTaskIdRoute: typeof AuthedTasksTaskIdRoute
   AuthedWorkflowsWorkflowIdRoute: typeof AuthedWorkflowsWorkflowIdRoute
   AuthedAgentsIndexRoute: typeof AuthedAgentsIndexRoute
+  AuthedTasksIndexRoute: typeof AuthedTasksIndexRoute
   AuthedWorkflowsIndexRoute: typeof AuthedWorkflowsIndexRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedIndexRoute: AuthedIndexRoute,
   AuthedAgentsAgentIdRoute: AuthedAgentsAgentIdRoute,
+  AuthedTasksTaskIdRoute: AuthedTasksTaskIdRoute,
   AuthedWorkflowsWorkflowIdRoute: AuthedWorkflowsWorkflowIdRoute,
   AuthedAgentsIndexRoute: AuthedAgentsIndexRoute,
+  AuthedTasksIndexRoute: AuthedTasksIndexRoute,
   AuthedWorkflowsIndexRoute: AuthedWorkflowsIndexRoute,
 }
 
