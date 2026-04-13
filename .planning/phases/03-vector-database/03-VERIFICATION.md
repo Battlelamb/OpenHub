@@ -1,9 +1,11 @@
 ---
 phase: 03-vector-database
 verified: 2026-04-13T10:30:00Z
-status: human_needed
-score: 4/4 Success Criteria code-verified (1 requires live-Turso spot-check)
+status: passed
+score: 4/4 Success Criteria verified + all 3 HUMAN-UAT items closed against live Turso on 2026-04-13
 re_verification: null
+closed_at: 2026-04-13T09:10:00Z
+closed_by: phase 3 deploy to hub.brunhilde.cloud with paraphrase-multilingual (768-dim) via Ollama; see 03-HUMAN-UAT.md for evidence
 human_verification:
   - test: "Turso vector binding smoke test"
     expected: "scripts/smoke_turso_vector.py writes a 384-dim vector via vector32(json.dumps(vec)) and reads it back with vector_distance_cos < 0.01 against a real Turso DB"
