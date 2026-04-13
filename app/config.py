@@ -69,7 +69,30 @@ class Settings(BaseSettings):
             "True/False=explicit override of vector search availability"
         ),
     )
-    
+    embedding_base_url: Optional[str] = Field(
+        default=None,
+        description=(
+            "Override OpenAI client base_url. Set to http://127.0.0.1:11434/v1 "
+            "to route OpenAI-compatible embeddings through a local Ollama server."
+        ),
+    )
+    embedding_model_override: Optional[str] = Field(
+        default=None,
+        description=(
+            "Override the model name sent to embeddings.create. Required when "
+            "using an Ollama model (e.g. 'paraphrase-multilingual', 'all-minilm')."
+        ),
+    )
+    embedding_dim_override: Optional[int] = Field(
+        default=None,
+        description=(
+            "Override the embedding dimension reported by OpenAIBackend. Must "
+            "match the vector column width (currently F32_BLOB(384)). Example: "
+            "384 for paraphrase-multilingual/all-minilm."
+        ),
+    )
+
+
     # Cleanup Configuration
     event_retention_days: int = Field(default=30, description="Event retention in days")
     message_retention_days: int = Field(default=90, description="Message retention in days")

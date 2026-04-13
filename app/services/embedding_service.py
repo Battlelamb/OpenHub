@@ -105,7 +105,14 @@ class LocalSentenceTransformerBackend:
 
 
 class OpenAIBackend:
-    """OpenAI text-embedding-3-small backend (1536-dim).
+    """OpenAI-compatible embeddings backend.
+
+    Default configuration targets OpenAI's ``text-embedding-3-small`` (1536-dim).
+    With ``base_url``, ``model``, and ``dim`` overrides this same class can talk
+    to any OpenAI-compatible endpoint, notably a local Ollama server exposing
+    ``http://127.0.0.1:11434/v1``. When pointed at Ollama, set ``dim=384`` and
+    ``model="paraphrase-multilingual"`` (or ``"all-minilm"``) to match the
+    ``F32_BLOB(384)`` vector column width in migration 0003.
 
     The AsyncOpenAI client is imported lazily on construction so the ``openai``
     package is only required when this backend is actually selected. Tests can
@@ -116,14 +123,28 @@ class OpenAIBackend:
     dim: int = 1536
     model_name: str = "text-embedding-3-small"
 
-    def __init__(self, api_key: str, client: Optional[object] = None) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        client: Optional[object] = None,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        dim: Optional[int] = None,
+    ) -> None:
         self._api_key = api_key
+        if model is not None:
+            self.model_name = model
+        if dim is not None:
+            self.dim = dim
         if client is not None:
             self._client = client
         else:
             from openai import AsyncOpenAI  # type: ignore
 
-            self._client = AsyncOpenAI(api_key=api_key, max_retries=3)
+            kwargs: dict = {"api_key": api_key, "max_retries": 3}
+            if base_url is not None:
+                kwargs["base_url"] = base_url
+            self._client = AsyncOpenAI(**kwargs)
 
     async def embed(self, texts: List[str]) -> List[List[float]]:
         # Cheap defensive truncation per Pitfall 7 in 03-RESEARCH.md.
@@ -158,8 +179,18 @@ def get_embedding_service() -> Optional[EmbeddingBackend]:
                 hint="set AGENTHUB_OPENAI_API_KEY to enable OpenAI embeddings",
             )
             return None
-        logger.debug("embedding_provider_openai", model=OpenAIBackend.model_name)
-        return OpenAIBackend(api_key=settings.openai_api_key)
+        logger.debug(
+            "embedding_provider_openai",
+            model=settings.embedding_model_override or OpenAIBackend.model_name,
+            base_url=settings.embedding_base_url,
+            dim=settings.embedding_dim_override,
+        )
+        return OpenAIBackend(
+            api_key=settings.openai_api_key,
+            base_url=settings.embedding_base_url,
+            model=settings.embedding_model_override,
+            dim=settings.embedding_dim_override,
+        )
 
     if provider != "local":
         logger.warning(

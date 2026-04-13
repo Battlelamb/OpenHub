@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import List
+from typing import List, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -186,15 +186,86 @@ def test_openai_with_key_returns_openai_backend(
     fake_openai = types.ModuleType("openai")
 
     class _FakeAsyncOpenAI:
-        def __init__(self, api_key: str, max_retries: int = 3) -> None:
+        def __init__(
+            self, api_key: str, max_retries: int = 3, base_url: Optional[str] = None
+        ) -> None:
             self.api_key = api_key
             self.max_retries = max_retries
+            self.base_url = base_url
 
     fake_openai.AsyncOpenAI = _FakeAsyncOpenAI  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "openai", fake_openai)
 
     backend = get_embedding_service()
     assert isinstance(backend, OpenAIBackend)
+
+
+@pytest.mark.asyncio
+async def test_openai_backend_ollama_override() -> None:
+    """Verify base_url + model + dim overrides flow through the OpenAI client.
+
+    Simulates pointing OpenAIBackend at a local Ollama server with a 384-dim
+    multilingual model, as required by the Phase 3 VPS deployment with
+    F32_BLOB(384) in migration 0003.
+    """
+    fake_client = MagicMock()
+    fake_resp = MagicMock()
+    fake_resp.data = [MagicMock(embedding=[0.3] * 384)]
+    fake_client.embeddings.create = AsyncMock(return_value=fake_resp)
+
+    backend = OpenAIBackend(
+        api_key="ollama",
+        client=fake_client,
+        base_url="http://127.0.0.1:11434/v1",
+        model="paraphrase-multilingual",
+        dim=384,
+    )
+
+    assert backend.dim == 384
+    assert backend.model_name == "paraphrase-multilingual"
+
+    out = await backend.embed(["merhaba dunya"])
+    fake_client.embeddings.create.assert_awaited_once()
+    call_kwargs = fake_client.embeddings.create.call_args.kwargs
+    assert call_kwargs["model"] == "paraphrase-multilingual"
+    assert len(out) == 1
+    assert len(out[0]) == 384
+
+
+def test_openai_factory_wires_ollama_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Factory must pass AGENTHUB_EMBEDDING_* overrides into OpenAIBackend."""
+    monkeypatch.setenv("AGENTHUB_EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("AGENTHUB_OPENAI_API_KEY", "ollama")
+    monkeypatch.setenv("AGENTHUB_EMBEDDING_BASE_URL", "http://127.0.0.1:11434/v1")
+    monkeypatch.setenv(
+        "AGENTHUB_EMBEDDING_MODEL_OVERRIDE", "paraphrase-multilingual"
+    )
+    monkeypatch.setenv("AGENTHUB_EMBEDDING_DIM_OVERRIDE", "384")
+    _reset_settings(monkeypatch)
+
+    captured: dict = {}
+
+    fake_openai = types.ModuleType("openai")
+
+    class _FakeAsyncOpenAI:
+        def __init__(
+            self, api_key: str, max_retries: int = 3, base_url: Optional[str] = None
+        ) -> None:
+            captured["api_key"] = api_key
+            captured["max_retries"] = max_retries
+            captured["base_url"] = base_url
+
+    fake_openai.AsyncOpenAI = _FakeAsyncOpenAI  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openai", fake_openai)
+
+    backend = get_embedding_service()
+    assert isinstance(backend, OpenAIBackend)
+    assert backend.dim == 384
+    assert backend.model_name == "paraphrase-multilingual"
+    assert captured["base_url"] == "http://127.0.0.1:11434/v1"
+    assert captured["api_key"] == "ollama"
 
 
 # ---------------------------------------------------------------------------
