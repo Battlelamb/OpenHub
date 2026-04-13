@@ -63,7 +63,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **VEC-02**: Vector similarity search using vector_distance_cos for context/memory queries
 - [x] **VEC-03**: DiskANN vector indexing for performant approximate nearest neighbor search
 - [x] **VEC-04**: Auto-indexing hooks on memory, task, and artifact write paths to generate embeddings
-- [ ] **VEC-05**: Vector search API endpoints (search, index, delete) in app/api/
+- [x] **VEC-05**: Vector search API endpoints (search, index, delete) in app/api/
 - [x] **VEC-06**: Feature flagged as opt-in beta with documented experimental status
 
 ### Open Source Readiness
@@ -146,7 +146,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | VEC-02 | Phase 3 | Complete |
 | VEC-03 | Phase 3 | Complete |
 | VEC-04 | Phase 3 | Complete |
-| VEC-05 | Phase 3 | Pending |
+| VEC-05 | Phase 3 | Complete |
 | VEC-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |

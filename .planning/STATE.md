@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-04-13T07:01:13.509Z"
+stopped_at: Completed 03-05-PLAN.md
+last_updated: "2026-04-13T07:13:29.063Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 03 (vector-database) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Plan: 5 of 6
 | Phase 03-vector-database P03 | 4m | 1 tasks | 4 files |
 | Phase 03-vector-database P02 | 5m | 2 tasks | 4 files |
 | Phase 03-vector-database P04 | 6m | 2 tasks | 10 files |
+| Phase 03-vector-database P05 | 9m | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 03-vector-database]: Plan 03-04: schedule_embedding short-circuits at call time on is_vector_enabled - tests must monkeypatch the function reference inside app.services.embedding_hooks, not the global
 - [Phase 03-vector-database]: Plan 03-04: BackgroundTasks _embed_and_store coroutine never raises (Pitfall 6) - all failure paths log + mark_failed so retry worker can find them later
 - [Phase 03-vector-database]: Plan 03-04: embedding_retry_worker stops BEFORE WS/heartbeat in shutdown so in-flight DB updates land while connection layer is still live
+- [Phase 03-vector-database]: Plan 03-05: HTTPException detail must be a string - OpenHub middleware re-wraps exc.detail into ProblemDetail.detail (typed str), so dict-typed details raise ValidationError and turn 400/404/503 into 500. Encode problem code as 'code: message' string instead.
+- [Phase 03-vector-database]: Plan 03-05: enable_vector test fixture must patch app.database.vector_availability.is_vector_enabled, NOT routes_search.require_vector - FastAPI captures the Depends callable at router creation and module-level reassignment is too late.
+- [Phase 03-vector-database]: Plan 03-05: Per-entity shortcuts use POST /search alongside existing GET /search (LIKE-based). FastAPI dispatches by method so the two coexist - no /vector-search rename needed. clear_embedding never DELETE FROM the entity table - UPDATE-only with embedding_status='deleted'.
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T07:01:13.504Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-04-13T07:13:19.060Z
+Stopped at: Completed 03-05-PLAN.md
 Resume file: None
