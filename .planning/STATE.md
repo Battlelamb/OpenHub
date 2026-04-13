@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 03-05-PLAN.md
-last_updated: "2026-04-13T07:13:29.063Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 03-06-PLAN.md
+last_updated: "2026-04-13T07:21:01.893Z"
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -61,6 +61,7 @@ Plan: 6 of 6
 | Phase 03-vector-database P02 | 5m | 2 tasks | 4 files |
 | Phase 03-vector-database P04 | 6m | 2 tasks | 10 files |
 | Phase 03-vector-database P05 | 9m | 3 tasks | 10 files |
+| Phase 03 P06 | 4m | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ Recent decisions affecting current work:
 - [Phase 03-vector-database]: Plan 03-05: HTTPException detail must be a string - OpenHub middleware re-wraps exc.detail into ProblemDetail.detail (typed str), so dict-typed details raise ValidationError and turn 400/404/503 into 500. Encode problem code as 'code: message' string instead.
 - [Phase 03-vector-database]: Plan 03-05: enable_vector test fixture must patch app.database.vector_availability.is_vector_enabled, NOT routes_search.require_vector - FastAPI captures the Depends callable at router creation and module-level reassignment is too late.
 - [Phase 03-vector-database]: Plan 03-05: Per-entity shortcuts use POST /search alongside existing GET /search (LIKE-based). FastAPI dispatches by method so the two coexist - no /vector-search rename needed. clear_embedding never DELETE FROM the entity table - UPDATE-only with embedding_status='deleted'.
+- [Phase 03]: Plan 03-06: VEC-06 closeout - openapi_tags entry in FastAPI() constructor + lifespan vector_search_disabled startup warning + README Vector Search (Beta) section + CHANGELOG. Tests must use capsys (not caplog) for structlog PrintLoggerFactory output.
 
 ### Pending Todos
 
@@ -110,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T07:13:19.060Z
-Stopped at: Completed 03-05-PLAN.md
+Last session: 2026-04-13T07:20:55.997Z
+Stopped at: Completed 03-06-PLAN.md
 Resume file: None

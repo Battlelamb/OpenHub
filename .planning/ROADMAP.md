@@ -81,7 +81,7 @@ Plans:
 - [x] 03-03-PLAN.md - EmbeddingService with lazy-loaded local and OpenAI backends
 - [x] 03-04-PLAN.md - Auto-indexing BackgroundTasks hooks on 4 write paths + 5-min retry worker
 - [x] 03-05-PLAN.md - Unified /v1/search endpoint + per-entity shortcuts + Pydantic models
-- [ ] 03-06-PLAN.md - VEC-06 opt-in beta: startup warning, OpenAPI tag, README/CHANGELOG/.env.example
+- [x] 03-06-PLAN.md - VEC-06 opt-in beta: startup warning, OpenAPI tag, README/CHANGELOG/.env.example
 
 ### Phase 4: Command Center UI
 **Goal**: A developer self-hosting OpenHub can log in, see live agent status, manage tasks, inspect workflows, and access the full visibility stack (DLQ, cost tracking, traces, memory, locks) from a browser
