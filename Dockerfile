@@ -20,7 +20,7 @@ COPY app/ ./app/
 COPY scripts/ ./scripts/
 
 # Create data directories
-RUN mkdir -p data/state data/artifacts data/zvec
+RUN mkdir -p data/state data/artifacts
 
 # Expose port
 EXPOSE 7788

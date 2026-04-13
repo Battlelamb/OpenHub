@@ -1,9 +1,22 @@
-"""Alembic migration environment - reads DB path from app Settings."""
+"""Alembic migration environment.
+
+Reads the target database URL from the application Settings. When
+``AGENTHUB_TURSO_DATABASE_URL`` is set, we route migrations to Turso via the
+``sqlalchemy-libsql`` dialect so alembic talks to the same DB the application
+uses at runtime. Otherwise we fall back to the local SQLite file at
+``settings.db_path``.
+
+The libSQL URL scheme is ``sqlite+libsql://<host>?authToken=<token>&secure=true``.
+The ``sqlalchemy-libsql`` package (pip: ``sqlalchemy-libsql``) registers this
+dialect; if it's not installed and Turso is configured, we fail loud so the
+deploy is caught early rather than silently writing migrations to a local file.
+"""
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 import os
 import sys
+from urllib.parse import urlencode, urlparse
 
 # Add project root to path so app can be imported
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,9 +27,42 @@ from app.database.models import Base
 # Alembic Config object
 config = context.config
 
-# Override sqlalchemy.url from app Settings
+
+def _build_sqlalchemy_url(settings) -> str:
+    """Return a SQLAlchemy URL matching the runtime DB target.
+
+    - When Turso is configured, return
+      ``sqlite+libsql://<host>?authToken=...&secure=true`` and require the
+      ``sqlalchemy-libsql`` dialect to be importable.
+    - Otherwise, return ``sqlite:///<local_path>``.
+    """
+    turso_url = getattr(settings, "turso_database_url", None)
+    turso_token = getattr(settings, "turso_auth_token", None)
+
+    if turso_url and turso_token:
+        # Validate the dialect is installed so we don't silently fall back
+        # to local SQLite. Failing here surfaces the missing dep at startup.
+        try:
+            import sqlalchemy_libsql  # noqa: F401
+        except ImportError as exc:
+            raise RuntimeError(
+                "AGENTHUB_TURSO_DATABASE_URL is set but sqlalchemy-libsql is "
+                "not installed. Install it on the deployment host: "
+                "`pip install sqlalchemy-libsql`."
+            ) from exc
+
+        # Convert libsql://host to sqlite+libsql://host?authToken=...&secure=true
+        parsed = urlparse(turso_url)
+        netloc = parsed.netloc or parsed.path
+        query = urlencode({"authToken": turso_token, "secure": "true"})
+        return f"sqlite+libsql://{netloc}?{query}"
+
+    return f"sqlite:///{settings.db_path}"
+
+
+# Override sqlalchemy.url from app Settings (Turso-aware).
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", f"sqlite:///{settings.db_path}")
+config.set_main_option("sqlalchemy.url", _build_sqlalchemy_url(settings))
 
 # Setup logging
 if config.config_file_name is not None:
