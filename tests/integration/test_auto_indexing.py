@@ -43,16 +43,59 @@ def fake_vector_service(monkeypatch):
 
 
 @pytest.fixture()
-def admin_api_key(test_client, admin_headers):
-    """Create a real API key for admin and return its plaintext value."""
-    resp = test_client.post(
-        "/v1/auth/api-keys",
-        json={"name": "test-auto-index", "scopes": ["read", "write", "admin"]},
-        headers=admin_headers,
+def seeded_admin_agent():
+    """Insert the test-admin agent row so task/message routes find a sender."""
+    import json as _json
+    from datetime import datetime, timezone
+
+    from app.database.connection import get_database
+
+    db = get_database()
+    now = datetime.now(timezone.utc).isoformat()
+    existing = db.fetch_one(
+        "SELECT id FROM agents WHERE id = :id", {"id": "test-admin"}
     )
-    assert resp.status_code in (200, 201), resp.text
-    body = resp.json()
-    return body.get("api_key") or body.get("key") or body.get("plaintext")
+    if existing:
+        return "test-admin"
+    db.execute(
+        """INSERT INTO agents (
+               id, agent_name, description, capabilities, status,
+               labels, created_at, updated_at, last_heartbeat
+           ) VALUES (
+               :id, :name, :desc, :caps, 'online',
+               :labels, :now, :now, :now
+           )""",
+        {
+            "id": "test-admin",
+            "name": "test-admin",
+            "desc": "auto-index test agent",
+            "caps": _json.dumps([]),
+            "labels": _json.dumps({}),
+            "now": now,
+        },
+    )
+    return "test-admin"
+
+
+@pytest.fixture()
+def admin_api_key(test_client):
+    """Create a real API key directly via APIKeyManager and return its plaintext."""
+    from app.auth.api_keys import APIKeyManager, APIKeyType
+    from app.database.connection import get_database
+
+    db = get_database()
+    mgr = APIKeyManager(db)
+    result = mgr.create_api_key(
+        name="test-auto-index",
+        key_type=APIKeyType.ADMIN,
+        scopes=[
+            "task:read", "task:create", "task:update",
+            "artifact:read", "artifact:upload",
+            "system:monitor", "system:admin",
+        ],
+        created_by="test-admin",
+    )
+    return result["api_key"]
 
 
 def test_memory_write_triggers_embedding(
@@ -74,7 +117,7 @@ def test_memory_write_triggers_embedding(
 
 
 def test_message_send_triggers_embedding(
-    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service, admin_api_key
+    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service, admin_api_key, seeded_admin_agent
 ):
     # Need a recipient agent. Use whatever already exists; if empty, send returns 400
     resp = test_client.post(
@@ -116,7 +159,7 @@ def test_artifact_upload_triggers_embedding(
 
 
 def test_task_create_triggers_embedding(
-    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service, admin_headers
+    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service, admin_headers, seeded_admin_agent
 ):
     resp = test_client.post(
         "/v1/tasks/",
@@ -126,6 +169,7 @@ def test_task_create_triggers_embedding(
             "description": "task description text",
             "task_type": "feature",
             "priority": 3,
+            "required_capabilities": ["general"],
         },
     )
     if resp.status_code != 200:

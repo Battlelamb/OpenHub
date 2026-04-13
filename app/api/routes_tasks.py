@@ -2,12 +2,13 @@
 Task management endpoints - clean and simple
 """
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status, Query
 
 from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database
 from ..services.task_service import TaskService
+from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
     Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail,
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter
@@ -66,6 +67,7 @@ async def _broadcast_task_status(
 async def create_task(
     task_data: TaskCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_agent: CurrentAgent = None,
     task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
@@ -91,6 +93,11 @@ async def create_task(
             new_status=new_task.status.value if hasattr(new_task.status, "value") else str(new_task.status),
             previous_status=None,
             agent_id=new_task.owner_agent_id,
+        )
+
+        # Auto-index task description for vector search (VEC-04).
+        schedule_embedding(
+            background_tasks, "task", new_task.id, new_task.description
         )
 
         # Convert to response model

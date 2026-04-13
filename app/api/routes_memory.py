@@ -6,11 +6,12 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
 
@@ -30,6 +31,7 @@ class MemoryWrite(PydanticBaseModel):
 async def write_memory(
     body: MemoryWrite,
     key_info: ApiKeyAuth,
+    background_tasks: BackgroundTasks,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Write to shared memory. Overwrites if key exists."""
@@ -57,6 +59,8 @@ async def write_memory(
                 "exp": expires_at, "now": now, "id": eid,
             }
         )
+        # Re-embed updated memory rows so search reflects the new value.
+        schedule_embedding(background_tasks, "memory", eid, body.value)
         return {"status": "updated", "key": body.key}
     else:
         mem_id = str(uuid4())
@@ -70,6 +74,7 @@ async def write_memory(
                 "ttl": body.ttl_seconds, "exp": expires_at, "now": now,
             }
         )
+        schedule_embedding(background_tasks, "memory", mem_id, body.value)
         return {"status": "created", "key": body.key, "id": mem_id}
 
 

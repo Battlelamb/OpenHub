@@ -6,12 +6,13 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Header
 
 from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_keys import APIKeyManager
+from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -69,6 +70,7 @@ class ThreadMessage(PydanticBaseModel):
 @router.post("/send")
 async def send_message(
     body: SendMessage,
+    background_tasks: BackgroundTasks,
     key_info: Dict = Depends(_require_api_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
@@ -108,6 +110,10 @@ async def send_message(
     )
 
     logger.info("message_sent", msg_id=msg_id, from_agent=from_agent_id, to_agent=to_id)
+
+    # Auto-index message content (VEC-04). Direct messages only - thread/broadcast
+    # messages skipped here so we don't double-embed broadcast fan-out rows.
+    schedule_embedding(background_tasks, "message", msg_id, body.content)
 
     return {"message_id": msg_id, "status": "sent", "to": to_id}
 

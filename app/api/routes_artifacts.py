@@ -8,11 +8,12 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from typing import Dict, Any, Optional
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/v1/artifacts", tags=["artifacts"])
@@ -32,6 +33,7 @@ class ArtifactUpload(PydanticBaseModel):
 async def upload_artifact(
     body: ArtifactUpload,
     key_info: ApiKeyAuth,
+    background_tasks: BackgroundTasks,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Upload an artifact (file). Max 500KB for inline storage."""
@@ -54,6 +56,18 @@ async def upload_artifact(
     )
 
     logger.info("artifact_uploaded", id=art_id, filename=body.filename, size=size)
+
+    # Auto-index artifact content (VEC-04). For base64 artifacts, decode best-effort
+    # so the embedded text reflects the source bytes; non-decodable blobs become
+    # an empty string and the schedule helper will short-circuit.
+    indexable: Optional[str] = body.content
+    if body.encoding == "base64":
+        try:
+            indexable = base64.b64decode(body.content).decode("utf-8", errors="replace")
+        except Exception:
+            indexable = None
+    schedule_embedding(background_tasks, "artifact", art_id, indexable)
+
     return {"artifact_id": art_id, "filename": body.filename, "size_bytes": size}
 
 
