@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ReconnectingBanner } from './ReconnectingBanner'
+import { useHealth } from '@/hooks/queries/useHealth'
 import { Moon, Sun, Languages, User, LogOut, Heart } from 'lucide-react'
 
 export function Topbar() {
@@ -18,7 +19,8 @@ export function Topbar() {
   const theme = useUIStore((s) => s.theme)
   const toggleTheme = useUIStore((s) => s.toggleTheme)
   const setLanguage = useUIStore((s) => s.setLanguage)
-  const healthOk = true
+  const { data: health } = useHealth()
+  const healthOk = health?.status === 'ok'
 
   return (
     <header className="flex h-14 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4">
