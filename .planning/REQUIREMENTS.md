@@ -59,12 +59,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Vector Database
 
-- [ ] **VEC-01**: Turso/libSQL native vector columns (F32_BLOB) for semantic search - replacing zvec
+- [x] **VEC-01**: Turso/libSQL native vector columns (F32_BLOB) for semantic search - replacing zvec
 - [ ] **VEC-02**: Vector similarity search using vector_distance_cos for context/memory queries
 - [ ] **VEC-03**: DiskANN vector indexing for performant approximate nearest neighbor search
 - [ ] **VEC-04**: Auto-indexing hooks on memory, task, and artifact write paths to generate embeddings
 - [ ] **VEC-05**: Vector search API endpoints (search, index, delete) in app/api/
-- [ ] **VEC-06**: Feature flagged as opt-in beta with documented experimental status
+- [x] **VEC-06**: Feature flagged as opt-in beta with documented experimental status
 
 ### Open Source Readiness
 
@@ -142,12 +142,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 2 | Complete |
 | TEST-05 | Phase 2 | Complete |
-| VEC-01 | Phase 3 | Pending |
+| VEC-01 | Phase 3 | Complete |
 | VEC-02 | Phase 3 | Pending |
 | VEC-03 | Phase 3 | Pending |
 | VEC-04 | Phase 3 | Pending |
 | VEC-05 | Phase 3 | Pending |
-| VEC-06 | Phase 3 | Pending |
+| VEC-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |

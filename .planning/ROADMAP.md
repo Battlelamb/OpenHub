@@ -76,7 +76,7 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 03-01-PLAN.md - Alembic vector migration, config/zvec cleanup, vector_availability module, Wave 0 test scaffolds
+- [x] 03-01-PLAN.md - Alembic vector migration, config/zvec cleanup, vector_availability module, Wave 0 test scaffolds
 - [ ] 03-02-PLAN.md - VectorSearchService + Turso vector32 binding smoke test (gating plan)
 - [ ] 03-03-PLAN.md - EmbeddingService with lazy-loaded local and OpenAI backends
 - [ ] 03-04-PLAN.md - Auto-indexing BackgroundTasks hooks on 4 write paths + 5-min retry worker
