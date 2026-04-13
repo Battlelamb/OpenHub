@@ -35,7 +35,9 @@ async def lifespan(app: FastAPI):
     # Create necessary directories
     import os
     os.makedirs(settings.artifact_dir, exist_ok=True)
-    os.makedirs(os.path.dirname(settings.db_path), exist_ok=True)
+    db_dir = os.path.dirname(settings.db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 
     # Run database migrations via Alembic (HARD-06)
     from alembic.config import Config as AlembicConfig
