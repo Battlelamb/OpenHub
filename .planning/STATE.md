@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-04-13T06:49:29.947Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-13T06:51:01.791Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 21
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 03 (vector-database) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 2 of 6
 | Phase 02 P06 | 10m | 2 tasks | 2 files |
 | Phase 03-vector-database P01 | 8m | 2 tasks | 18 files |
 | Phase 03-vector-database P03 | 4m | 1 tasks | 4 files |
+| Phase 03-vector-database P02 | 5m | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 03-vector-database]: alembic env.py overrides sqlalchemy.url from settings.db_path - migration tests must monkeypatch AGENTHUB_DB_PATH and reset cached settings
 - [Phase 03-vector-database]: Plan 03-03: lazy module import inside asyncio.Lock double-check is the canonical pattern - sentence_transformers and torch must never appear in sys.modules at app boot
 - [Phase 03-vector-database]: Plan 03-03: get_embedding_service returns Optional[EmbeddingBackend] - downstream plans must handle None for openai-without-key graceful degradation (D-03)
+- [Phase 03-vector-database]: vector32(:vec) is bound exclusively as json.dumps(list_of_floats); raw bytes/struct.pack/numpy reject silently and break the index
+- [Phase 03-vector-database]: vector_top_k joins on t.rowid (NOT t.id) and filter clauses live in outer WHERE after vector_top_k - pre-filtering bypasses DiskANN
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T06:49:29.878Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-04-13T06:51:01.787Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
