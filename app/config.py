@@ -22,9 +22,8 @@ class Settings(BaseSettings):
     # Database Configuration
     db_path: str = Field(default="./data/state/agenthub.db", description="SQLite database path")
     
-    # Storage Configuration  
+    # Storage Configuration
     artifact_dir: str = Field(default="./data/artifacts", description="Artifact storage directory")
-    zvec_path: str = Field(default="./data/zvec", description="Zvec data directory")
     
     # Cache Configuration
     redis_url: str = Field(default="redis://localhost:6379", description="Redis connection URL")
@@ -50,9 +49,26 @@ class Settings(BaseSettings):
     max_ws_agents: int = Field(default=100, description="Maximum concurrent agent WebSocket connections")
     max_ws_ui: int = Field(default=10, description="Maximum concurrent UI WebSocket connections")
     
-    # Vector Search Configuration
+    # Vector Search Configuration (Phase 3)
     vector_batch_size: int = Field(default=1000, description="Vector operation batch size")
-    embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2", description="Embedding model")
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Embedding model identifier",
+    )
+    embedding_provider: str = Field(
+        default="local",
+        description="Embedding backend: 'local' (sentence-transformers) or 'openai'",
+    )
+    openai_api_key: Optional[str] = Field(
+        default=None, description="OpenAI API key for embeddings (if provider=openai)"
+    )
+    vector_search_enabled: Optional[bool] = Field(
+        default=None,
+        description=(
+            "None=auto-detect from Turso configuration, "
+            "True/False=explicit override of vector search availability"
+        ),
+    )
     
     # Cleanup Configuration
     event_retention_days: int = Field(default=30, description="Event retention in days")

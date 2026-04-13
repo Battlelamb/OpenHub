@@ -36,12 +36,25 @@ def _build_alembic_config(db_path: str) -> Config:
 
 
 @pytest.fixture()
-def temp_sqlite_db():
+def temp_sqlite_db(monkeypatch):
+    """Create a temp SQLite DB and point app Settings at it.
+
+    alembic/env.py overrides sqlalchemy.url with settings.db_path, so we must
+    patch the env var (and reload the cached settings) for the migration to
+    target our isolated DB instead of the conftest one.
+    """
     fd, path = tempfile.mkstemp(prefix="vec-mig-", suffix=".db")
     os.close(fd)
+    monkeypatch.setenv("AGENTHUB_DB_PATH", path)
+
+    # Reset cached settings so env.py picks up the new path on import-time read.
+    from app import config as _config
+
+    _config.settings = _config.Settings()
     try:
         yield path
     finally:
+        _config.settings = _config.Settings()
         if os.path.exists(path):
             os.remove(path)
 
