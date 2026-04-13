@@ -1,0 +1,17 @@
+{
+  "brand": "OpenHub",
+  "signIn": "Sign in",
+  "signOut": "Sign out",
+  "loading": "Loading",
+  "signInTitle": "Sign in to OpenHub",
+  "invalidCredentials": "Invalid credentials. Check username and password.",
+  "healthOk": "Hub healthy",
+  "healthFail": "Hub unreachable - retrying",
+  "reconnecting": "Reconnecting to live updates...",
+  "tokenExpiring": "Session ending soon. Click to stay signed in.",
+  "themeToLight": "Switch to light theme",
+  "themeToDark": "Switch to dark theme",
+  "language": "Language",
+  "requestFailed": "Request failed",
+  "networkError": "Cannot reach hub. Check your network and that the hub is running on port 7788."
+}

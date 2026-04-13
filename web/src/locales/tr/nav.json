@@ -1,0 +1,19 @@
+{
+  "groups": {
+    "operations": "Operasyonlar",
+    "visibility": "Gorunurluk",
+    "admin": "Yonetim"
+  },
+  "items": {
+    "agents": "Ajanlar",
+    "tasks": "Gorevler",
+    "workflows": "Workflow'lar",
+    "dlq": "DLQ",
+    "costs": "Maliyetler",
+    "traces": "Trace'ler",
+    "memory": "Bellek",
+    "locks": "Kilitler",
+    "health": "Saglik",
+    "settings": "Ayarlar"
+  }
+}

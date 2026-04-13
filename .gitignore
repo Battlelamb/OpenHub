@@ -94,3 +94,8 @@ vendor/
 coverage/
 .cache/
 .claude/worktrees/
+
+# Phase 4 frontend
+web/node_modules
+web/dist
+web/coverage

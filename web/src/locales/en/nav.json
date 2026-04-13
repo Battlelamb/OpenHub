@@ -1,0 +1,19 @@
+{
+  "groups": {
+    "operations": "Operations",
+    "visibility": "Visibility",
+    "admin": "Admin"
+  },
+  "items": {
+    "agents": "Agents",
+    "tasks": "Tasks",
+    "workflows": "Workflows",
+    "dlq": "DLQ",
+    "costs": "Costs",
+    "traces": "Traces",
+    "memory": "Memory",
+    "locks": "Locks",
+    "health": "Health",
+    "settings": "Settings"
+  }
+}

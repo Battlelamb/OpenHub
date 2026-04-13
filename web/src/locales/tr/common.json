@@ -1,0 +1,17 @@
+{
+  "brand": "OpenHub",
+  "signIn": "Giris yap",
+  "signOut": "Cikis yap",
+  "loading": "Yukleniyor",
+  "signInTitle": "OpenHub'a giris yap",
+  "invalidCredentials": "Hatali kimlik bilgileri. Kullanici adi ve sifreyi kontrol et.",
+  "healthOk": "Hub saglikli",
+  "healthFail": "Hub'a ulasilamiyor - tekrar deneniyor",
+  "reconnecting": "Canli guncellemelere yeniden baglaniliyor...",
+  "tokenExpiring": "Oturum yakinda bitiyor. Devam etmek icin tikla.",
+  "themeToLight": "Acik temaya gec",
+  "themeToDark": "Koyu temaya gec",
+  "language": "Dil",
+  "requestFailed": "Istek basarisiz",
+  "networkError": "Hub'a ulasilamiyor. Aginizi ve hub'in 7788 portunda calistigini kontrol edin."
+}
