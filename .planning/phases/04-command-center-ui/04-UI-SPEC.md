@@ -1,10 +1,13 @@
 ---
 phase: 4
 slug: command-center-ui
-status: draft
+status: approved
+reviewed_at: 2026-04-13
 shadcn_initialized: false
 preset: manual (shadcn/ui CLI, no preset)
 created: 2026-04-13
+dimensions_passed: 6/6
+flags: 1 (typography 3 weights — justified, per-tier locked)
 ---
 
 # Phase 4 - UI Design Contract
