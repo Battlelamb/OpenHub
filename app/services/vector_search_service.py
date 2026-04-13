@@ -21,6 +21,7 @@ The 4 entity types that are auto-indexed (D-12) are listed in
 ``ENTITY_CONFIG`` as ``(table_name, content_column, id_column)``.
 """
 import json
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..database.connection import Database
@@ -204,20 +205,41 @@ class VectorSearchService:
         return results
 
     def list_unindexed(
-        self, entity_type: str, limit: int = 100
+        self,
+        entity_type: str,
+        limit: int = 100,
+        since: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
-        """Return rows that have no embedding yet (NULL or 'failed' status).
+        """Return rows that have no embedding yet (NULL/'failed'/'pending').
 
-        Used by the retry worker in Plan 04.
+        Used by the retry worker (Plan 04) and the admin /v1/search/reindex
+        endpoint (Plan 05). The optional ``since`` filter restricts to rows
+        whose updated_at (or created_at fallback) is on/after that timestamp;
+        Plan 05 / D-15 documents this as the bulk-backfill scope knob.
         """
         table, content_col, id_col = self._resolve(entity_type)
+        params: Dict[str, Any] = {"limit": limit}
+        where = (
+            "embedding_status IS NULL "
+            "OR embedding_status = 'failed' "
+            "OR embedding_status = 'pending'"
+        )
+        if since is not None:
+            params["since"] = since.isoformat()
+            # Use updated_at when present (shared_memory, tasks), fall back to
+            # created_at otherwise (artifacts, messages). COALESCE keeps the
+            # query portable across the 4 tables.
+            where = (
+                f"({where}) "
+                "AND COALESCE(updated_at, created_at) >= :since"
+            )
         sql = (
             f"SELECT {id_col} AS id, {content_col} AS content "
             f"FROM {table} "
-            "WHERE embedding_status IS NULL OR embedding_status = 'failed' "
+            f"WHERE {where} "
             "LIMIT :limit"
         )
-        rows = self.db.fetch_all(sql, {"limit": limit}) or []
+        rows = self.db.fetch_all(sql, params) or []
         return [
             {
                 "id": row["id"] if isinstance(row, dict) else row[0],
@@ -225,3 +247,37 @@ class VectorSearchService:
             }
             for row in rows
         ]
+
+    # ------------------------------------------------------------------
+    # Admin: clear embedding (Plan 05 / VEC-05 / D-15)
+    # ------------------------------------------------------------------
+
+    def clear_embedding(self, entity_type: str, entity_id: str) -> bool:
+        """Set embedding=NULL and embedding_status='deleted' for one row.
+
+        MUST NOT issue ``DELETE FROM`` against the underlying entity table - the
+        row stays, only its vector is cleared. Returns True if a row was
+        updated, False if the id does not exist.
+        """
+        table, _, id_col = self._resolve(entity_type)
+        # Existence check first so we can return a clean 404 path.
+        existing = self.db.fetch_one(
+            f"SELECT {id_col} AS id FROM {table} WHERE {id_col} = :id",
+            {"id": entity_id},
+        )
+        if not existing:
+            return False
+        sql = (
+            f"UPDATE {table} "
+            "SET embedding = NULL, "
+            "    embedding_status = 'deleted', "
+            "    embedding_error = NULL "
+            f"WHERE {id_col} = :id"
+        )
+        self.db.execute(sql, {"id": entity_id})
+        logger.info(
+            "embedding_cleared",
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+        return True
