@@ -73,12 +73,31 @@ async def lifespan(app: FastAPI):
     await heartbeat_service.start_monitoring()
     logger.info("heartbeat_monitor_started")
 
+    # Start embedding retry worker (Plan 03-04 / VEC-04). No-op on local SQLite.
+    from .services.embedding_retry_worker import (
+        start_retry_worker,
+        stop_retry_worker,
+    )
+    try:
+        await start_retry_worker()
+        logger.info("embedding_retry_worker_lifespan_started")
+    except Exception as e:
+        logger.warning("embedding_retry_worker_start_failed", error=str(e))
+
     logger.info("agent_hub_started", version=__version__)
 
     yield
 
-    # Shutdown - stop WebSocket manager before heartbeat so open sockets
-    # are closed cleanly while the rest of the runtime is still live.
+    # Shutdown - stop the embedding retry worker first so its in-flight DB
+    # operations finish before the connection layer is torn down.
+    try:
+        await stop_retry_worker()
+        logger.info("embedding_retry_worker_lifespan_stopped")
+    except Exception as e:
+        logger.warning("embedding_retry_worker_stop_failed", error=str(e))
+
+    # Stop WebSocket manager before heartbeat so open sockets are closed
+    # cleanly while the rest of the runtime is still live.
     await connection_manager.stop()
     logger.info("connection_manager_stopped")
 
