@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-04-13T06:51:01.791Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-04-13T07:01:13.509Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 21
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 03 (vector-database) — EXECUTING
-Plan: 3 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Plan: 3 of 6
 | Phase 03-vector-database P01 | 8m | 2 tasks | 18 files |
 | Phase 03-vector-database P03 | 4m | 1 tasks | 4 files |
 | Phase 03-vector-database P02 | 5m | 2 tasks | 4 files |
+| Phase 03-vector-database P04 | 6m | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 03-vector-database]: Plan 03-03: get_embedding_service returns Optional[EmbeddingBackend] - downstream plans must handle None for openai-without-key graceful degradation (D-03)
 - [Phase 03-vector-database]: vector32(:vec) is bound exclusively as json.dumps(list_of_floats); raw bytes/struct.pack/numpy reject silently and break the index
 - [Phase 03-vector-database]: vector_top_k joins on t.rowid (NOT t.id) and filter clauses live in outer WHERE after vector_top_k - pre-filtering bypasses DiskANN
+- [Phase 03-vector-database]: Plan 03-04: schedule_embedding short-circuits at call time on is_vector_enabled - tests must monkeypatch the function reference inside app.services.embedding_hooks, not the global
+- [Phase 03-vector-database]: Plan 03-04: BackgroundTasks _embed_and_store coroutine never raises (Pitfall 6) - all failure paths log + mark_failed so retry worker can find them later
+- [Phase 03-vector-database]: Plan 03-04: embedding_retry_worker stops BEFORE WS/heartbeat in shutdown so in-flight DB updates land while connection layer is still live
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T06:51:01.787Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-04-13T07:01:13.504Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
