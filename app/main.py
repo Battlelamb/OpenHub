@@ -84,6 +84,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("embedding_retry_worker_start_failed", error=str(e))
 
+    # Vector search availability advisory (Plan 03-06 / VEC-06).
+    # Emit a clear warning so OSS users running on local SQLite without Turso
+    # understand why /v1/search returns 503. Also logs on auto-detect failures.
+    from .database.vector_availability import is_vector_enabled
+    if not is_vector_enabled():
+        logger.warning(
+            "vector_search_disabled",
+            reason="Turso not configured or AGENTHUB_VECTOR_SEARCH_ENABLED=false",
+            hint=(
+                "Set AGENTHUB_TURSO_DATABASE_URL + AGENTHUB_TURSO_AUTH_TOKEN "
+                "and AGENTHUB_VECTOR_SEARCH_ENABLED=true to enable BETA vector search. "
+                "See README Vector Search (Beta) section for setup."
+            ),
+        )
+    else:
+        logger.info("vector_search_enabled")
+
     logger.info("agent_hub_started", version=__version__)
 
     yield
@@ -106,6 +123,22 @@ async def lifespan(app: FastAPI):
     logger.info("agent_hub_shutting_down")
 
 
+# OpenAPI tag metadata. The "search [experimental]" tag matches the prefix used
+# by app/api/routes_search.py and the per-entity shortcut routes (Plan 03-06 /
+# VEC-06). Marking it BETA in OpenAPI surfaces the opt-in status to /docs users.
+openapi_tags = [
+    {
+        "name": "search [experimental]",
+        "description": (
+            "Semantic vector search over memories, tasks, artifacts, and messages. "
+            "BETA: opt-in feature that requires Turso configuration. "
+            "Set AGENTHUB_VECTOR_SEARCH_ENABLED=true and provide "
+            "AGENTHUB_TURSO_DATABASE_URL + AGENTHUB_TURSO_AUTH_TOKEN. "
+            "See README Vector Search (Beta) section for full setup."
+        ),
+    },
+]
+
 # Create FastAPI app with lifespan management
 app = FastAPI(
     title="OpenHub API",
@@ -117,6 +150,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
+    openapi_tags=openapi_tags,
 )
 
 # Setup error handlers and middleware

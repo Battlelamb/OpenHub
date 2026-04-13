@@ -1,4 +1,4 @@
-"""Unified vector search API (experimental, VEC-05).
+"""Unified vector search API (experimental, VEC-05 / VEC-06 BETA).
 
 This module owns the public surface of Phase 3:
 
@@ -6,9 +6,12 @@ This module owns the public surface of Phase 3:
   - POST   /v1/search/reindex                 Admin-only re-embed (D-15)
   - DELETE /v1/search/{entity_type}/{id}      Admin-only embedding clear
 
-Per D-23 the router is tagged "search [experimental]" so OpenAPI consumers can
-identify it as a beta surface. Per D-08 every handler returns 503 on local
-SQLite via the router-level Depends(require_vector).
+BETA: opt-in vector search. Requires Turso configuration. See the README
+"Vector Search (Beta)" section for setup. The router is tagged
+"search [experimental]" (D-23) and the matching tag description in
+``app/main.py`` advertises the beta opt-in contract via OpenAPI. Per D-08,
+every handler returns 503 on local SQLite via the router-level
+``Depends(require_vector)``.
 """
 from typing import Any, Dict, List
 
