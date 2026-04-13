@@ -138,6 +138,78 @@ All settings use the `AGENTHUB_` environment variable prefix.
 
 Redis is optional. The system degrades gracefully without it, falling back to in-memory token management.
 
+## Vector Search (Beta)
+
+OpenHub ships with optional semantic search over memories, tasks, artifacts, and messages. This feature is in beta and requires Turso.
+
+When vector search is disabled or unavailable, all `/v1/search*` endpoints return RFC 7807 `503` responses, and the rest of OpenHub continues to work normally. On startup, the server logs `vector_search_disabled` so you can see at a glance whether the feature is active.
+
+### Requirements
+
+- A Turso database (free tier at [turso.tech](https://turso.tech)) with `AGENTHUB_TURSO_DATABASE_URL` and `AGENTHUB_TURSO_AUTH_TOKEN` set
+- Either `sentence-transformers` installed locally (default backend, ~350MB of ML deps) OR an OpenAI API key
+
+### Setup
+
+```bash
+export AGENTHUB_TURSO_DATABASE_URL="libsql://your-db.turso.io"
+export AGENTHUB_TURSO_AUTH_TOKEN="your-token"
+export AGENTHUB_EMBEDDING_PROVIDER="local"   # or "openai"
+export AGENTHUB_OPENAI_API_KEY=""            # required when EMBEDDING_PROVIDER=openai
+export AGENTHUB_VECTOR_SEARCH_ENABLED="true" # or leave unset for auto-detect
+```
+
+Run migrations to add vector columns and the DiskANN index:
+
+```bash
+alembic upgrade head
+```
+
+Verify the endpoint is live:
+
+```bash
+curl -X POST http://localhost:7788/v1/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"hello","top_k":5}'
+```
+
+### API
+
+- `POST /v1/search` - unified semantic search across all entity types
+- `POST /v1/memory/search` - memory-only shortcut
+- `POST /v1/tasks/search` - task-only shortcut
+- `POST /v1/artifacts/search` - artifact-only shortcut
+- `POST /v1/messages/search` - message-only shortcut
+- `POST /v1/search/reindex` - admin-only re-embed of unindexed rows
+- `DELETE /v1/search/{entity_type}/{entity_id}` - admin-only embedding clear
+
+Request body for search endpoints:
+
+```json
+{
+  "query": "your natural language query",
+  "types": ["memory", "task"],
+  "filters": {},
+  "top_k": 10
+}
+```
+
+`top_k` is bounded to `1..50` and defaults to `10`. The response is a list of `SearchHit` objects with `entity_type`, `id`, `content`, and `distance` (cosine distance, ascending).
+
+All search endpoints are tagged `search [experimental]` in OpenAPI so they appear under a clearly labelled BETA group at `/docs`.
+
+### Limitations (v1 Beta)
+
+- Requires Turso. Local SQLite returns `503` on every vector endpoint.
+- English language only (sentence-transformers/all-MiniLM-L6-v2 by default)
+- No cross-encoder re-ranking
+- Text is truncated to 30000 characters before embedding
+- Switching embedding providers (local <-> openai) requires a schema migration because vector dimensions differ
+
+### Disabling
+
+Set `AGENTHUB_VECTOR_SEARCH_ENABLED=false` to explicitly disable vector search, even when Turso is configured. This is useful for staging environments where you want the rest of OpenHub running but no embeddings flowing.
+
 ## Tech Stack
 
 - **Python 3.11+** with FastAPI and Uvicorn
