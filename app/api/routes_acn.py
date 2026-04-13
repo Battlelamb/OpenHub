@@ -588,8 +588,8 @@ async def apply_to_acn(
 
     # Store application
     database.execute(
-        """INSERT INTO pending_applications (id, agent_name, data, client_ip, status, created_at)
-           VALUES (:id, :name, :data, :ip, 'pending', :now)""",
+        """INSERT INTO pending_applications (id, agent_name, data, client_ip, status, source, created_at)
+           VALUES (:id, :name, :data, :ip, 'pending', 'acn', :now)""",
         {
             "id": app_id,
             "name": agent_data.agent_name,
@@ -680,8 +680,10 @@ async def list_applications(
             "application_id": r["id"],
             "agent_name": r["agent_name"],
             "status": r["status"],
+            "source": r.get("source") or "acn",
             "client_ip": r.get("client_ip"),
             "created_at": r.get("created_at"),
+            "description": data.get("description"),
             "model": data.get("model"),
             "platform": data.get("platform"),
             "capabilities": data.get("capabilities", []),
@@ -713,35 +715,79 @@ async def approve_application(
     if app["status"] != "pending":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Application already {app['status']}")
 
-    # Parse stored data back to RemoteAgentRegister
     data = _json.loads(app["data"]) if isinstance(app["data"], str) else app["data"]
-    agent_data = RemoteAgentRegister(**data)
+    source = app.get("source") or "acn"
 
-    # Ensure node exists
-    try:
-        node = service.node_repo.find_by_name(agent_data.node_name)
-        if not node:
-            service.register_node(ACNNodeCreate(
-                node_name=agent_data.node_name,
-                node_url=agent_data.callback_url or "http://localhost",
-            ))
-    except ValueError:
-        pass
+    if source == "direct":
+        # Direct registration - create agent in agents table directly
+        from uuid import uuid4
 
-    # Register agent
-    new_agent = service.register_remote_agent(agent_data, client_ip=app.get("client_ip"))
+        agent_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        agent_name = data.get("agent_name", app["agent_name"])
 
-    # Create API key
-    api_key_result = key_manager.create_api_key(
-        name=f"acn-agent-{agent_data.agent_name}",
-        key_type=APIKeyType.AGENT,
-        scopes=[
-            APIKeyScope.ACN_NODE_MANAGE.value, APIKeyScope.ACN_AGENT_REGISTER.value,
-            APIKeyScope.ACN_AGENT_READ.value, APIKeyScope.ACN_TASK_SUBMIT.value,
-            APIKeyScope.AGENT_HEARTBEAT.value, APIKeyScope.TASK_READ.value, APIKeyScope.TASK_UPDATE.value,
-        ],
-        description=f"ACN agent key for {agent_data.agent_name}",
-    )
+        database.execute("""
+            INSERT INTO agents (
+                id, agent_name, description, capabilities, status,
+                labels, created_at, updated_at, last_heartbeat
+            ) VALUES (
+                :id, :agent_name, :description, :capabilities, :status,
+                :labels, :created_at, :updated_at, :last_heartbeat
+            )
+        """, {
+            "id": agent_id,
+            "agent_name": agent_name,
+            "description": data.get("description"),
+            "capabilities": _json.dumps(data.get("capabilities") or []),
+            "status": "online",
+            "labels": _json.dumps(data.get("labels") or {}),
+            "created_at": now,
+            "updated_at": now,
+            "last_heartbeat": now,
+        })
+
+        api_key_result = key_manager.create_api_key(
+            name=f"agent-{agent_name}",
+            key_type=APIKeyType.AGENT,
+            scopes=[
+                APIKeyScope.AGENT_HEARTBEAT.value,
+                APIKeyScope.TASK_READ.value,
+                APIKeyScope.TASK_UPDATE.value,
+            ],
+            description=f"Agent key for {agent_name}",
+        )
+
+        result_agent_id = agent_id
+        result_agent_name = agent_name
+    else:
+        # ACN registration - use RemoteAgentService for node + agent creation
+        agent_data = RemoteAgentRegister(**data)
+
+        try:
+            node = service.node_repo.find_by_name(agent_data.node_name)
+            if not node:
+                service.register_node(ACNNodeCreate(
+                    node_name=agent_data.node_name,
+                    node_url=agent_data.callback_url or "http://localhost",
+                ))
+        except ValueError:
+            pass
+
+        new_agent = service.register_remote_agent(agent_data, client_ip=app.get("client_ip"))
+
+        api_key_result = key_manager.create_api_key(
+            name=f"acn-agent-{agent_data.agent_name}",
+            key_type=APIKeyType.AGENT,
+            scopes=[
+                APIKeyScope.ACN_NODE_MANAGE.value, APIKeyScope.ACN_AGENT_REGISTER.value,
+                APIKeyScope.ACN_AGENT_READ.value, APIKeyScope.ACN_TASK_SUBMIT.value,
+                APIKeyScope.AGENT_HEARTBEAT.value, APIKeyScope.TASK_READ.value, APIKeyScope.TASK_UPDATE.value,
+            ],
+            description=f"ACN agent key for {agent_data.agent_name}",
+        )
+
+        result_agent_id = new_agent.id
+        result_agent_name = new_agent.agent_name
 
     # Update application status
     database.execute(
@@ -750,12 +796,13 @@ async def approve_application(
         {"key": api_key_result["api_key"], "now": datetime.now(timezone.utc).isoformat(), "id": application_id}
     )
 
-    logger.info("acn_application_approved", app_id=application_id, agent_name=agent_data.agent_name)
+    logger.info("application_approved", app_id=application_id,
+               agent_name=result_agent_name, source=source)
 
     return {
         "status": "approved",
-        "agent_id": new_agent.id,
-        "agent_name": new_agent.agent_name,
+        "agent_id": result_agent_id,
+        "agent_name": result_agent_name,
         "api_key": api_key_result["api_key"],
     }
 

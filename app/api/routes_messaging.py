@@ -6,12 +6,15 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Header
 
 from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_keys import APIKeyManager
+from ..database.vector_availability import require_vector
+from ..models.vector_search import SearchRequest, SearchResponse
+from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -69,6 +72,7 @@ class ThreadMessage(PydanticBaseModel):
 @router.post("/send")
 async def send_message(
     body: SendMessage,
+    background_tasks: BackgroundTasks,
     key_info: Dict = Depends(_require_api_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
@@ -108,6 +112,10 @@ async def send_message(
     )
 
     logger.info("message_sent", msg_id=msg_id, from_agent=from_agent_id, to_agent=to_id)
+
+    # Auto-index message content (VEC-04). Direct messages only - thread/broadcast
+    # messages skipped here so we don't double-embed broadcast fan-out rows.
+    schedule_embedding(background_tasks, "message", msg_id, body.content)
 
     return {"message_id": msg_id, "status": "sent", "to": to_id}
 
@@ -364,3 +372,17 @@ def _resolve_sender(key_info: Dict, database: Database) -> str:
     # Fallback: first agent
     row = database.fetch_one("SELECT id FROM agents LIMIT 1")
     return (row["id"] if isinstance(row, dict) else row[0]) if row else "unknown"
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    dependencies=[Depends(require_vector)],
+    tags=["messaging [experimental]"],
+    summary="Semantic search over messages (experimental, Phase 03 / VEC-05)",
+)
+async def message_search_shortcut(req: SearchRequest) -> SearchResponse:
+    """Vector search shortcut. Forces types=['message'] regardless of body."""
+    from .routes_search import unified_search  # local import avoids cycle
+    forced = req.model_copy(update={"types": ["message"]})
+    return await unified_search(forced)

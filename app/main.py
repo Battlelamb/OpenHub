@@ -2,14 +2,19 @@
 Agent Hub Main Application Entry Point
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 
 from .config import get_settings
 from .logging import setup_logging, get_logger
 from .middleware import setup_error_handlers, setup_middleware
+from .limiter import limiter
+from .services.connection_manager import ConnectionManager
 from .api.routes_health import router as health_router
+from .api.routes_metrics import router as metrics_router
+from .api.routes_ws_ui import router as ws_ui_router
 
 # Version info
 __version__ = "0.1.0"
@@ -20,7 +25,6 @@ settings = get_settings()
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,176 +38,149 @@ async def lifespan(app: FastAPI):
     db_dir = os.path.dirname(settings.db_path)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
-    os.makedirs(settings.zvec_path, exist_ok=True)
 
-    # Auto-create database tables on startup
+    # Run database migrations via Alembic (HARD-06)
+    from alembic.config import Config as AlembicConfig
+    from alembic import command as alembic_command
+    import os as _lifespan_os
+    alembic_ini = _lifespan_os.path.join(
+        _lifespan_os.path.dirname(_lifespan_os.path.dirname(_lifespan_os.path.abspath(__file__))),
+        "alembic.ini",
+    )
+    alembic_cfg = AlembicConfig(alembic_ini)
+    alembic_command.upgrade(alembic_cfg, "head")
+    logger.info("database_migrations_applied")
+
+    # Sync for Turso remote mode compatibility
     from .database.connection import get_database
     try:
         db = get_database()
-        # Sync from Turso first to get existing tables
         db.sync()
-        tables = [
-            """CREATE TABLE IF NOT EXISTS agents (
-                id TEXT PRIMARY KEY, agent_name TEXT NOT NULL UNIQUE, description TEXT,
-                capabilities TEXT DEFAULT '[]', status TEXT DEFAULT 'offline',
-                last_heartbeat TIMESTAMP, current_task TEXT,
-                labels TEXT DEFAULT '{}', metadata TEXT DEFAULT '{}',
-                tasks_completed INTEGER DEFAULT 0, tasks_failed INTEGER DEFAULT 0,
-                average_task_duration REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS tasks (
-                id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT,
-                task_type TEXT NOT NULL DEFAULT 'feature', priority INTEGER DEFAULT 50,
-                status TEXT NOT NULL DEFAULT 'queued',
-                required_capabilities TEXT DEFAULT '[]', owner_agent_id TEXT,
-                claimed_at TIMESTAMP, started_at TIMESTAMP, completed_at TIMESTAMP,
-                lease_until TIMESTAMP, retry_count INTEGER DEFAULT 0,
-                max_retries INTEGER DEFAULT 3, last_error TEXT,
-                deadline_at TIMESTAMP, idempotency_key TEXT,
-                labels TEXT DEFAULT '{}', metadata TEXT DEFAULT '{}',
-                payload TEXT DEFAULT '{}', result_summary TEXT,
-                output TEXT DEFAULT '{}', artifact_ids TEXT DEFAULT '[]',
-                duration_seconds REAL, created_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS acn_nodes (
-                id TEXT PRIMARY KEY, node_name TEXT NOT NULL UNIQUE, node_url TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'offline', capabilities TEXT DEFAULT '[]',
-                metadata TEXT DEFAULT '{}', labels TEXT DEFAULT '{}',
-                last_heartbeat TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS remote_agent_mappings (
-                id TEXT PRIMARY KEY, local_agent_id TEXT NOT NULL UNIQUE,
-                node_id TEXT NOT NULL, remote_agent_name TEXT NOT NULL,
-                callback_url TEXT, connection_metadata TEXT DEFAULT '{}',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS api_keys (
-                id TEXT PRIMARY KEY, name TEXT NOT NULL, key_type TEXT NOT NULL,
-                key_hash TEXT NOT NULL, salt TEXT NOT NULL, scopes TEXT DEFAULT '[]',
-                description TEXT, expires_at TIMESTAMP, created_by TEXT,
-                metadata TEXT DEFAULT '{}', is_active BOOLEAN DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_used_at TIMESTAMP, revoked_at TIMESTAMP, revoked_by TEXT)""",
-            """CREATE TABLE IF NOT EXISTS pending_applications (
-                id TEXT PRIMARY KEY, agent_name TEXT NOT NULL,
-                data TEXT NOT NULL, client_ip TEXT,
-                status TEXT DEFAULT 'pending',
-                api_key_value TEXT,
-                reviewed_by TEXT, reviewed_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS messages (
-                id TEXT PRIMARY KEY,
-                from_agent_id TEXT NOT NULL,
-                to_agent_id TEXT,
-                thread_id TEXT,
-                message_type TEXT DEFAULT 'text',
-                content TEXT NOT NULL,
-                metadata TEXT DEFAULT '{}',
-                read_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS threads (
-                id TEXT PRIMARY KEY,
-                title TEXT,
-                thread_type TEXT DEFAULT 'conversation',
-                task_id TEXT,
-                participants TEXT DEFAULT '[]',
-                status TEXT DEFAULT 'open',
-                created_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS shared_memory (
-                id TEXT PRIMARY KEY,
-                key TEXT NOT NULL,
-                value TEXT NOT NULL,
-                value_type TEXT DEFAULT 'text',
-                tags TEXT DEFAULT '[]',
-                created_by TEXT,
-                access_level TEXT DEFAULT 'public',
-                ttl_seconds INTEGER,
-                expires_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS workflows (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                steps TEXT NOT NULL,
-                status TEXT DEFAULT 'created',
-                current_step INTEGER DEFAULT 0,
-                results TEXT DEFAULT '{}',
-                created_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS artifacts (
-                id TEXT PRIMARY KEY, filename TEXT NOT NULL, content_type TEXT,
-                content TEXT, encoding TEXT DEFAULT 'text', size_bytes INTEGER,
-                task_id TEXT, description TEXT, tags TEXT DEFAULT '[]',
-                uploaded_by TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS resource_locks (
-                id TEXT PRIMARY KEY, resource TEXT NOT NULL, locked_by TEXT,
-                reason TEXT, ttl_seconds INTEGER, expires_at TIMESTAMP,
-                released_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS trace_events (
-                id TEXT PRIMARY KEY, trace_id TEXT NOT NULL, agent_id TEXT,
-                event_type TEXT, name TEXT NOT NULL, data TEXT DEFAULT '{}',
-                task_id TEXT, duration_ms REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS cost_tracking (
-                id TEXT PRIMARY KEY, agent_id TEXT, task_id TEXT,
-                model TEXT NOT NULL, input_tokens INTEGER, output_tokens INTEGER,
-                cost_usd REAL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS shared_tools (
-                id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
-                tool_type TEXT DEFAULT 'mcp', endpoint TEXT,
-                config TEXT DEFAULT '{}', tags TEXT DEFAULT '[]',
-                registered_by TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-            """CREATE TABLE IF NOT EXISTS agent_templates (
-                id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
-                capabilities TEXT DEFAULT '[]', skills TEXT DEFAULT '[]',
-                mcp_servers TEXT DEFAULT '[]', model TEXT, platform TEXT,
-                config TEXT DEFAULT '{}', created_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""",
-        ]
-        for ddl in tables:
-            try:
-                db.execute(ddl)
-            except Exception:
-                pass
-        # Force sync to pull tables into local replica
-        db.sync()
-        # Re-sync to ensure local has all tables
-        import time
-        time.sleep(1)
-        db.sync()
-        logger.info("database_tables_ready")
     except Exception as e:
-        logger.error("database_init_failed", error=str(e))
+        logger.warning("database_sync_skipped", reason=str(e))
+
+    # Wire ConnectionManager for WebSocket management (WS-02)
+    # Must be created BEFORE HeartbeatService so the broadcast callback can be
+    # injected into heartbeat monitoring (WS-04 offline detection events).
+    connection_manager = ConnectionManager()
+    await connection_manager.start()
+    app.state.connection_manager = connection_manager
+    logger.info("connection_manager_started")
+
+    # Wire heartbeat monitor to detect offline agents (HARD-04).
+    # Pass broadcast callback so offline detection emits agent_status_changed
+    # events to UI clients (WS-04).
+    from .services.heartbeat_service import HeartbeatService
+    heartbeat_service = HeartbeatService(db, on_event=connection_manager.broadcast_to_ui)
+    await heartbeat_service.start_monitoring()
+    logger.info("heartbeat_monitor_started")
+
+    # Start embedding retry worker (Plan 03-04 / VEC-04). No-op on local SQLite.
+    from .services.embedding_retry_worker import (
+        start_retry_worker,
+        stop_retry_worker,
+    )
+    try:
+        await start_retry_worker()
+        logger.info("embedding_retry_worker_lifespan_started")
+    except Exception as e:
+        logger.warning("embedding_retry_worker_start_failed", error=str(e))
+
+    # Vector search availability advisory (Plan 03-06 / VEC-06).
+    # Emit a clear warning so OSS users running on local SQLite without Turso
+    # understand why /v1/search returns 503. Also logs on auto-detect failures.
+    from .database.vector_availability import is_vector_enabled
+    if not is_vector_enabled():
+        logger.warning(
+            "vector_search_disabled",
+            reason="Turso not configured or AGENTHUB_VECTOR_SEARCH_ENABLED=false",
+            hint=(
+                "Set AGENTHUB_TURSO_DATABASE_URL + AGENTHUB_TURSO_AUTH_TOKEN "
+                "and AGENTHUB_VECTOR_SEARCH_ENABLED=true to enable BETA vector search. "
+                "See README Vector Search (Beta) section for setup."
+            ),
+        )
+    else:
+        logger.info("vector_search_enabled")
 
     logger.info("agent_hub_started", version=__version__)
-    
+
     yield
-    
-    # Shutdown
+
+    # Shutdown - stop the embedding retry worker first so its in-flight DB
+    # operations finish before the connection layer is torn down.
+    try:
+        await stop_retry_worker()
+        logger.info("embedding_retry_worker_lifespan_stopped")
+    except Exception as e:
+        logger.warning("embedding_retry_worker_stop_failed", error=str(e))
+
+    # Stop WebSocket manager before heartbeat so open sockets are closed
+    # cleanly while the rest of the runtime is still live.
+    await connection_manager.stop()
+    logger.info("connection_manager_stopped")
+
+    await heartbeat_service.stop_monitoring()
+    logger.info("heartbeat_monitor_stopped")
     logger.info("agent_hub_shutting_down")
 
 
+# OpenAPI tag metadata. The "search [experimental]" tag matches the prefix used
+# by app/api/routes_search.py and the per-entity shortcut routes (Plan 03-06 /
+# VEC-06). Marking it BETA in OpenAPI surfaces the opt-in status to /docs users.
+openapi_tags = [
+    {
+        "name": "search [experimental]",
+        "description": (
+            "Semantic vector search over memories, tasks, artifacts, and messages. "
+            "BETA: opt-in feature that requires Turso configuration. "
+            "Set AGENTHUB_VECTOR_SEARCH_ENABLED=true and provide "
+            "AGENTHUB_TURSO_DATABASE_URL + AGENTHUB_TURSO_AUTH_TOKEN. "
+            "See README Vector Search (Beta) section for full setup."
+        ),
+    },
+]
+
 # Create FastAPI app with lifespan management
 app = FastAPI(
-    title="Agent Hub API",
-    description="Multi-agent coordination system for local development",
+    title="OpenHub API",
+    description=(
+        "Multi-agent coordination platform. "
+        "All endpoints require JWT Bearer token or X-API-Key header unless marked public."
+    ),
     version=__version__,
-    docs_url=None,
-    redoc_url=None,
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
+    openapi_tags=openapi_tags,
 )
 
 # Setup error handlers and middleware
 setup_error_handlers(app)
 setup_middleware(app)
+
+# Wire slowapi rate limiter with RFC 7807 handler
+app.state.limiter = limiter
+
+
+async def rfc7807_rate_limit_handler(request, exc):
+    from .models.errors import problem_rate_limit
+    request_id = getattr(request.state, "request_id", str(__import__("uuid").uuid4()))
+    retry_after = getattr(exc, "retry_after", "60")
+    problem = problem_rate_limit(
+        detail=str(exc.detail) if hasattr(exc, "detail") else "Rate limit exceeded",
+        instance=request.url.path,
+        trace_id=request_id,
+    )
+    from starlette.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content=problem.model_dump(exclude_none=True),
+        headers={"Retry-After": str(retry_after), "X-Request-ID": request_id},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, rfc7807_rate_limit_handler)
 
 # Add CORS middleware
 app.add_middleware(
@@ -254,6 +231,9 @@ app.include_router(thread_router)
 from .api.routes_websocket import router as ws_router
 app.include_router(ws_router)
 
+# Include WebSocket UI router (WS-01) - module-level import at top of file
+app.include_router(ws_ui_router)
+
 # Import and include memory router
 from .api.routes_memory import router as memory_router
 app.include_router(memory_router)
@@ -266,6 +246,10 @@ app.include_router(workflow_engine_router)
 from .api.routes_artifacts import router as artifacts_router
 app.include_router(artifacts_router)
 
+# Import and include vector search router (Phase 03 / VEC-05, experimental)
+from .api.routes_search import router as search_router
+app.include_router(search_router)
+
 # Import and include P1 routers (locks, tracing, costs)
 from .api.routes_p1 import lock_router, trace_router, cost_router
 app.include_router(lock_router)
@@ -277,6 +261,9 @@ from .api.routes_p2 import tools_router, templates_router, dlq_router
 app.include_router(tools_router)
 app.include_router(templates_router)
 app.include_router(dlq_router)
+
+# Import and include metrics router (Prometheus)
+app.include_router(metrics_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse

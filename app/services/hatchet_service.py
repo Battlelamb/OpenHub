@@ -3,7 +3,7 @@ Hatchet workflow orchestration integration for OpenHub - clean and simple
 """
 import uuid
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
 
@@ -97,7 +97,7 @@ class HatchetService:
                 "status": "running",
                 "steps": steps,
                 "input_data": input_data or {},
-                "created_at": datetime.utcnow(),
+                "created_at": datetime.now(timezone.utc),
                 "created_by": created_by,
                 "current_step": 0,
                 "completed_steps": [],
@@ -166,7 +166,7 @@ class HatchetService:
         
         # Update workflow status
         workflow["status"] = "cancelled"
-        workflow["cancelled_at"] = datetime.utcnow()
+        workflow["cancelled_at"] = datetime.now(timezone.utc)
         workflow["cancellation_reason"] = reason
         
         # Cancel any running tasks in this workflow
@@ -237,7 +237,7 @@ class HatchetService:
                     # Handle step failure
                     workflow["status"] = "failed"
                     workflow["error"] = f"Step '{step.step_name}' failed: {str(step_error)}"
-                    workflow["failed_at"] = datetime.utcnow()
+                    workflow["failed_at"] = datetime.now(timezone.utc)
                     return
                 
                 # Check if workflow was cancelled
@@ -248,7 +248,7 @@ class HatchetService:
             
             # All steps completed successfully
             workflow["status"] = "completed"
-            workflow["completed_at"] = datetime.utcnow()
+            workflow["completed_at"] = datetime.now(timezone.utc)
             
             logger.info("workflow_execution_completed",
                        workflow_run_id=workflow_run_id,
@@ -263,7 +263,7 @@ class HatchetService:
             if workflow:
                 workflow["status"] = "failed"
                 workflow["error"] = str(e)
-                workflow["failed_at"] = datetime.utcnow()
+                workflow["failed_at"] = datetime.now(timezone.utc)
     
     async def _execute_workflow_step(self, 
                                     workflow_run_id: str, 
@@ -284,7 +284,7 @@ class HatchetService:
                 "max_retries": step.retry_count,
                 "workflow_run_id": workflow_run_id,
                 "workflow_step_id": step.step_id,
-                "deadline_at": datetime.utcnow().timestamp() + step.timeout_seconds
+                "deadline_at": datetime.now(timezone.utc).timestamp() + step.timeout_seconds
             }
             
             # Create task in database
@@ -299,7 +299,7 @@ class HatchetService:
                 TaskStatus.CLAIMED,
                 additional_updates={
                     "owner_agent_id": step.agent_id,
-                    "claimed_at": datetime.utcnow()
+                    "claimed_at": datetime.now(timezone.utc)
                 }
             )
             
@@ -314,7 +314,7 @@ class HatchetService:
                 "status": "completed",
                 "result": result,
                 "agent_id": step.agent_id,
-                "executed_at": datetime.utcnow().isoformat()
+                "executed_at": datetime.now(timezone.utc).isoformat()
             }
         
         except Exception as e:
@@ -327,13 +327,13 @@ class HatchetService:
                 "status": "failed",
                 "error": str(e),
                 "agent_id": step.agent_id,
-                "failed_at": datetime.utcnow().isoformat()
+                "failed_at": datetime.now(timezone.utc).isoformat()
             }
     
     async def _wait_for_task_completion(self, task_id: str, timeout_seconds: int) -> Dict[str, Any]:
         """Wait for task to complete with timeout (simplified implementation)"""
         
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         
         while True:
             task = self.task_repo.get_by_id(task_id)
@@ -348,7 +348,7 @@ class HatchetService:
                     raise Exception(f"Task failed: {task.last_error}")
             
             # Check timeout
-            elapsed = (datetime.utcnow() - start_time).total_seconds()
+            elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
             if elapsed > timeout_seconds:
                 raise Exception(f"Task timeout after {elapsed} seconds")
             

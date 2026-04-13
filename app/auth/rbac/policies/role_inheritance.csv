@@ -1,0 +1,6 @@
+# Inheritance Type,Child Role,Parent Role
+g,agent:claude-code-001,agent
+g,agent:cursor-002,agent
+g,service:github-actions,service
+g,admin:system,admin
+g,monitor:prometheus,readonly

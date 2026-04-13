@@ -1,10 +1,14 @@
 """
 Configuration management for Agent Hub
 """
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 import os
+
+# Load .env file
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -18,9 +22,8 @@ class Settings(BaseSettings):
     # Database Configuration
     db_path: str = Field(default="./data/state/agenthub.db", description="SQLite database path")
     
-    # Storage Configuration  
+    # Storage Configuration
     artifact_dir: str = Field(default="./data/artifacts", description="Artifact storage directory")
-    zvec_path: str = Field(default="./data/zvec", description="Zvec data directory")
     
     # Cache Configuration
     redis_url: str = Field(default="redis://localhost:6379", description="Redis connection URL")
@@ -28,6 +31,10 @@ class Settings(BaseSettings):
     # Security Configuration
     secret_key: str = Field(default="your-secret-key-change-in-production", description="Secret key for tokens")
     api_keys_file: str = Field(default="./data/state/api_keys.json", description="API keys file path")
+
+    # Admin Credentials (required - no defaults, per D-06/D-07)
+    admin_user: str = Field(default=..., description="Admin username (required - set AGENTHUB_ADMIN_USER)")
+    admin_password: str = Field(default=..., description="Admin password (required - set AGENTHUB_ADMIN_PASSWORD)")
     
     # Logging Configuration
     log_level: str = Field(default="INFO", description="Log level")
@@ -37,19 +44,73 @@ class Settings(BaseSettings):
     task_lease_ttl_sec: int = Field(default=300, description="Task lease TTL in seconds")
     max_agents: int = Field(default=100, description="Maximum concurrent agents")
     max_concurrent_tasks: int = Field(default=50, description="Maximum concurrent tasks")
+
+    # WebSocket Connection Limits (D-12)
+    max_ws_agents: int = Field(default=100, description="Maximum concurrent agent WebSocket connections")
+    max_ws_ui: int = Field(default=10, description="Maximum concurrent UI WebSocket connections")
     
-    # Vector Search Configuration
+    # Vector Search Configuration (Phase 3)
     vector_batch_size: int = Field(default=1000, description="Vector operation batch size")
-    embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2", description="Embedding model")
-    
+    embedding_model: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="Embedding model identifier",
+    )
+    embedding_provider: str = Field(
+        default="local",
+        description="Embedding backend: 'local' (sentence-transformers) or 'openai'",
+    )
+    openai_api_key: Optional[str] = Field(
+        default=None, description="OpenAI API key for embeddings (if provider=openai)"
+    )
+    vector_search_enabled: Optional[bool] = Field(
+        default=None,
+        description=(
+            "None=auto-detect from Turso configuration, "
+            "True/False=explicit override of vector search availability"
+        ),
+    )
+    embedding_base_url: Optional[str] = Field(
+        default=None,
+        description=(
+            "Override OpenAI client base_url. Set to http://127.0.0.1:11434/v1 "
+            "to route OpenAI-compatible embeddings through a local Ollama server."
+        ),
+    )
+    embedding_model_override: Optional[str] = Field(
+        default=None,
+        description=(
+            "Override the model name sent to embeddings.create. Required when "
+            "using an Ollama model (e.g. 'paraphrase-multilingual', 'all-minilm')."
+        ),
+    )
+    embedding_dim_override: Optional[int] = Field(
+        default=None,
+        description=(
+            "Override the embedding dimension reported by OpenAIBackend. Must "
+            "match the vector column width (currently F32_BLOB(384)). Example: "
+            "384 for paraphrase-multilingual/all-minilm."
+        ),
+    )
+
+
     # Cleanup Configuration
     event_retention_days: int = Field(default=30, description="Event retention in days")
     message_retention_days: int = Field(default=90, description="Message retention in days")
     
-    # CORS Configuration
-    cors_origins: List[str] = Field(default=["*"], description="CORS allowed origins")
-    cors_methods: List[str] = Field(default=["*"], description="CORS allowed methods")
-    cors_headers: List[str] = Field(default=["*"], description="CORS allowed headers")
+    # CORS Configuration - per HARD-05: no wildcard in production
+    # Override via AGENTHUB_CORS_ORIGINS='["https://yourdomain.com"]' in production
+    cors_origins: List[str] = Field(
+        default=["http://localhost:3000", "http://localhost:7788"],
+        description="CORS allowed origins - set to your domain in production"
+    )
+    cors_methods: List[str] = Field(
+        default=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        description="CORS allowed methods"
+    )
+    cors_headers: List[str] = Field(
+        default=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
+        description="CORS allowed request headers"
+    )
     
     # JWT Authentication Configuration
     jwt_secret_key: str = Field(default="your-super-secret-jwt-key-change-in-production", description="JWT secret key")

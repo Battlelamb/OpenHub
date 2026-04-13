@@ -2,7 +2,7 @@
 Agent heartbeat and status monitoring service - clean and simple
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 from asyncio import Task
 
@@ -18,13 +18,32 @@ settings = get_settings()
 
 class HeartbeatService:
     """Simple heartbeat monitoring for agents"""
-    
-    def __init__(self, database: Database):
+
+    def __init__(self, database: Database, on_event=None):
+        """
+        Args:
+            database: Database instance.
+            on_event: Optional async callback with signature
+                ``async def on_event(event_type: str, data: dict, critical: bool = True)``.
+                Used to broadcast agent_status_changed events (WS-04) when an agent
+                is marked offline by the heartbeat monitor. Kept optional so tests
+                and alternate runtimes that don't wire a ConnectionManager still work.
+        """
         self.db = database
         self.agent_repo = AgentRepository(database)
         self.heartbeat_timeout = settings.heartbeat_timeout_sec
         self._monitor_task: Optional[Task] = None
         self._running = False
+        self._on_event = on_event
+
+    async def _emit(self, event_type: str, data: dict, critical: bool = True) -> None:
+        """Safely emit an event via the injected callback; never raise."""
+        if self._on_event is None:
+            return
+        try:
+            await self._on_event(event_type, data, critical)
+        except Exception as e:
+            logger.warning("event_emit_failed", event_type=event_type, error=str(e))
     
     async def start_monitoring(self) -> None:
         """Start heartbeat monitoring task"""
@@ -77,7 +96,7 @@ class HeartbeatService:
             if not agents:
                 return
             
-            timeout_threshold = datetime.utcnow() - timedelta(seconds=self.heartbeat_timeout)
+            timeout_threshold = datetime.now(timezone.utc) - timedelta(seconds=self.heartbeat_timeout)
             expired_agents = []
             
             for agent in agents:
@@ -101,13 +120,22 @@ class HeartbeatService:
             success = self.agent_repo.set_agent_status(agent.id, AgentStatus.OFFLINE)
             
             if success:
-                logger.warning("agent_marked_offline_due_to_timeout", 
+                logger.warning("agent_marked_offline_due_to_timeout",
                               agent_id=agent.id,
                               agent_name=agent.agent_name,
                               last_heartbeat=agent.last_heartbeat)
-                
-                # TODO: Could emit event here for notification system
-                # await self._emit_agent_offline_event(agent)
+
+                # Emit agent_status_changed (WS-04) via optional callback
+                await self._emit(
+                    "agent_status_changed",
+                    {
+                        "agent_id": agent.id,
+                        "status": AgentStatus.OFFLINE.value,
+                        "previous_status": AgentStatus.ONLINE.value,
+                        "reason": "heartbeat_timeout",
+                    },
+                    True,
+                )
             
         except Exception as e:
             logger.error("failed_to_handle_expired_agent", 
@@ -129,7 +157,7 @@ class HeartbeatService:
                 stats[f"{status.value}_agents"] = count
             
             # Count recently active (last 5 minutes)
-            recent_threshold = datetime.utcnow() - timedelta(minutes=5)
+            recent_threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
             recent_count = self.agent_repo.count(
                 where_clause="last_heartbeat > :threshold",
                 params={"threshold": recent_threshold}

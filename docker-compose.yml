@@ -17,6 +17,9 @@ services:
       - AGENTHUB_DB_PATH=/app/data/state/agenthub.db
       - AGENTHUB_ARTIFACT_DIR=/app/data/artifacts
       - AGENTHUB_ZVEC_PATH=/app/data/zvec
+      # REQUIRED: Override these in production via .env file or secrets manager
+      - AGENTHUB_ADMIN_USER=admin
+      - AGENTHUB_ADMIN_PASSWORD=changeme-set-in-production
       - AGENTHUB_LOG_LEVEL=INFO
       - REDIS_URL=redis://redis:6379
     depends_on:

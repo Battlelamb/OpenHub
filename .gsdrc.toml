@@ -1,0 +1,53 @@
+# GSD-2 Configuration for OpenHub
+# See: https://gsd.build/docs
+
+[project]
+name = "OpenHub"
+version = "1.0.0"
+description = "Multi-agent coordination platform for local development environments"
+
+[auth]
+# Run 'gsd auth login' to authenticate
+# Provider: claude.ai (same login)
+
+[workflow]
+# Git workflow settings
+worktree = true
+branch_pattern = "feature/{slice}"
+merge_strategy = "squash"
+commit_style = "conventional"
+
+# Verification commands (run after each task)
+verify = [
+  "pytest",
+  "mypy app/",
+  "flake8 app/",
+  "black --check app/",
+  "isort --check app/"
+]
+
+# Budget limits (optional)
+# budget_usd = 10.0
+# token_ceiling = 1000000
+
+[model]
+# Qwen models via DashScope API
+default = "qwen3.5-plus"
+research = "qwen3.5-plus"
+planning = "qwen3-max-2026-01-23"
+implementation = "qwen3.5-plus"
+verification = "qwen3-coder-plus"
+
+[paths]
+# GSD-2 directory structure
+planning_dir = ".gsd"
+legacy_planning_dir = ".planning"
+docs_dir = "docs"
+tests_dir = "tests"
+
+[commands]
+# Project-specific commands
+start = "uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload"
+build = "docker-compose build"
+test = "pytest"
+lint = "black --check app/ && isort --check app/ && flake8 app/ && mypy app/"

@@ -2,7 +2,7 @@
 FastAPI dependencies for authentication and authorization
 """
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Annotated, List
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -162,7 +162,7 @@ async def get_current_agent(
             role=token_data.role or "agent",
             permissions=token_data.permissions,
             is_active=agent_dict.get("status") in ["online", "idle", "busy"],
-            last_seen=datetime.utcnow()
+            last_seen=datetime.now(timezone.utc)
         )
         
         logger.debug("agent_authenticated", 

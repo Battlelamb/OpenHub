@@ -3,7 +3,7 @@ Task service for OpenHub - clean business logic
 """
 import json as _json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 
 from ..logging import get_logger
@@ -12,7 +12,7 @@ from ..database.connection import Database
 from ..database.repositories.tasks import TaskRepository
 from ..database.repositories.agents import AgentRepository
 from ..models.tasks import (
-    Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, 
+    Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail,
     TaskStatus, TaskPriority, TaskType, TaskProgress
 )
 from ..models.agents import AgentStatus
@@ -60,8 +60,8 @@ class TaskService:
                 max_retries=task_data.max_retries,
                 idempotency_key=task_data.idempotency_key,
                 labels=task_data.labels or {},
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
             new_task = self.task_repo.create(new_task_model)
             
@@ -164,13 +164,13 @@ class TaskService:
             
             # Calculate lease expiration
             lease_duration = settings.task_lease_ttl_sec
-            lease_until = datetime.utcnow() + timedelta(seconds=lease_duration)
+            lease_until = datetime.now(timezone.utc) + timedelta(seconds=lease_duration)
             
             # Update task status
             update_data = {
                 "status": TaskStatus.CLAIMED.value,
                 "owner_agent_id": claim_data.agent_id,
-                "claimed_at": datetime.utcnow(),
+                "claimed_at": datetime.now(timezone.utc),
                 "lease_until": lease_until
             }
             
@@ -220,7 +220,7 @@ class TaskService:
             # Update task to running
             updated_task = self.task_repo.update(task_id, {
                 "status": TaskStatus.RUNNING.value,
-                "started_at": datetime.utcnow()
+                "started_at": datetime.now(timezone.utc)
             })
             
             if updated_task:
@@ -260,7 +260,7 @@ class TaskService:
                 "percent": progress.progress_percent,
                 "note": progress.note,
                 "metrics": progress.metrics,
-                "updated_at": datetime.utcnow().isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat()
             }
             
             updated_task = self.task_repo.update(task_id, {
@@ -300,12 +300,12 @@ class TaskService:
             # Calculate duration
             duration = None
             if task.started_at:
-                duration = (datetime.utcnow() - task.started_at).total_seconds()
+                duration = (datetime.now(timezone.utc) - task.started_at).total_seconds()
             
             # Update task (serialize dicts/lists to JSON for sqlite)
             update_data = {
                 "status": TaskStatus.COMPLETED.value,
-                "completed_at": datetime.utcnow(),
+                "completed_at": datetime.now(timezone.utc),
                 "result_summary": completion.result_summary,
                 "output": _json.dumps(completion.output or {}),
                 "artifact_ids": _json.dumps(completion.artifact_ids or []),
@@ -316,7 +316,7 @@ class TaskService:
             if completion.metrics:
                 current_payload = task.payload or {}
                 current_payload["completion_metrics"] = completion.metrics
-                update_data["payload"] = current_payload
+                update_data["payload"] = _json.dumps(current_payload)
             
             updated_task = self.task_repo.update(task_id, update_data)
             if not updated_task:
@@ -383,20 +383,20 @@ class TaskService:
                 # Permanently fail the task
                 update_data = {
                     "status": TaskStatus.FAILED.value,
-                    "completed_at": datetime.utcnow(),
+                    "completed_at": datetime.now(timezone.utc),
                     "last_error": failure.error_message
                 }
-                
+
                 # Store error details in payload
                 current_payload = task.payload or {}
                 current_payload["error_details"] = {
                     "error_code": failure.error_code,
                     "error_message": failure.error_message,
                     "error_details": failure.error_details,
-                    "failed_at": datetime.utcnow().isoformat()
+                    "failed_at": datetime.now(timezone.utc).isoformat()
                 }
-                update_data["payload"] = current_payload
-                
+                update_data["payload"] = _json.dumps(current_payload)
+
                 self.task_repo.update(task_id, update_data)
                 
                 logger.warning("task_failed_permanently", 
@@ -437,13 +437,13 @@ class TaskService:
             # Update task status
             update_data = {
                 "status": TaskStatus.CANCELLED.value,
-                "completed_at": datetime.utcnow()
+                "completed_at": datetime.now(timezone.utc)
             }
             
             if reason:
                 current_payload = task.payload or {}
                 current_payload["cancellation_reason"] = reason
-                update_data["payload"] = current_payload
+                update_data["payload"] = _json.dumps(current_payload)
             
             updated_task = self.task_repo.update(task_id, update_data)
             

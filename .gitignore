@@ -78,3 +78,19 @@ data/zvec/
 # Artifacts
 data/artifacts/*
 !data/artifacts/.gitkeep
+
+# ── GSD baseline (auto-generated) ──
+.gsd-id
+.bg-shell/
+*~
+*.code-workspace
+.env.*
+!.env.example
+node_modules/
+.next/
+*.pyc
+target/
+vendor/
+coverage/
+.cache/
+.claude/worktrees/

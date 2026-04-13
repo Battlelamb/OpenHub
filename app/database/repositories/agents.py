@@ -2,7 +2,7 @@
 Agent repository for database operations
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 from ...logging import get_logger
@@ -80,7 +80,7 @@ class AgentRepository(BaseRepository[Agent]):
         
         try:
             updated = self.update(agent_id, {
-                "last_heartbeat": datetime.utcnow(),
+                "last_heartbeat": datetime.now(timezone.utc),
                 "status": AgentStatus.ONLINE.value
             })
             

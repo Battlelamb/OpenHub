@@ -10,9 +10,14 @@ sqlalchemy==2.0.23
 alembic==1.12.1
 
 # Vector Database
-zvec==0.1.0
+# (Phase 3: native Turso F32_BLOB columns + embedding backends below)
 
-# Cache & Messaging  
+# Vector search backends (Phase 3)
+# Heavy ML deps - install only when running with AGENTHUB_EMBEDDING_PROVIDER=local
+sentence-transformers==3.3.1
+openai==1.54.0
+
+# Cache & Messaging
 redis==5.0.1
 
 # Data Validation

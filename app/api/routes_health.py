@@ -1,15 +1,17 @@
 """
 Health check and system status endpoints
 """
+from datetime import datetime, timezone
+from typing import Dict, Any, Annotated
 from fastapi import APIRouter, Depends
-from datetime import datetime
 import psutil
 import os
-from typing import Dict, Any
 
 from ..config import get_settings, Settings
-from ..dependencies import RequestIdDep
+from ..middleware import get_request_id
 from ..logging import get_logger
+
+RequestIdDep = Annotated[str, Depends(get_request_id)]
 
 router = APIRouter(prefix="/v1", tags=["health"])
 logger = get_logger(__name__)
@@ -35,7 +37,7 @@ async def health_check(
     health_data = {
         "status": "healthy",
         "version": "0.1.0",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "request_id": request_id,
     }
     
@@ -83,18 +85,12 @@ async def health_check(
     # Storage status
     try:
         artifact_dir = settings.artifact_dir
-        zvec_dir = settings.zvec_path
-        
+
         health_data["storage"] = {
             "artifact_dir": {
                 "path": artifact_dir,
                 "exists": os.path.exists(artifact_dir),
                 "writable": os.access(artifact_dir, os.W_OK) if os.path.exists(artifact_dir) else False
-            },
-            "zvec_dir": {
-                "path": zvec_dir,
-                "exists": os.path.exists(zvec_dir),
-                "writable": os.access(zvec_dir, os.W_OK) if os.path.exists(zvec_dir) else False
             }
         }
     except Exception as e:
@@ -138,12 +134,12 @@ async def health_check(
 async def simple_health_check() -> Dict[str, str]:
     """
     Simple health check for load balancers and monitoring
-    
+
     Returns minimal response for quick health verification
     """
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
 

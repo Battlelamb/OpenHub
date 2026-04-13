@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-11T16:34:29.722Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 03-06-PLAN.md
+last_updated: "2026-04-13T07:21:01.893Z"
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 3
+  total_plans: 21
+  completed_plans: 21
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Any developer can self-host OpenHub, connect their AI agents, and coordinate multi-agent workflows from a single command center - reliably and without conflicts.
-**Current focus:** Phase 01 — backend-hardening
+**Current focus:** Phase 03 — vector-database
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 03 (vector-database) — EXECUTING
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -52,6 +52,16 @@ Plan: Not started
 | Phase 01-backend-hardening P05 | 3min | 2 tasks | 3 files |
 | Phase 01-backend-hardening P06 | 3min | 2 tasks | 7 files |
 | Phase 01-backend-hardening P08 | 3min | 2 tasks | 4 files |
+| Phase 02-websocket-test-suite P01 | 8min | 2 tasks | 3 files |
+| Phase 02-websocket-test-suite P03 | 6min | 2 tasks | 4 files |
+| Phase 02 P04 | 15min | 2 tasks | 2 files |
+| Phase 02 P06 | 10m | 2 tasks | 2 files |
+| Phase 03-vector-database P01 | 8m | 2 tasks | 18 files |
+| Phase 03-vector-database P03 | 4m | 1 tasks | 4 files |
+| Phase 03-vector-database P02 | 5m | 2 tasks | 4 files |
+| Phase 03-vector-database P04 | 6m | 2 tasks | 10 files |
+| Phase 03-vector-database P05 | 9m | 3 tasks | 10 files |
+| Phase 03 P06 | 4m | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -71,6 +81,25 @@ Recent decisions affecting current work:
 - [Phase 01-backend-hardening]: RFC 7807 Problem Details as the standard error format - all errors use ProblemDetail model with type/title/status/detail/instance/trace_id
 - [Phase 01-backend-hardening]: Limiter in dedicated app/limiter.py to avoid circular imports; RFC 7807 JSON for 429 instead of plain text; trace_id as structlog contextvars key
 - [Phase 01-backend-hardening]: request parameter reordered to first position in auth routes for slowapi compatibility
+- [Phase 02-websocket-test-suite]: conftest uses tempfile DB path so app lifespan os.makedirs succeeds (fixed pre-existing :memory: blocker)
+- [Phase 02-websocket-test-suite]: admin_headers fixture returns real signed JWT; auth_token and agent_headers added for WS and agent-role tests
+- [Phase 02-websocket-test-suite]: Mint JWT per integration test with sub=<real agent id> because get_current_agent looks up sub in the agents table
+- [Phase 02-websocket-test-suite]: Rule 1 fix: TaskService fail/complete/cancel now json.dumps payload dict before sqlite update
+- [Phase 02]: Plan 02-04: WS UI endpoint uses first-frame JWT auth via app.state.connection_manager, welcome envelope carries client_id in data (not agent_id), refresh via cm.refresh_ui_expiry()
+- [Phase 03-vector-database]: Migration 0003: ALTER TABLE wrapped in safe_execute(ignore=duplicate column name) for idempotency since SQLite has no IF NOT EXISTS for ADD COLUMN
+- [Phase 03-vector-database]: is_vector_enabled is single source of truth - downstream plans must call require_vector instead of inspecting Database._use_turso directly
+- [Phase 03-vector-database]: alembic env.py overrides sqlalchemy.url from settings.db_path - migration tests must monkeypatch AGENTHUB_DB_PATH and reset cached settings
+- [Phase 03-vector-database]: Plan 03-03: lazy module import inside asyncio.Lock double-check is the canonical pattern - sentence_transformers and torch must never appear in sys.modules at app boot
+- [Phase 03-vector-database]: Plan 03-03: get_embedding_service returns Optional[EmbeddingBackend] - downstream plans must handle None for openai-without-key graceful degradation (D-03)
+- [Phase 03-vector-database]: vector32(:vec) is bound exclusively as json.dumps(list_of_floats); raw bytes/struct.pack/numpy reject silently and break the index
+- [Phase 03-vector-database]: vector_top_k joins on t.rowid (NOT t.id) and filter clauses live in outer WHERE after vector_top_k - pre-filtering bypasses DiskANN
+- [Phase 03-vector-database]: Plan 03-04: schedule_embedding short-circuits at call time on is_vector_enabled - tests must monkeypatch the function reference inside app.services.embedding_hooks, not the global
+- [Phase 03-vector-database]: Plan 03-04: BackgroundTasks _embed_and_store coroutine never raises (Pitfall 6) - all failure paths log + mark_failed so retry worker can find them later
+- [Phase 03-vector-database]: Plan 03-04: embedding_retry_worker stops BEFORE WS/heartbeat in shutdown so in-flight DB updates land while connection layer is still live
+- [Phase 03-vector-database]: Plan 03-05: HTTPException detail must be a string - OpenHub middleware re-wraps exc.detail into ProblemDetail.detail (typed str), so dict-typed details raise ValidationError and turn 400/404/503 into 500. Encode problem code as 'code: message' string instead.
+- [Phase 03-vector-database]: Plan 03-05: enable_vector test fixture must patch app.database.vector_availability.is_vector_enabled, NOT routes_search.require_vector - FastAPI captures the Depends callable at router creation and module-level reassignment is too late.
+- [Phase 03-vector-database]: Plan 03-05: Per-entity shortcuts use POST /search alongside existing GET /search (LIKE-based). FastAPI dispatches by method so the two coexist - no /vector-search rename needed. clear_embedding never DELETE FROM the entity table - UPDATE-only with embedding_status='deleted'.
+- [Phase 03]: Plan 03-06: VEC-06 closeout - openapi_tags entry in FastAPI() constructor + lifespan vector_search_disabled startup warning + README Vector Search (Beta) section + CHANGELOG. Tests must use capsys (not caplog) for structlog PrintLoggerFactory output.
 
 ### Pending Todos
 
@@ -83,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T16:34:29.716Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-websocket-test-suite/02-CONTEXT.md
+Last session: 2026-04-13T07:20:55.997Z
+Stopped at: Completed 03-06-PLAN.md
+Resume file: None

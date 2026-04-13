@@ -22,20 +22,20 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### WebSocket Real-time
 
-- [ ] **WS-01**: /v1/ws/ui endpoint for dashboard clients with JWT authentication via initial-message frame
+- [x] **WS-01**: /v1/ws/ui endpoint for dashboard clients with JWT authentication via initial-message frame
 - [ ] **WS-02**: ConnectionManager class replacing module-level _connections dict with proper connect/disconnect cleanup
 - [ ] **WS-03**: broadcast_to_ui() helper for pushing events to all connected dashboard clients
 - [ ] **WS-04**: Agent status change events (online/offline/idle) broadcast to UI clients in real-time
 - [ ] **WS-05**: Task lifecycle events (created/claimed/running/completed/failed) broadcast to UI clients
-- [ ] **WS-06**: Workflow step progress events broadcast to UI clients
+- [x] **WS-06**: Workflow step progress events broadcast to UI clients
 
 ### Test Suite
 
-- [ ] **TEST-01**: Unit tests for auth system (JWT creation/validation, API key verification, RBAC enforcement)
-- [ ] **TEST-02**: Unit tests for capability matching (exact match, fuzzy match, scoring)
-- [ ] **TEST-03**: Integration tests for task lifecycle (create, claim, start, complete, fail, retry)
-- [ ] **TEST-04**: Integration tests for agent registration and heartbeat/offline detection
-- [ ] **TEST-05**: Integration tests for WebSocket connections (auth, event broadcast, disconnect cleanup)
+- [x] **TEST-01**: Unit tests for auth system (JWT creation/validation, API key verification, RBAC enforcement)
+- [x] **TEST-02**: Unit tests for capability matching (exact match, fuzzy match, scoring)
+- [x] **TEST-03**: Integration tests for task lifecycle (create, claim, start, complete, fail, retry)
+- [x] **TEST-04**: Integration tests for agent registration and heartbeat/offline detection
+- [x] **TEST-05**: Integration tests for WebSocket connections (auth, event broadcast, disconnect cleanup)
 - [ ] **TEST-06**: E2E tests with Playwright for critical UI flows (login, agent list, task create/cancel)
 
 ### Command Center UI
@@ -59,12 +59,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Vector Database
 
-- [ ] **VEC-01**: Turso/libSQL native vector columns (F32_BLOB) for semantic search - replacing zvec
-- [ ] **VEC-02**: Vector similarity search using vector_distance_cos for context/memory queries
-- [ ] **VEC-03**: DiskANN vector indexing for performant approximate nearest neighbor search
-- [ ] **VEC-04**: Auto-indexing hooks on memory, task, and artifact write paths to generate embeddings
-- [ ] **VEC-05**: Vector search API endpoints (search, index, delete) in app/api/
-- [ ] **VEC-06**: Feature flagged as opt-in beta with documented experimental status
+- [x] **VEC-01**: Turso/libSQL native vector columns (F32_BLOB) for semantic search - replacing zvec
+- [x] **VEC-02**: Vector similarity search using vector_distance_cos for context/memory queries
+- [x] **VEC-03**: DiskANN vector indexing for performant approximate nearest neighbor search
+- [x] **VEC-04**: Auto-indexing hooks on memory, task, and artifact write paths to generate embeddings
+- [x] **VEC-05**: Vector search API endpoints (search, index, delete) in app/api/
+- [x] **VEC-06**: Feature flagged as opt-in beta with documented experimental status
 
 ### Open Source Readiness
 
@@ -131,23 +131,23 @@ Deferred to future release. Tracked but not in current roadmap.
 | PROD-01 | Phase 1 | Complete |
 | PROD-02 | Phase 1 | Complete |
 | PROD-04 | Phase 1 | Complete |
-| WS-01 | Phase 2 | Pending |
+| WS-01 | Phase 2 | Complete |
 | WS-02 | Phase 2 | Pending |
 | WS-03 | Phase 2 | Pending |
 | WS-04 | Phase 2 | Pending |
 | WS-05 | Phase 2 | Pending |
-| WS-06 | Phase 2 | Pending |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
-| TEST-04 | Phase 2 | Pending |
-| TEST-05 | Phase 2 | Pending |
-| VEC-01 | Phase 3 | Pending |
-| VEC-02 | Phase 3 | Pending |
-| VEC-03 | Phase 3 | Pending |
-| VEC-04 | Phase 3 | Pending |
-| VEC-05 | Phase 3 | Pending |
-| VEC-06 | Phase 3 | Pending |
+| WS-06 | Phase 2 | Complete |
+| TEST-01 | Phase 2 | Complete |
+| TEST-02 | Phase 2 | Complete |
+| TEST-03 | Phase 2 | Complete |
+| TEST-04 | Phase 2 | Complete |
+| TEST-05 | Phase 2 | Complete |
+| VEC-01 | Phase 3 | Complete |
+| VEC-02 | Phase 3 | Complete |
+| VEC-03 | Phase 3 | Complete |
+| VEC-04 | Phase 3 | Complete |
+| VEC-05 | Phase 3 | Complete |
+| VEC-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |

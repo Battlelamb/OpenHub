@@ -73,11 +73,29 @@ async def register_agent(
     try:
         # Register the agent
         new_agent = agent_service.register_agent(agent_data)
-        
-        logger.info("agent_registration_successful", 
+
+        logger.info("agent_registration_successful",
                    agent_id=new_agent.id,
                    agent_name=new_agent.agent_name)
-        
+
+        # Broadcast agent_status_changed (WS-04) to UI clients.
+        # Guarded with getattr so tests without a wired ConnectionManager still pass.
+        connection_manager = getattr(request.app.state, "connection_manager", None)
+        if connection_manager is not None:
+            try:
+                await connection_manager.broadcast_to_ui(
+                    "agent_status_changed",
+                    {
+                        "agent_id": new_agent.id,
+                        "status": new_agent.status.value if hasattr(new_agent.status, "value") else str(new_agent.status),
+                        "previous_status": None,
+                        "reason": "registered",
+                    },
+                    True,
+                )
+            except Exception as e:
+                logger.warning("ws_broadcast_failed", event="agent_registered", error=str(e))
+
         return new_agent
     
     except ValueError as e:
@@ -140,21 +158,40 @@ async def send_heartbeat(
 
 @router.post("/offline")
 async def go_offline(
+    request: Request,
     current_agent: CurrentAgent,
-    agent_service: AgentService = Depends(get_agent_service)
+    agent_service: AgentService = Depends(get_agent_service),
 ) -> Dict[str, str]:
     """
     Set agent to offline status
     """
     success = agent_service.set_agent_offline(current_agent.agent_id)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Status update failed"
         )
-    
+
     logger.info("agent_went_offline", agent_id=current_agent.agent_id)
+
+    # Broadcast agent_status_changed (WS-04) to UI clients
+    connection_manager = getattr(request.app.state, "connection_manager", None)
+    if connection_manager is not None:
+        try:
+            await connection_manager.broadcast_to_ui(
+                "agent_status_changed",
+                {
+                    "agent_id": current_agent.agent_id,
+                    "status": AgentStatus.OFFLINE.value,
+                    "previous_status": AgentStatus.ONLINE.value,
+                    "reason": "manual_offline",
+                },
+                True,
+            )
+        except Exception as e:
+            logger.warning("ws_broadcast_failed", event="agent_offline", error=str(e))
+
     return {"status": "offline"}
 
 

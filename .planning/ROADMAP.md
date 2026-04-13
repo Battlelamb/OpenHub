@@ -57,12 +57,12 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 02-01-PLAN.md - Test infrastructure fix (real JWT fixtures) and auth unit tests (TEST-01)
-- [ ] 02-02-PLAN.md - ConnectionManager class with dual pools, tiered broadcasting, Prometheus metrics (WS-02, WS-03)
-- [ ] 02-03-PLAN.md - Capability matcher, task lifecycle, and agent lifecycle tests (TEST-02, TEST-03, TEST-04)
-- [ ] 02-04-PLAN.md - /v1/ws/ui endpoint with JWT auth via initial message frame (WS-01)
+- [x] 02-01-PLAN.md - Test infrastructure fix (real JWT fixtures) and auth unit tests (TEST-01)
+- [x] 02-02-PLAN.md - ConnectionManager class with dual pools, tiered broadcasting, Prometheus metrics (WS-02, WS-03)
+- [x] 02-03-PLAN.md - Capability matcher, task lifecycle, and agent lifecycle tests (TEST-02, TEST-03, TEST-04)
+- [x] 02-04-PLAN.md - /v1/ws/ui endpoint with JWT auth via initial message frame (WS-01)
 - [ ] 02-05-PLAN.md - Service event hooks for broadcasting agent/task/workflow events (WS-04, WS-05, WS-06)
-- [ ] 02-06-PLAN.md - WebSocket integration tests and ConnectionManager unit tests (TEST-05)
+- [x] 02-06-PLAN.md - WebSocket integration tests and ConnectionManager unit tests (TEST-05)
 
 ### Phase 3: Vector Database
 **Goal**: Semantic search over memories, tasks, and artifacts is available via a REST API backed by Turso/libSQL native vector columns, shipped as an opt-in beta feature
@@ -73,7 +73,15 @@ Plans:
   2. Vectors survive a server restart - a record written before restart is findable by similarity search after restart, confirming F32_BLOB persistence
   3. New memory, task, and artifact writes automatically generate and store embeddings without manual intervention
   4. The feature is documented as experimental/opt-in - the server starts and operates normally with vector search disabled
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [x] 03-01-PLAN.md - Alembic vector migration, config/zvec cleanup, vector_availability module, Wave 0 test scaffolds
+- [x] 03-02-PLAN.md - VectorSearchService + Turso vector32 binding smoke test (gating plan)
+- [x] 03-03-PLAN.md - EmbeddingService with lazy-loaded local and OpenAI backends
+- [x] 03-04-PLAN.md - Auto-indexing BackgroundTasks hooks on 4 write paths + 5-min retry worker
+- [x] 03-05-PLAN.md - Unified /v1/search endpoint + per-entity shortcuts + Pydantic models
+- [x] 03-06-PLAN.md - VEC-06 opt-in beta: startup warning, OpenAPI tag, README/CHANGELOG/.env.example
 
 ### Phase 4: Command Center UI
 **Goal**: A developer self-hosting OpenHub can log in, see live agent status, manage tasks, inspect workflows, and access the full visibility stack (DLQ, cost tracking, traces, memory, locks) from a browser
@@ -112,6 +120,6 @@ Note: Phase 3 depends only on Phase 1 and can be planned in parallel with Phase 
 |-------|----------------|--------|-----------|
 | 1. Backend Hardening | 0/7 | Not started | - |
 | 2. WebSocket + Test Suite | 0/6 | Not started | - |
-| 3. Vector Database | 0/TBD | Not started | - |
+| 3. Vector Database | 0/6 | Not started | - |
 | 4. Command Center UI | 0/TBD | Not started | - |
 | 5. Release Readiness | 0/TBD | Not started | - |

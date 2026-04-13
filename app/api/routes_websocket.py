@@ -9,6 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
 from ..logging import get_logger
 from ..database.connection import get_database
+from ..auth.api_key_deps import resolve_agent_id
 from ..auth.api_keys import APIKeyManager
 
 logger = get_logger(__name__)
@@ -47,7 +48,7 @@ async def websocket_endpoint(
         return
 
     # Resolve agent ID
-    agent_id = _resolve_agent_id(key_info, db)
+    agent_id = resolve_agent_id(key_info, db)
     if not agent_id:
         await websocket.close(code=4002, reason="agent not found")
         return
@@ -128,13 +129,3 @@ def get_connected_count() -> int:
 
 def get_connected_agents() -> list:
     return list(_connections.keys())
-
-
-def _resolve_agent_id(key_info: Dict, db) -> str:
-    key_name = key_info.get("name", "")
-    if key_name.startswith("acn-agent-"):
-        agent_name = key_name.replace("acn-agent-", "")
-        row = db.fetch_one("SELECT id FROM agents WHERE agent_name = :name", {"name": agent_name})
-        if row:
-            return row["id"] if isinstance(row, dict) else row[0]
-    return None

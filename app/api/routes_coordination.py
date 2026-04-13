@@ -2,7 +2,7 @@
 Agent-Workflow Coordination endpoints - clean integration layer
 """
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from pydantic import BaseModel, Field
 
 from ..config import get_settings
@@ -18,10 +18,18 @@ settings = get_settings()
 router = APIRouter(prefix="/v1/coordination", tags=["coordination"])
 
 
-def get_workflow_coordinator() -> WorkflowCoordinator:
-    """Get workflow coordinator instance"""
+def get_workflow_coordinator(request: Request) -> WorkflowCoordinator:
+    """
+    Get workflow coordinator instance.
+
+    Pulls the ConnectionManager from app.state (if wired) and passes its
+    broadcast_to_ui as the event callback so workflow_progress events (WS-06)
+    are emitted from the background monitoring task.
+    """
     database = get_database()
-    return WorkflowCoordinator(database)
+    connection_manager = getattr(request.app.state, "connection_manager", None)
+    on_event = connection_manager.broadcast_to_ui if connection_manager is not None else None
+    return WorkflowCoordinator(database, on_event=on_event)
 
 
 # Pydantic models for coordination API

@@ -3,7 +3,7 @@ Base repository class with common database operations
 """
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Type, TypeVar, Generic
 from uuid import uuid4
 
@@ -55,8 +55,8 @@ class BaseRepository(Generic[T], ABC):
         return str(uuid4())
     
     def _get_current_timestamp(self) -> datetime:
-        """Get current timestamp"""
-        return datetime.utcnow()
+        """Get current timestamp (timezone-aware)"""
+        return datetime.now(timezone.utc)
     
     def create(self, model: T) -> T:
         """Create a new entity"""
