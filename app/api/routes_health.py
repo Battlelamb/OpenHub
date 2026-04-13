@@ -85,18 +85,12 @@ async def health_check(
     # Storage status
     try:
         artifact_dir = settings.artifact_dir
-        zvec_dir = settings.zvec_path
-        
+
         health_data["storage"] = {
             "artifact_dir": {
                 "path": artifact_dir,
                 "exists": os.path.exists(artifact_dir),
                 "writable": os.access(artifact_dir, os.W_OK) if os.path.exists(artifact_dir) else False
-            },
-            "zvec_dir": {
-                "path": zvec_dir,
-                "exists": os.path.exists(zvec_dir),
-                "writable": os.access(zvec_dir, os.W_OK) if os.path.exists(zvec_dir) else False
             }
         }
     except Exception as e:

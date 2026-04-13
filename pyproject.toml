@@ -57,3 +57,6 @@ minversion = "6.0"
 addopts = "-ra -q --cov=app --cov-report=html --cov-report=term"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "turso: requires live Turso DB for vector tests",
+]

@@ -69,3 +69,56 @@ def agent_headers():
 def agent_api_key():
     """A test API key value (raw, unhashed) for agent auth tests."""
     return "test-api-key-abcdef1234567890"
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 (Vector Database) test infrastructure
+# ---------------------------------------------------------------------------
+
+
+def pytest_configure(config):
+    """Register custom markers used by Phase 3 vector tests."""
+    config.addinivalue_line(
+        "markers",
+        "turso: requires live Turso DB for vector tests",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Auto-skip @pytest.mark.turso tests when Turso credentials are absent.
+
+    Per VEC-06 / Approach A in 03-RESEARCH.md: vector tests that hit the real
+    Turso backend must skip cleanly on local dev so the rest of the suite
+    stays green without configuration.
+    """
+    has_turso = bool(
+        os.environ.get("TURSO_DATABASE_URL")
+        and os.environ.get("TURSO_AUTH_TOKEN")
+    )
+    if has_turso:
+        return
+    skip_marker = pytest.mark.skip(reason="Turso credentials not set")
+    for item in items:
+        if "turso" in item.keywords:
+            item.add_marker(skip_marker)
+
+
+class _MockEmbeddingBackend:
+    """Deterministic in-process embedding backend for unit tests.
+
+    Returns vectors of the configured dimension whose components encode the
+    input index, which is enough to assert ordering/shape without booting a
+    real model.
+    """
+
+    dim = 384
+    model_name = "mock"
+
+    async def embed(self, texts):
+        return [[float(i)] * self.dim for i, _ in enumerate(texts)]
+
+
+@pytest.fixture()
+def mock_embedding_backend():
+    """Function-scoped mock embedding backend for embedding-service tests."""
+    return _MockEmbeddingBackend()
