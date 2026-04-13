@@ -50,7 +50,7 @@ def _install_fake_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> Magi
                 def tolist(self_inner):
                     return list(self_inner)
 
-            return _Arr([[0.0] * 384 for _ in texts])
+            return _Arr([[0.0] * 768 for _ in texts])
 
     fake_module.SentenceTransformer = _FakeModel  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
@@ -63,10 +63,10 @@ def _install_fake_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> Magi
 
 
 def test_local_dim() -> None:
-    assert LocalSentenceTransformerBackend.dim == 384
+    assert LocalSentenceTransformerBackend.dim == 768
     assert (
         LocalSentenceTransformerBackend.model_name
-        == "sentence-transformers/all-MiniLM-L6-v2"
+        == "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     )
 
 
@@ -99,7 +99,7 @@ async def test_local_lazy_load_and_embed_shape(
     out = await backend.embed(["hello", "world"])
     assert backend._model is not None
     assert len(out) == 2
-    assert all(len(vec) == 384 for vec in out)
+    assert all(len(vec) == 768 for vec in out)
 
 
 # ---------------------------------------------------------------------------
@@ -204,13 +204,13 @@ def test_openai_with_key_returns_openai_backend(
 async def test_openai_backend_ollama_override() -> None:
     """Verify base_url + model + dim overrides flow through the OpenAI client.
 
-    Simulates pointing OpenAIBackend at a local Ollama server with a 384-dim
+    Simulates pointing OpenAIBackend at a local Ollama server with a 768-dim
     multilingual model, as required by the Phase 3 VPS deployment with
-    F32_BLOB(384) in migration 0003.
+    F32_BLOB(768) in migration 0003.
     """
     fake_client = MagicMock()
     fake_resp = MagicMock()
-    fake_resp.data = [MagicMock(embedding=[0.3] * 384)]
+    fake_resp.data = [MagicMock(embedding=[0.3] * 768)]
     fake_client.embeddings.create = AsyncMock(return_value=fake_resp)
 
     backend = OpenAIBackend(
@@ -218,10 +218,10 @@ async def test_openai_backend_ollama_override() -> None:
         client=fake_client,
         base_url="http://127.0.0.1:11434/v1",
         model="paraphrase-multilingual",
-        dim=384,
+        dim=768,
     )
 
-    assert backend.dim == 384
+    assert backend.dim == 768
     assert backend.model_name == "paraphrase-multilingual"
 
     out = await backend.embed(["merhaba dunya"])
@@ -229,7 +229,7 @@ async def test_openai_backend_ollama_override() -> None:
     call_kwargs = fake_client.embeddings.create.call_args.kwargs
     assert call_kwargs["model"] == "paraphrase-multilingual"
     assert len(out) == 1
-    assert len(out[0]) == 384
+    assert len(out[0]) == 768
 
 
 def test_openai_factory_wires_ollama_overrides(
@@ -242,7 +242,7 @@ def test_openai_factory_wires_ollama_overrides(
     monkeypatch.setenv(
         "AGENTHUB_EMBEDDING_MODEL_OVERRIDE", "paraphrase-multilingual"
     )
-    monkeypatch.setenv("AGENTHUB_EMBEDDING_DIM_OVERRIDE", "384")
+    monkeypatch.setenv("AGENTHUB_EMBEDDING_DIM_OVERRIDE", "768")
     _reset_settings(monkeypatch)
 
     captured: dict = {}
@@ -262,7 +262,7 @@ def test_openai_factory_wires_ollama_overrides(
 
     backend = get_embedding_service()
     assert isinstance(backend, OpenAIBackend)
-    assert backend.dim == 384
+    assert backend.dim == 768
     assert backend.model_name == "paraphrase-multilingual"
     assert captured["base_url"] == "http://127.0.0.1:11434/v1"
     assert captured["api_key"] == "ollama"

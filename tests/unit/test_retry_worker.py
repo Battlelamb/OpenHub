@@ -64,7 +64,7 @@ async def test_run_once_processes_rows(monkeypatch, patched_db, patched_service)
     monkeypatch.setattr(embedding_retry_worker, "is_vector_enabled", lambda: True)
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.1] * 384])
+    backend.embed = AsyncMock(return_value=[[0.1] * 768])
     monkeypatch.setattr(embedding_retry_worker, "get_embedding_service", lambda: backend)
 
     # Return rows for "memory" only, empty for the others
@@ -86,7 +86,7 @@ async def test_run_once_iterates_all_entity_types(monkeypatch, patched_db, patch
     monkeypatch.setattr(embedding_retry_worker, "is_vector_enabled", lambda: True)
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(embedding_retry_worker, "get_embedding_service", lambda: backend)
 
     patched_service.list_unindexed.side_effect = lambda et, limit=50: [
@@ -112,7 +112,7 @@ async def test_run_once_handles_item_failure(monkeypatch, patched_db, patched_se
         call_count["n"] += 1
         if call_count["n"] == 1:
             raise RuntimeError("boom")
-        return [[0.0] * 384]
+        return [[0.0] * 768]
 
     backend = MagicMock()
     backend.model_name = "mock"
@@ -137,7 +137,7 @@ async def test_run_once_skips_empty_content(monkeypatch, patched_db, patched_ser
     monkeypatch.setattr(embedding_retry_worker, "is_vector_enabled", lambda: True)
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(embedding_retry_worker, "get_embedding_service", lambda: backend)
     patched_service.list_unindexed.side_effect = lambda et, limit=50: (
         [{"id": "1", "content": "  "}] if et == "memory" else []
@@ -154,7 +154,7 @@ async def test_stop_cancels_running_task(monkeypatch, patched_db, patched_servic
     monkeypatch.setattr(embedding_retry_worker, "is_vector_enabled", lambda: True)
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(embedding_retry_worker, "get_embedding_service", lambda: backend)
     patched_service.list_unindexed.return_value = []
 

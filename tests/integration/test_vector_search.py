@@ -69,7 +69,7 @@ def clean_memory_rows(turso_db):
     _cleanup()
 
 
-def _make_vec(index: int, dim: int = 384) -> list:
+def _make_vec(index: int, dim: int = 768) -> list:
     """Build a deterministic unit vector with a single 1.0 at position `index`."""
     v = [0.0] * dim
     v[index % dim] = 1.0
@@ -194,7 +194,7 @@ def test_end_to_end_search(turso_db, clean_memory_rows, monkeypatch):
         svc.write_embedding("memory", rid, vec, "test-model")
 
     fake_backend = MagicMock(name="fake_backend")
-    fake_backend.dim = 384
+    fake_backend.dim = 768
     fake_backend.model_name = "mock"
     # Return the same vector as row b so cosine distance to b is ~0.
     fake_backend.embed = AsyncMock(return_value=[_make_vec(1)])

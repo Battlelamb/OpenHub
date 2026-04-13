@@ -121,8 +121,8 @@ def mock_backend(monkeypatch):
 
     backend = MagicMock(name="fake_backend")
     backend.model_name = "mock"
-    backend.dim = 384
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.dim=768
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(routes_search, "get_embedding_service", lambda: backend)
     return backend
 
@@ -442,7 +442,7 @@ def test_reindex_default_scope(
         {"id": "row-1", "content": "first"},
         {"id": "row-2", "content": "second"},
     ]
-    mock_backend.embed = AsyncMock(return_value=[[0.1] * 384, [0.2] * 384])
+    mock_backend.embed = AsyncMock(return_value=[[0.1] * 768, [0.2] * 768])
     r = real_client.post(
         "/v1/search/reindex",
         json={},
@@ -466,7 +466,7 @@ def test_reindex_entity_type_scope(
     mock_vector_service.list_unindexed.return_value = [
         {"id": "m-1", "content": "memory row"}
     ]
-    mock_backend.embed = AsyncMock(return_value=[[0.1] * 384])
+    mock_backend.embed = AsyncMock(return_value=[[0.1] * 768])
     r = real_client.post(
         "/v1/search/reindex",
         json={"entity_type": "memory"},
@@ -568,7 +568,7 @@ def test_reindex_per_row_failure_does_not_abort(
         if (k.get("entity_type") == "memory" or (a and a[0] == "memory"))
         else []
     )
-    mock_backend.embed = AsyncMock(return_value=[[0.1] * 384, [0.2] * 384])
+    mock_backend.embed = AsyncMock(return_value=[[0.1] * 768, [0.2] * 768])
 
     write_calls = {"n": 0}
 
@@ -602,7 +602,7 @@ def test_reindex_writes_embedding(
         if (k.get("entity_type") == "task" or (a and a[0] == "task"))
         else []
     )
-    mock_backend.embed = AsyncMock(return_value=[[0.42] * 384])
+    mock_backend.embed = AsyncMock(return_value=[[0.42] * 768])
     r = real_client.post(
         "/v1/search/reindex",
         json={"entity_type": "task"},
@@ -614,7 +614,7 @@ def test_reindex_writes_embedding(
     # Args: (entity_type, entity_id, vector, model_name)
     assert call.args[0] == "task"
     assert call.args[1] == "row-1"
-    assert call.args[2] == [0.42] * 384
+    assert call.args[2] == [0.42] * 768
 
 
 # ---------------------------------------------------------------------------

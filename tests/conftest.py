@@ -111,7 +111,7 @@ class _MockEmbeddingBackend:
     real model.
     """
 
-    dim = 384
+    dim = 768
     model_name = "mock"
 
     async def embed(self, texts):

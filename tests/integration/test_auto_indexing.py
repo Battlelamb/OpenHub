@@ -26,7 +26,7 @@ def fake_backend(monkeypatch):
 
     backend = MagicMock(name="fake_backend")
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(embedding_hooks, "get_embedding_service", lambda: backend)
     return backend
 

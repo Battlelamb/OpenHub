@@ -31,7 +31,7 @@ def test_binding_roundtrip(turso_db):
     """vector32(json.dumps(vec)) roundtrips with cosine distance ~0."""
     svc = VectorSearchService(turso_db)
     row_id = "__vector_test_storage_roundtrip"
-    known_vec = [0.0] * 384
+    known_vec = [0.0] * 768
     known_vec[0] = 1.0
     known_vec[1] = 0.5
 
@@ -75,7 +75,7 @@ def test_binding_wrong_type_rejects(turso_db):
             "VALUES (:id, :k, :v, CURRENT_TIMESTAMP)",
             {"id": row_id, "k": row_id, "v": "wrong type"},
         )
-        bad_blob = struct.pack("f" * 384, *([0.1] * 384))
+        bad_blob = struct.pack("f" * 768, *([0.1] * 768))
         with pytest.raises(Exception):
             turso_db.execute(
                 "UPDATE shared_memory SET embedding = vector32(:vec) WHERE id = :id",

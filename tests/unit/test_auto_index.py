@@ -105,14 +105,14 @@ async def test_embed_and_store_writes_embedding_on_success(monkeypatch, patched_
 
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.1] * 384])
+    backend.embed = AsyncMock(return_value=[[0.1] * 768])
     monkeypatch.setattr(embedding_hooks, "get_embedding_service", lambda: backend)
     await embedding_hooks._embed_and_store("memory", "id-1", "hello", "trace-1")
     patched_service.write_embedding.assert_called_once()
     args, _ = patched_service.write_embedding.call_args
     assert args[0] == "memory"
     assert args[1] == "id-1"
-    assert len(args[2]) == 384
+    assert len(args[2]) == 768
     assert args[3] == "mock"
     patched_service.mark_failed.assert_not_called()
 
@@ -123,7 +123,7 @@ async def test_embed_and_store_truncates_long_text(monkeypatch, patched_db, patc
 
     backend = MagicMock()
     backend.model_name = "mock"
-    backend.embed = AsyncMock(return_value=[[0.0] * 384])
+    backend.embed = AsyncMock(return_value=[[0.0] * 768])
     monkeypatch.setattr(embedding_hooks, "get_embedding_service", lambda: backend)
     long_text = "x" * 60000
     await embedding_hooks._embed_and_store("memory", "id-1", long_text, "trace-1")

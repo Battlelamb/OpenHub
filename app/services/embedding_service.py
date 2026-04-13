@@ -7,7 +7,8 @@ can stay backend-agnostic.
 Two concrete backends ship in Wave 2:
 
 - ``LocalSentenceTransformerBackend`` wraps sentence-transformers
-  ``all-MiniLM-L6-v2`` (384-dim cosine vectors). The model and the
+  ``paraphrase-multilingual-mpnet-base-v2`` (768-dim, 50+ languages including
+  Turkish). The model and the
   ``sentence_transformers`` / ``torch`` imports are loaded lazily inside
   ``_ensure_model`` so that:
 
@@ -58,12 +59,28 @@ class LocalSentenceTransformerBackend:
     The underlying model is constructed on the first call to ``embed`` rather
     than at import or instantiation time. This keeps app boot cheap and lets
     deployments that never call vector endpoints avoid paying the torch tax.
+
+    Both the model identifier and the vector dimension can be overridden via
+    constructor arguments so deployments can swap models without touching this
+    file. The factory reads ``Settings.embedding_model`` and
+    ``Settings.embedding_dim_override`` and passes them in.
+
+    Default is ``paraphrase-multilingual-mpnet-base-v2`` (768-dim, multilingual)
+    to match the ``F32_BLOB(768)`` column width set by migration 0004.
     """
 
-    dim: int = 384
-    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    dim: int = 768
+    model_name: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        dim: Optional[int] = None,
+    ) -> None:
+        if model_name is not None:
+            self.model_name = model_name
+        if dim is not None:
+            self.dim = dim
         self._model = None
         self._lock = asyncio.Lock()
 
@@ -110,9 +127,9 @@ class OpenAIBackend:
     Default configuration targets OpenAI's ``text-embedding-3-small`` (1536-dim).
     With ``base_url``, ``model``, and ``dim`` overrides this same class can talk
     to any OpenAI-compatible endpoint, notably a local Ollama server exposing
-    ``http://127.0.0.1:11434/v1``. When pointed at Ollama, set ``dim=384`` and
-    ``model="paraphrase-multilingual"`` (or ``"all-minilm"``) to match the
-    ``F32_BLOB(384)`` vector column width in migration 0003.
+    ``http://127.0.0.1:11434/v1``. When pointed at Ollama, set ``dim=768``
+    and ``model="paraphrase-multilingual"`` to match the ``F32_BLOB(768)``
+    vector column width set by migration 0004.
 
     The AsyncOpenAI client is imported lazily on construction so the ``openai``
     package is only required when this backend is actually selected. Tests can
@@ -197,12 +214,19 @@ def get_embedding_service() -> Optional[EmbeddingBackend]:
             "embedding_provider_unknown_falling_back_to_local",
             requested=provider,
         )
-    else:
-        logger.debug(
-            "embedding_provider_local",
-            model=LocalSentenceTransformerBackend.model_name,
-        )
-    return LocalSentenceTransformerBackend()
+
+    # Honor settings.embedding_model so deployments can swap in multilingual
+    # models (e.g. paraphrase-multilingual-MiniLM-L12-v2) without code changes,
+    # as long as the dim still matches the F32_BLOB column width.
+    local_model = settings.embedding_model or LocalSentenceTransformerBackend.model_name
+    local_dim = settings.embedding_dim_override
+
+    logger.debug(
+        "embedding_provider_local",
+        model=local_model,
+        dim=local_dim,
+    )
+    return LocalSentenceTransformerBackend(model_name=local_model, dim=local_dim)
 
 
 __all__ = [
