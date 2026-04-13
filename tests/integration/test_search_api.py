@@ -720,3 +720,69 @@ def test_delete_embedding_turso_unavailable(
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# Plan 06 (VEC-06): OpenAPI BETA tag description + startup warning
+# ---------------------------------------------------------------------------
+
+
+def test_openapi_tag_has_description(real_client):
+    """The 'search [experimental]' tag must have a BETA description at app level."""
+    r = real_client.get("/openapi.json")
+    assert r.status_code == 200
+    data = r.json()
+    tags = data.get("tags", [])
+    exp = [t for t in tags if "experimental" in t.get("name", "")]
+    assert exp, f"No experimental tag found in OpenAPI tags: {[t.get('name') for t in tags]}"
+    description = exp[0].get("description", "")
+    assert "BETA" in description or "beta" in description or "opt-in" in description, (
+        f"experimental tag description missing BETA/opt-in marker: {description!r}"
+    )
+
+
+def test_search_endpoint_marked_experimental_in_operation(real_client):
+    """The /v1/search POST operation must carry an experimental tag."""
+    r = real_client.get("/openapi.json")
+    assert r.status_code == 200
+    paths = r.json()["paths"]
+    assert "/v1/search" in paths
+    op = paths["/v1/search"]["post"]
+    tags = op.get("tags", [])
+    assert any("experimental" in t for t in tags), (
+        f"/v1/search POST is missing experimental tag, got {tags}"
+    )
+
+
+def test_startup_logs_warning_on_local_sqlite(monkeypatch, capsys):
+    """Lifespan startup must log a vector_search_disabled warning on local SQLite.
+
+    OpenHub's structlog setup uses PrintLoggerFactory which writes to stdout,
+    so we capture via capsys rather than caplog.
+    """
+    from app.database import vector_availability as va
+    from app.main import app as real_app
+
+    monkeypatch.setattr(va, "is_vector_enabled", lambda: False)
+    with TestClient(real_app):
+        pass
+
+    captured = capsys.readouterr()
+    combined = captured.out + captured.err
+    assert "vector_search_disabled" in combined, (
+        f"Expected vector_search_disabled in startup output, got: {combined[:500]}"
+    )
+
+
+def test_startup_no_warning_when_enabled(monkeypatch, capsys):
+    """When vector is enabled, the vector_search_disabled warning must not fire."""
+    from app.database import vector_availability as va
+    from app.main import app as real_app
+
+    monkeypatch.setattr(va, "is_vector_enabled", lambda: True)
+    with TestClient(real_app):
+        pass
+
+    captured = capsys.readouterr()
+    combined = captured.out + captured.err
+    assert "vector_search_disabled" not in combined

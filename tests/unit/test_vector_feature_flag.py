@@ -70,3 +70,30 @@ def test_feature_flag_explicit_true_without_turso_still_false(patch_env):
     # Cannot force-enable without Turso configured.
     patch_env(use_turso=False, vector_search_enabled=True)
     assert is_vector_enabled() is False
+
+
+# Plan 06: full coverage of all (Turso, flag) combinations.
+
+
+def test_explicit_false_overrides_turso(patch_env):
+    """Even with Turso configured, explicit False disables vector search."""
+    patch_env(use_turso=True, vector_search_enabled=False)
+    assert is_vector_enabled() is False
+
+
+def test_true_without_turso_still_false(patch_env):
+    """Explicit True cannot force-enable without a real Turso connection."""
+    patch_env(use_turso=False, vector_search_enabled=True)
+    assert is_vector_enabled() is False
+
+
+def test_none_auto_detects_turso(patch_env):
+    """None means auto: enabled when Turso is configured."""
+    patch_env(use_turso=True, vector_search_enabled=None)
+    assert is_vector_enabled() is True
+
+
+def test_none_auto_detects_no_turso(patch_env):
+    """None means auto: disabled on local SQLite."""
+    patch_env(use_turso=False, vector_search_enabled=None)
+    assert is_vector_enabled() is False
