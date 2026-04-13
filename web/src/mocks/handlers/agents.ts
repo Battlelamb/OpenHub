@@ -1,6 +1,6 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type HttpHandler } from 'msw'
 
-export const agentsHandlers = [
+export const agentsHandlers: HttpHandler[] = [
   http.get('/v1/agents', () =>
     HttpResponse.json([
       {
@@ -10,6 +10,16 @@ export const agentsHandlers = [
         capabilities: ['code', 'test', 'debug'],
         last_heartbeat: new Date().toISOString(),
         current_task_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'agent-2',
+        name: 'cursor',
+        status: 'idle',
+        capabilities: ['edit', 'review'],
+        last_heartbeat: new Date().toISOString(),
+        current_task_id: 'task-1',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
