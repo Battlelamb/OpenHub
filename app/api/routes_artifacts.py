@@ -13,6 +13,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..database.vector_availability import require_vector
+from ..models.vector_search import SearchRequest, SearchResponse
 from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
@@ -135,3 +137,17 @@ async def delete_artifact(
 ) -> Dict[str, str]:
     database.execute("DELETE FROM artifacts WHERE id = :id", {"id": artifact_id})
     return {"status": "deleted", "artifact_id": artifact_id}
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    dependencies=[Depends(require_vector)],
+    tags=["artifacts [experimental]"],
+    summary="Semantic search over artifacts (experimental, Phase 03 / VEC-05)",
+)
+async def artifact_search_shortcut(req: SearchRequest) -> SearchResponse:
+    """Vector search shortcut. Forces types=['artifact'] regardless of body."""
+    from .routes_search import unified_search  # local import avoids cycle
+    forced = req.model_copy(update={"types": ["artifact"]})
+    return await unified_search(forced)

@@ -165,3 +165,52 @@ def test_search_entity_respects_top_k(turso_db, clean_memory_rows):
 
     results = svc.search_entity("memory", _make_vec(0), top_k=2)
     assert len(results) == 2
+
+
+def test_end_to_end_search(turso_db, clean_memory_rows, monkeypatch):
+    """Plan 05 / VEC-05: POST /v1/search end-to-end against a real Turso DB.
+
+    Seeds 3 memory rows with orthogonal vectors, monkeypatches the embedding
+    backend so the query vector points at row b, then asserts the public API
+    returns row b first and distances are sorted ascending. Uses a mock
+    backend so the real sentence-transformers download is not required.
+    """
+    from unittest.mock import AsyncMock, MagicMock
+
+    from fastapi.testclient import TestClient
+
+    from app.api import routes_search
+    from app.database import vector_availability as va
+    from app.main import app as real_app
+
+    svc = VectorSearchService(turso_db)
+    rows = [
+        ("__vector_test_e2e_a", _make_vec(0), "row alpha"),
+        ("__vector_test_e2e_b", _make_vec(1), "row bravo"),
+        ("__vector_test_e2e_c", _make_vec(2), "row charlie"),
+    ]
+    for rid, vec, content in rows:
+        _insert_memory(turso_db, rid, content)
+        svc.write_embedding("memory", rid, vec, "test-model")
+
+    fake_backend = MagicMock(name="fake_backend")
+    fake_backend.dim = 384
+    fake_backend.model_name = "mock"
+    # Return the same vector as row b so cosine distance to b is ~0.
+    fake_backend.embed = AsyncMock(return_value=[_make_vec(1)])
+
+    monkeypatch.setattr(routes_search, "get_embedding_service", lambda: fake_backend)
+    monkeypatch.setattr(va, "is_vector_enabled", lambda: True)
+
+    with TestClient(real_app, raise_server_exceptions=False) as client:
+        response = client.post(
+            "/v1/search",
+            json={"query": "find bravo", "types": ["memory"], "top_k": 3},
+        )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["total"] >= 1
+    hits = body["hits"]
+    assert hits[0]["id"] == "__vector_test_e2e_b"
+    distances = [h["distance"] for h in hits]
+    assert distances == sorted(distances)

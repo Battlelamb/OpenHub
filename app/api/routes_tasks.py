@@ -14,6 +14,8 @@ from ..models.tasks import (
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter
 )
 from ..auth.dependencies import CurrentAgent, CurrentAdmin
+from ..database.vector_availability import require_vector
+from ..models.vector_search import SearchRequest, SearchResponse
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -601,3 +603,17 @@ def _task_to_response(task: Task) -> TaskResponse:
             max_retries=task.max_retries,
             last_error=task.last_error
         )
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    dependencies=[Depends(require_vector)],
+    tags=["tasks [experimental]"],
+    summary="Semantic search over tasks (experimental, Phase 03 / VEC-05)",
+)
+async def task_search_shortcut(req: SearchRequest) -> SearchResponse:
+    """Vector search shortcut. Forces types=['task'] regardless of body."""
+    from .routes_search import unified_search  # local import avoids cycle
+    forced = req.model_copy(update={"types": ["task"]})
+    return await unified_search(forced)

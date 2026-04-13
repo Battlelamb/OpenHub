@@ -11,6 +11,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..database.vector_availability import require_vector
+from ..models.vector_search import SearchRequest, SearchResponse
 from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
@@ -183,3 +185,17 @@ async def list_keys(
             "updated_at": r.get("updated_at"),
         })
     return {"keys": keys, "total": len(keys)}
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    dependencies=[Depends(require_vector)],
+    tags=["memory [experimental]"],
+    summary="Semantic search over memories (experimental, Phase 03 / VEC-05)",
+)
+async def memory_search_shortcut(req: SearchRequest) -> SearchResponse:
+    """Vector search shortcut. Forces types=['memory'] regardless of body."""
+    from .routes_search import unified_search  # local import avoids cycle
+    forced = req.model_copy(update={"types": ["memory"]})
+    return await unified_search(forced)

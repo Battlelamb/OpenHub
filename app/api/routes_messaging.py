@@ -12,6 +12,8 @@ from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_keys import APIKeyManager
+from ..database.vector_availability import require_vector
+from ..models.vector_search import SearchRequest, SearchResponse
 from ..services.embedding_hooks import schedule_embedding
 
 logger = get_logger(__name__)
@@ -370,3 +372,17 @@ def _resolve_sender(key_info: Dict, database: Database) -> str:
     # Fallback: first agent
     row = database.fetch_one("SELECT id FROM agents LIMIT 1")
     return (row["id"] if isinstance(row, dict) else row[0]) if row else "unknown"
+
+
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    dependencies=[Depends(require_vector)],
+    tags=["messaging [experimental]"],
+    summary="Semantic search over messages (experimental, Phase 03 / VEC-05)",
+)
+async def message_search_shortcut(req: SearchRequest) -> SearchResponse:
+    """Vector search shortcut. Forces types=['message'] regardless of body."""
+    from .routes_search import unified_search  # local import avoids cycle
+    forced = req.model_copy(update={"types": ["message"]})
+    return await unified_search(forced)
