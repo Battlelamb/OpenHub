@@ -61,13 +61,20 @@ def test_binding_roundtrip(turso_db):
             pass
 
 
+@pytest.mark.xfail(
+    reason=(
+        "Canary from Plan 03-02 documented its own obsolescence: 'if this ever "
+        "starts failing, libsql started accepting binary input'. Confirmed on "
+        "Turso EU 2026-04-13 - the driver now silently accepts struct.pack "
+        "blobs as vector32 input. write_embedding still uses json.dumps per "
+        "Pattern 2 in 03-RESEARCH.md (no functional regression); this test is "
+        "kept as historical documentation of the stricter-to-lenient driver "
+        "evolution."
+    ),
+    strict=False,
+)
 def test_binding_wrong_type_rejects(turso_db):
-    """Binding raw bytes (struct.pack) to vector32() must raise.
-
-    This is the canary for Pitfall 1: if this test ever starts passing it
-    means the libsql driver started accepting binary input and the json.dumps
-    pattern can be revisited. Until then, do not change write_embedding.
-    """
+    """Historical canary: binding raw bytes used to raise, now silently accepted."""
     row_id = "__vector_test_storage_wrongtype"
     try:
         turso_db.execute(
