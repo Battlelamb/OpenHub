@@ -210,6 +210,10 @@ app.include_router(workflow_engine_router)
 from .api.routes_artifacts import router as artifacts_router
 app.include_router(artifacts_router)
 
+# Import and include vector search router (Phase 03 / VEC-05, experimental)
+from .api.routes_search import router as search_router
+app.include_router(search_router)
+
 # Import and include P1 routers (locks, tracing, costs)
 from .api.routes_p1 import lock_router, trace_router, cost_router
 app.include_router(lock_router)
