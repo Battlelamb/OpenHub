@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedTracesRouteImport } from './routes/_authed/traces'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedLocksRouteImport } from './routes/_authed/locks'
+import { Route as AuthedHealthRouteImport } from './routes/_authed/health'
+import { Route as AuthedDlqRouteImport } from './routes/_authed/dlq'
+import { Route as AuthedCostsRouteImport } from './routes/_authed/costs'
 import { Route as AuthedWorkflowsIndexRouteImport } from './routes/_authed/workflows/index'
 import { Route as AuthedTasksIndexRouteImport } from './routes/_authed/tasks/index'
 import { Route as AuthedAgentsIndexRouteImport } from './routes/_authed/agents/index'
@@ -31,6 +37,36 @@ const AuthedRoute = AuthedRouteImport.update({
 const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedTracesRoute = AuthedTracesRouteImport.update({
+  id: '/traces',
+  path: '/traces',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedLocksRoute = AuthedLocksRouteImport.update({
+  id: '/locks',
+  path: '/locks',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHealthRoute = AuthedHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDlqRoute = AuthedDlqRouteImport.update({
+  id: '/dlq',
+  path: '/dlq',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedCostsRoute = AuthedCostsRouteImport.update({
+  id: '/costs',
+  path: '/costs',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedWorkflowsIndexRoute = AuthedWorkflowsIndexRouteImport.update({
@@ -68,6 +104,12 @@ const AuthedAgentsAgentIdRoute = AuthedAgentsAgentIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
+  '/costs': typeof AuthedCostsRoute
+  '/dlq': typeof AuthedDlqRoute
+  '/health': typeof AuthedHealthRoute
+  '/locks': typeof AuthedLocksRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/traces': typeof AuthedTracesRoute
   '/agents/$agentId': typeof AuthedAgentsAgentIdRoute
   '/tasks/$taskId': typeof AuthedTasksTaskIdRoute
   '/workflows/$workflowId': typeof AuthedWorkflowsWorkflowIdRoute
@@ -77,6 +119,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/costs': typeof AuthedCostsRoute
+  '/dlq': typeof AuthedDlqRoute
+  '/health': typeof AuthedHealthRoute
+  '/locks': typeof AuthedLocksRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/traces': typeof AuthedTracesRoute
   '/': typeof AuthedIndexRoute
   '/agents/$agentId': typeof AuthedAgentsAgentIdRoute
   '/tasks/$taskId': typeof AuthedTasksTaskIdRoute
@@ -89,6 +137,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authed/costs': typeof AuthedCostsRoute
+  '/_authed/dlq': typeof AuthedDlqRoute
+  '/_authed/health': typeof AuthedHealthRoute
+  '/_authed/locks': typeof AuthedLocksRoute
+  '/_authed/settings': typeof AuthedSettingsRoute
+  '/_authed/traces': typeof AuthedTracesRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/agents/$agentId': typeof AuthedAgentsAgentIdRoute
   '/_authed/tasks/$taskId': typeof AuthedTasksTaskIdRoute
@@ -102,6 +156,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/costs'
+    | '/dlq'
+    | '/health'
+    | '/locks'
+    | '/settings'
+    | '/traces'
     | '/agents/$agentId'
     | '/tasks/$taskId'
     | '/workflows/$workflowId'
@@ -111,6 +171,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/costs'
+    | '/dlq'
+    | '/health'
+    | '/locks'
+    | '/settings'
+    | '/traces'
     | '/'
     | '/agents/$agentId'
     | '/tasks/$taskId'
@@ -122,6 +188,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authed'
     | '/login'
+    | '/_authed/costs'
+    | '/_authed/dlq'
+    | '/_authed/health'
+    | '/_authed/locks'
+    | '/_authed/settings'
+    | '/_authed/traces'
     | '/_authed/'
     | '/_authed/agents/$agentId'
     | '/_authed/tasks/$taskId'
@@ -157,6 +229,48 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/traces': {
+      id: '/_authed/traces'
+      path: '/traces'
+      fullPath: '/traces'
+      preLoaderRoute: typeof AuthedTracesRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/locks': {
+      id: '/_authed/locks'
+      path: '/locks'
+      fullPath: '/locks'
+      preLoaderRoute: typeof AuthedLocksRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/health': {
+      id: '/_authed/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof AuthedHealthRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/dlq': {
+      id: '/_authed/dlq'
+      path: '/dlq'
+      fullPath: '/dlq'
+      preLoaderRoute: typeof AuthedDlqRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/costs': {
+      id: '/_authed/costs'
+      path: '/costs'
+      fullPath: '/costs'
+      preLoaderRoute: typeof AuthedCostsRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/workflows/': {
@@ -205,6 +319,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthedRouteChildren {
+  AuthedCostsRoute: typeof AuthedCostsRoute
+  AuthedDlqRoute: typeof AuthedDlqRoute
+  AuthedHealthRoute: typeof AuthedHealthRoute
+  AuthedLocksRoute: typeof AuthedLocksRoute
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedTracesRoute: typeof AuthedTracesRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedAgentsAgentIdRoute: typeof AuthedAgentsAgentIdRoute
   AuthedTasksTaskIdRoute: typeof AuthedTasksTaskIdRoute
@@ -215,6 +335,12 @@ interface AuthedRouteChildren {
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedCostsRoute: AuthedCostsRoute,
+  AuthedDlqRoute: AuthedDlqRoute,
+  AuthedHealthRoute: AuthedHealthRoute,
+  AuthedLocksRoute: AuthedLocksRoute,
+  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedTracesRoute: AuthedTracesRoute,
   AuthedIndexRoute: AuthedIndexRoute,
   AuthedAgentsAgentIdRoute: AuthedAgentsAgentIdRoute,
   AuthedTasksTaskIdRoute: AuthedTasksTaskIdRoute,
