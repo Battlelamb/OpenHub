@@ -1,10 +1,5 @@
-import { http, HttpResponse } from 'msw'
+import { type HttpHandler } from 'msw'
 
-export const settingsHandlers = [
-  http.get('/v1/settings', () =>
-    HttpResponse.json({
-      theme: 'dark',
-      language: 'en',
-    }),
-  ),
-]
+// Settings page reads from ui-store (client-side only); no network handler
+// needed. Keeping the export shape consistent with other feature handlers.
+export const settingsHandlers: HttpHandler[] = []

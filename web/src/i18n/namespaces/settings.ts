@@ -1,10 +1,7 @@
 export const en = {
-  settings: 'Settings',
-  theme: 'Theme',
-  language: 'Language',
+  title: 'Settings',
 } as const
+
 export const tr = {
-  settings: 'Ayarlar',
-  theme: 'Tema',
-  language: 'Dil',
+  title: 'Ayarlar',
 } as const

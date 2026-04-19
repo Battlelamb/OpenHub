@@ -1,14 +1,5 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type HttpHandler } from 'msw'
 
-export const memoryHandlers = [
-  http.get('/v1/memory', () =>
-    HttpResponse.json([
-      {
-        key: 'test-key',
-        size_bytes: 1024,
-        age_seconds: 3600,
-        value_preview: { data: 'test' },
-      },
-    ]),
-  ),
+export const memoryHandlers: HttpHandler[] = [
+  http.get('/v1/memory', () => HttpResponse.json([])),
 ]

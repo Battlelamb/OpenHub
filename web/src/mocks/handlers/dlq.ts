@@ -1,14 +1,6 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse, type HttpHandler } from 'msw'
 
-export const dlqHandlers = [
+export const dlqHandlers: HttpHandler[] = [
   http.get('/v1/dlq', () => HttpResponse.json([])),
-  http.post('/v1/dlq/:id/retry', ({ params }) =>
-    HttpResponse.json({
-      task_id: params.id,
-      title: 'Retried Task',
-      failed_at: new Date().toISOString(),
-      error: 'Previous error',
-      retries: 1,
-    }),
-  ),
+  http.post('/v1/dlq/:id/retry', () => HttpResponse.json({ ok: true })),
 ]
