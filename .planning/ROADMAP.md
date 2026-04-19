@@ -100,9 +100,9 @@ Plans:
 - [x] 04-01-PLAN.md - Wave 0: scaffold web/ (Vite + React 19 + TS + Tailwind v4 + shadcn + Vitest + msw)
 - [x] 04-02-PLAN.md - App shell: sidebar + topbar + theme + i18n (TR+EN) + reconnecting banner
 - [x] 04-03-PLAN.md - Auth layer: Zustand in-memory store + api-client RFC 7807 + LoginForm + _authed guard
-- [ ] 04-04-PLAN.md - Data layer: query-key factory + all query hooks + useWebSocketSync hybrid merge/invalidate
-- [ ] 04-05-PLAN.md - Operations: agents, tasks (create/cancel/trace), workflows + ResponsiveList + TraceTimeline
-- [ ] 04-06-PLAN.md - Visibility: DLQ/costs/memory/locks/health/settings/traces + JsonViewer
+- [x] 04-04-PLAN.md - Data layer: query-key factory + all query hooks + useWebSocketSync hybrid merge/invalidate
+- [x] 04-05-PLAN.md - Operations: agents, tasks (create/cancel/trace), workflows + ResponsiveList + TraceTimeline
+- [x] 04-06-PLAN.md - Visibility: DLQ/costs/memory/locks/health/settings/traces + JsonViewer
 - [x] 04-07-PLAN.md - Production integration: FastAPI StaticFiles mount at /dashboard + smoke tests + README
 - [x] 04-08-PLAN.md - Gap closure: psutil manifest, router basepath + favicon, SPA fallback catch-all, strict deep-link tests
 

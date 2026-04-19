@@ -49,11 +49,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **UI-07**: Agent detail drilldown showing capabilities, current task, heartbeat history
 - [x] **UI-08**: Health/connectivity indicator using /v1/health in the top bar
 - [ ] **UI-09**: Structured error display via toast notifications for failed operations
-- [ ] **UI-10**: DLQ (Dead Letter Queue) panel showing failed tasks with manual retry button
-- [ ] **UI-11**: Cost tracking display showing per-agent spend and per-task cost
+- [x] **UI-10**: DLQ (Dead Letter Queue) panel showing failed tasks with manual retry button
+- [x] **UI-11**: Cost tracking display showing per-agent spend and per-task cost
 - [ ] **UI-12**: Distributed trace viewer in task detail showing tool calls, sub-steps, timing
-- [ ] **UI-13**: Shared memory key/value viewer with size and age metadata
-- [ ] **UI-14**: Resource lock panel showing active locks and lock conflicts as warnings
+- [x] **UI-13**: Shared memory key/value viewer with size and age metadata
+- [x] **UI-14**: Resource lock panel showing active locks and lock conflicts as warnings
 - [ ] **UI-15**: Mobile-responsive layout using Tailwind breakpoints (table-to-card at small screens)
 - [ ] **UI-16**: WebSocket hook with exponential backoff reconnection and "reconnecting..." banner
 
@@ -157,11 +157,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | UI-07 | Phase 4 | Pending |
 | UI-08 | Phase 4 | Complete |
 | UI-09 | Phase 4 | Pending |
-| UI-10 | Phase 4 | Pending |
-| UI-11 | Phase 4 | Pending |
+| UI-10 | Phase 4 | Complete |
+| UI-11 | Phase 4 | Complete |
 | UI-12 | Phase 4 | Pending |
-| UI-13 | Phase 4 | Pending |
-| UI-14 | Phase 4 | Pending |
+| UI-13 | Phase 4 | Complete |
+| UI-14 | Phase 4 | Complete |
 | UI-15 | Phase 4 | Pending |
 | UI-16 | Phase 4 | Pending |
 | OSS-01 | Phase 5 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-08-PLAN.md
-last_updated: "2026-04-19T11:49:21.739Z"
+stopped_at: Completed 04-06-PLAN.md
+last_updated: "2026-04-19T12:23:54.527Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 30
-  completed_plans: 26
+  completed_plans: 30
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 04 (command-center-ui) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Plan: 2 of 9
 | Phase 03-vector-database P05 | 9m | 3 tasks | 10 files |
 | Phase 03 P06 | 4m | 2 tasks | 6 files |
 | Phase 04-command-center-ui P08 | 6min | 3 tasks | 9 files |
+| Phase 04-command-center-ui P06 | 10min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,9 @@ Recent decisions affecting current work:
 - [Phase 04-command-center-ui]: Plan 04-08: SPA fallback via catch-all FastAPI route + separate /dashboard/assets StaticFiles mount - StaticFiles(html=True) only serves index.html on directory requests, not deep links; catch-all with path-traversal guard is explicit, testable, and correct for any shareable URL under /dashboard
 - [Phase 04-command-center-ui]: Plan 04-08: TanStack Router basepath derived from import.meta.env.BASE_URL with trailing-slash strip and '/' fallback - same build artifact works in dev ('/') and prod ('/dashboard') without duplicate configs
 - [Phase 04-command-center-ui]: Plan 04-08: Regression guards over permissive assertions - strict deep-link test fails loudly if catch-all is deleted; base-href test fails if vite.config.ts base regresses; favicon test fails if href flips back to absolute
+- [Phase 04-command-center-ui]: Plan 04-06: Used existing compositional ResponsiveList (Header/Row/Cell) instead of the plan's proposed generic <T> API to avoid regressing 04-05 and 04-05b routes
+- [Phase 04-command-center-ui]: Plan 04-06: Kept /v1/health handler in mocks/handlers/health.ts (plan said empty) because useHealth test + Topbar health dot depend on it - removing breaks Plan 04-04 contract
+- [Phase 04-command-center-ui]: Plan 04-06: JsonViewer primitive uses native <details open> for collapse with syntax-aware color tokens (emerald/sky/violet/zinc) - no third-party JSON viewer library added
 
 ### Pending Todos
 
@@ -116,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-19T11:49:21.734Z
-Stopped at: Completed 04-08-PLAN.md
+Last session: 2026-04-19T12:23:54.524Z
+Stopped at: Completed 04-06-PLAN.md
 Resume file: None
