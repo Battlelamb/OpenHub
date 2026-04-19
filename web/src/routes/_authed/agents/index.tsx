@@ -5,6 +5,7 @@ import { useAgents } from '@/hooks/queries/useAgents'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
 import { AgentStatusBadge } from '@/components/common/StatusBadge'
 import { Link } from '@tanstack/react-router'
+import type { Agent } from '@/types/entities'
 
 export const Route = createRoute({
   getParentRoute: () => parentRoute,
@@ -34,7 +35,7 @@ function AgentsPage() {
               <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider py-3 px-4">{t('columns.currentTask')}</th>
             </tr>
           </ResponsiveList.Header>
-          {agents.map((agent) => (
+          {agents.map((agent: Agent) => (
             <ResponsiveList.Row key={agent.id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <Link to="/agents/$agentId" params={{ agentId: agent.id }} className="text-emerald-400 hover:text-emerald-300">

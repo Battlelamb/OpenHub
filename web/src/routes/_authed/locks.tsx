@@ -3,6 +3,7 @@ import { Route as parentRoute } from '../_authed'
 import { useTranslation } from 'react-i18next'
 import { useLocks } from '@/hooks/queries/useLocks'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
+import type { ResourceLock } from '@/types/entities'
 
 export const Route = createRoute({
   getParentRoute: () => parentRoute,
@@ -42,7 +43,7 @@ function LocksPage() {
               </th>
             </tr>
           </ResponsiveList.Header>
-          {items.map((l) => (
+          {items.map((l: ResourceLock) => (
             <ResponsiveList.Row key={l.resource_id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <span className="font-mono text-sm text-zinc-50">

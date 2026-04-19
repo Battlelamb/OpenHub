@@ -3,6 +3,7 @@ import { Route as parentRoute } from '../_authed'
 import { useTranslation } from 'react-i18next'
 import { useDlq, useRetryDlq } from '@/hooks/queries/useDlq'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
+import type { DlqItem } from '@/types/entities'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -55,7 +56,7 @@ function DlqPage() {
               </th>
             </tr>
           </ResponsiveList.Header>
-          {items.map((i) => (
+          {items.map((i: DlqItem) => (
             <ResponsiveList.Row key={i.task_id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <span className="text-sm text-zinc-50">{i.title}</span>

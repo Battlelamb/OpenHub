@@ -3,6 +3,7 @@ import { Route as parentRoute } from '../_authed'
 import { useTranslation } from 'react-i18next'
 import { useCosts } from '@/hooks/queries/useCosts'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
+import type { CostItem } from '@/types/entities'
 
 export const Route = createRoute({
   getParentRoute: () => parentRoute,
@@ -39,7 +40,7 @@ function CostsPage() {
               </th>
             </tr>
           </ResponsiveList.Header>
-          {items.map((c) => (
+          {items.map((c: CostItem) => (
             <ResponsiveList.Row key={c.agent_id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <span className="text-sm text-zinc-50">{c.agent_name}</span>
