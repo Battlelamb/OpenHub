@@ -42,20 +42,20 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **UI-01**: JWT login form with token management (stored in memory, not localStorage)
 - [x] **UI-02**: Live agent status board showing online/offline/idle states with last-seen timestamps (WebSocket-driven)
-- [ ] **UI-03**: Task list with filterable status columns and real-time updates via WebSocket
-- [ ] **UI-04**: Task create form allowing dispatch from the UI with agent selection
-- [ ] **UI-05**: Task cancel action on running tasks from the UI
-- [ ] **UI-06**: Workflow step-list view with read-only status badges per step
-- [ ] **UI-07**: Agent detail drilldown showing capabilities, current task, heartbeat history
+- [x] **UI-03**: Task list with filterable status columns and real-time updates via WebSocket
+- [x] **UI-04**: Task create form allowing dispatch from the UI with agent selection
+- [x] **UI-05**: Task cancel action on running tasks from the UI
+- [x] **UI-06**: Workflow step-list view with read-only status badges per step
+- [x] **UI-07**: Agent detail drilldown showing capabilities, current task, heartbeat history
 - [x] **UI-08**: Health/connectivity indicator using /v1/health in the top bar
-- [ ] **UI-09**: Structured error display via toast notifications for failed operations
+- [x] **UI-09**: Structured error display via toast notifications for failed operations
 - [x] **UI-10**: DLQ (Dead Letter Queue) panel showing failed tasks with manual retry button
 - [x] **UI-11**: Cost tracking display showing per-agent spend and per-task cost
 - [ ] **UI-12**: Distributed trace viewer in task detail showing tool calls, sub-steps, timing
 - [x] **UI-13**: Shared memory key/value viewer with size and age metadata
 - [x] **UI-14**: Resource lock panel showing active locks and lock conflicts as warnings
-- [ ] **UI-15**: Mobile-responsive layout using Tailwind breakpoints (table-to-card at small screens)
-- [ ] **UI-16**: WebSocket hook with exponential backoff reconnection and "reconnecting..." banner
+- [x] **UI-15**: Mobile-responsive layout using Tailwind breakpoints (table-to-card at small screens)
+- [x] **UI-16**: WebSocket hook with exponential backoff reconnection and "reconnecting..." banner
 
 ### Vector Database
 
@@ -150,20 +150,20 @@ Deferred to future release. Tracked but not in current roadmap.
 | VEC-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Complete |
 | UI-02 | Phase 4 | Complete |
-| UI-03 | Phase 4 | Pending |
-| UI-04 | Phase 4 | Pending |
-| UI-05 | Phase 4 | Pending |
-| UI-06 | Phase 4 | Pending |
-| UI-07 | Phase 4 | Pending |
+| UI-03 | Phase 4 | Complete |
+| UI-04 | Phase 4 | Complete |
+| UI-05 | Phase 4 | Complete |
+| UI-06 | Phase 4 | Complete |
+| UI-07 | Phase 4 | Complete |
 | UI-08 | Phase 4 | Complete |
-| UI-09 | Phase 4 | Pending |
+| UI-09 | Phase 4 | Complete |
 | UI-10 | Phase 4 | Complete |
 | UI-11 | Phase 4 | Complete |
 | UI-12 | Phase 4 | Pending |
 | UI-13 | Phase 4 | Complete |
 | UI-14 | Phase 4 | Complete |
-| UI-15 | Phase 4 | Pending |
-| UI-16 | Phase 4 | Pending |
+| UI-15 | Phase 4 | Complete |
+| UI-16 | Phase 4 | Complete |
 | OSS-01 | Phase 5 | Pending |
 | OSS-03 | Phase 5 | Pending |
 | OSS-04 | Phase 5 | Pending |
