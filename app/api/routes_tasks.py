@@ -1,6 +1,7 @@
 """
 Task management endpoints - clean and simple
 """
+import json as _json
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status, Query
 
@@ -125,14 +126,78 @@ async def get_task(
     Get task by ID
     """
     task = task_service.get_task(task_id)
-    
+
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task '{task_id}' not found"
         )
-    
+
     return _task_to_response(task)
+
+
+def _trace_row_to_span(r: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Map a trace_events row to the UI TraceSpan shape (see
+    web/src/components/common/TraceTimeline.tsx and web/src/types/entities.ts).
+
+    Agents that log via POST /v1/traces/event may include category/level/completed_at
+    in data. When they do, those values flow through. When they don't, we fall back
+    to neutral defaults so the timeline degrades gracefully instead of crashing.
+    """
+    event_type = r.get("event_type") or "info"
+    data = r.get("data") or {}
+    if isinstance(data, str):
+        try:
+            data = _json.loads(data)
+        except Exception:
+            data = {}
+
+    if event_type == "error":
+        category = "error"
+    else:
+        raw = data.get("category", "internal") if isinstance(data, dict) else "internal"
+        category = raw if raw in ("llm", "tool", "db", "http", "internal", "error") else "internal"
+
+    level_raw = data.get("level", 0) if isinstance(data, dict) else 0
+    level = int(level_raw) if isinstance(level_raw, (int, float)) else 0
+
+    completed_at = data.get("completed_at") if isinstance(data, dict) else None
+
+    return {
+        "id": r["id"],
+        "name": r.get("name") or "",
+        "category": category,
+        "duration_ms": float(r.get("duration_ms") or 0),
+        "level": level,
+        "started_at": r.get("created_at") or "",
+        "completed_at": completed_at,
+    }
+
+
+@router.get("/{task_id}/trace", response_model=List[Dict[str, Any]])
+async def get_task_trace(
+    task_id: str,
+    current_agent: CurrentAgent = None,
+) -> List[Dict[str, Any]]:
+    """
+    Return the distributed trace for a task as an array of TraceSpan objects
+    (UI-12). Reads from the trace_events table filtered by task_id, ordered by
+    creation time so nested spans appear in causal order. Returns [] when the
+    task has no spans yet - the UI shows the empty state without needing a
+    separate 404 handler.
+    """
+    database = get_database()
+    rows = database.fetch_all(
+        "SELECT id, trace_id, agent_id, event_type, name, data, task_id, duration_ms, created_at "
+        "FROM trace_events WHERE task_id = :tid ORDER BY created_at ASC",
+        {"tid": task_id},
+    )
+    spans = []
+    for r in rows:
+        r_dict = dict(r) if not isinstance(r, dict) else r
+        spans.append(_trace_row_to_span(r_dict))
+    return spans
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
