@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-04-13T12:09:23.722Z"
+status: Ready to execute
+stopped_at: Completed 04-08-PLAN.md
+last_updated: "2026-04-19T11:49:21.739Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 30
+  completed_plans: 26
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Any developer can self-host OpenHub, connect their AI agents, and coordinate multi-agent workflows from a single command center - reliably and without conflicts.
-**Current focus:** Phase 03 — vector-database
+**Current focus:** Phase 04 — command-center-ui
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 04 (command-center-ui) — EXECUTING
+Plan: 2 of 9
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Plan: Not started
 | Phase 03-vector-database P04 | 6m | 2 tasks | 10 files |
 | Phase 03-vector-database P05 | 9m | 3 tasks | 10 files |
 | Phase 03 P06 | 4m | 2 tasks | 6 files |
+| Phase 04-command-center-ui P08 | 6min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,9 @@ Recent decisions affecting current work:
 - [Phase 03-vector-database]: Plan 03-05: enable_vector test fixture must patch app.database.vector_availability.is_vector_enabled, NOT routes_search.require_vector - FastAPI captures the Depends callable at router creation and module-level reassignment is too late.
 - [Phase 03-vector-database]: Plan 03-05: Per-entity shortcuts use POST /search alongside existing GET /search (LIKE-based). FastAPI dispatches by method so the two coexist - no /vector-search rename needed. clear_embedding never DELETE FROM the entity table - UPDATE-only with embedding_status='deleted'.
 - [Phase 03]: Plan 03-06: VEC-06 closeout - openapi_tags entry in FastAPI() constructor + lifespan vector_search_disabled startup warning + README Vector Search (Beta) section + CHANGELOG. Tests must use capsys (not caplog) for structlog PrintLoggerFactory output.
+- [Phase 04-command-center-ui]: Plan 04-08: SPA fallback via catch-all FastAPI route + separate /dashboard/assets StaticFiles mount - StaticFiles(html=True) only serves index.html on directory requests, not deep links; catch-all with path-traversal guard is explicit, testable, and correct for any shareable URL under /dashboard
+- [Phase 04-command-center-ui]: Plan 04-08: TanStack Router basepath derived from import.meta.env.BASE_URL with trailing-slash strip and '/' fallback - same build artifact works in dev ('/') and prod ('/dashboard') without duplicate configs
+- [Phase 04-command-center-ui]: Plan 04-08: Regression guards over permissive assertions - strict deep-link test fails loudly if catch-all is deleted; base-href test fails if vite.config.ts base regresses; favicon test fails if href flips back to absolute
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T12:09:23.718Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-command-center-ui/04-UI-SPEC.md
+Last session: 2026-04-19T11:49:21.734Z
+Stopped at: Completed 04-08-PLAN.md
+Resume file: None

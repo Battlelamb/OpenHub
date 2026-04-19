@@ -40,14 +40,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Command Center UI
 
-- [ ] **UI-01**: JWT login form with token management (stored in memory, not localStorage)
-- [ ] **UI-02**: Live agent status board showing online/offline/idle states with last-seen timestamps (WebSocket-driven)
+- [x] **UI-01**: JWT login form with token management (stored in memory, not localStorage)
+- [x] **UI-02**: Live agent status board showing online/offline/idle states with last-seen timestamps (WebSocket-driven)
 - [ ] **UI-03**: Task list with filterable status columns and real-time updates via WebSocket
 - [ ] **UI-04**: Task create form allowing dispatch from the UI with agent selection
 - [ ] **UI-05**: Task cancel action on running tasks from the UI
 - [ ] **UI-06**: Workflow step-list view with read-only status badges per step
 - [ ] **UI-07**: Agent detail drilldown showing capabilities, current task, heartbeat history
-- [ ] **UI-08**: Health/connectivity indicator using /v1/health in the top bar
+- [x] **UI-08**: Health/connectivity indicator using /v1/health in the top bar
 - [ ] **UI-09**: Structured error display via toast notifications for failed operations
 - [ ] **UI-10**: DLQ (Dead Letter Queue) panel showing failed tasks with manual retry button
 - [ ] **UI-11**: Cost tracking display showing per-agent spend and per-task cost
@@ -148,14 +148,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | VEC-04 | Phase 3 | Complete |
 | VEC-05 | Phase 3 | Complete |
 | VEC-06 | Phase 3 | Complete |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
+| UI-01 | Phase 4 | Complete |
+| UI-02 | Phase 4 | Complete |
 | UI-03 | Phase 4 | Pending |
 | UI-04 | Phase 4 | Pending |
 | UI-05 | Phase 4 | Pending |
 | UI-06 | Phase 4 | Pending |
 | UI-07 | Phase 4 | Pending |
-| UI-08 | Phase 4 | Pending |
+| UI-08 | Phase 4 | Complete |
 | UI-09 | Phase 4 | Pending |
 | UI-10 | Phase 4 | Pending |
 | UI-11 | Phase 4 | Pending |
