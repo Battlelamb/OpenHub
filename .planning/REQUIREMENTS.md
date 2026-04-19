@@ -51,7 +51,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **UI-09**: Structured error display via toast notifications for failed operations
 - [x] **UI-10**: DLQ (Dead Letter Queue) panel showing failed tasks with manual retry button
 - [x] **UI-11**: Cost tracking display showing per-agent spend and per-task cost
-- [ ] **UI-12**: Distributed trace viewer in task detail showing tool calls, sub-steps, timing
+- [x] **UI-12**: Distributed trace viewer in task detail showing tool calls, sub-steps, timing
 - [x] **UI-13**: Shared memory key/value viewer with size and age metadata
 - [x] **UI-14**: Resource lock panel showing active locks and lock conflicts as warnings
 - [x] **UI-15**: Mobile-responsive layout using Tailwind breakpoints (table-to-card at small screens)
@@ -159,7 +159,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | UI-09 | Phase 4 | Complete |
 | UI-10 | Phase 4 | Complete |
 | UI-11 | Phase 4 | Complete |
-| UI-12 | Phase 4 | Pending |
+| UI-12 | Phase 4 | Complete |
 | UI-13 | Phase 4 | Complete |
 | UI-14 | Phase 4 | Complete |
 | UI-15 | Phase 4 | Complete |
