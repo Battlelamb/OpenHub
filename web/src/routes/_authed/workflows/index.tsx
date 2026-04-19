@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWorkflows } from '@/hooks/queries/useWorkflows'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
 import { Link } from '@tanstack/react-router'
+import type { Workflow } from '@/types/entities'
 
 function getStatusColor(status: string) {
   const colors: Record<string, string> = {
@@ -43,7 +44,7 @@ function WorkflowsPage() {
               <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider py-3 px-4">{t('columns.updated')}</th>
             </tr>
           </ResponsiveList.Header>
-          {workflows.map((workflow) => (
+          {workflows.map((workflow: Workflow) => (
             <ResponsiveList.Row key={workflow.id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <Link to="/workflows/$workflowId" params={{ workflowId: workflow.id }} className="text-emerald-400 hover:text-emerald-300">

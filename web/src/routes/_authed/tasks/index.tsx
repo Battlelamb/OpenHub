@@ -3,6 +3,7 @@ import { Route as parentRoute } from '../../_authed'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTasks, useCancelTask } from '@/hooks/queries/useTasks'
+import type { Task } from '@/types/entities'
 import { ResponsiveList } from '@/components/common/ResponsiveList'
 import { TaskStatusBadge } from '@/components/common/StatusBadge'
 import { TaskCreateForm } from '@/components/forms/TaskCreateForm'
@@ -85,7 +86,7 @@ function TasksPage() {
               <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider py-3 px-4">Actions</th>
             </tr>
           </ResponsiveList.Header>
-          {tasks.map((task) => (
+          {tasks.map((task: Task) => (
             <ResponsiveList.Row key={task.id}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <Link to="/tasks/$taskId" params={{ taskId: task.id }} className="text-emerald-400 hover:text-emerald-300">

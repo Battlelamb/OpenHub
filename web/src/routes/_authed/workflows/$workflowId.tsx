@@ -3,6 +3,7 @@ import { Route as parentRoute } from '../../_authed'
 import { useTranslation } from 'react-i18next'
 import { useWorkflow } from '@/hooks/queries/useWorkflows'
 import { Link } from '@tanstack/react-router'
+import type { WorkflowStep } from '@/types/entities'
 
 function getStepStatusColor(status: string) {
   const colors: Record<string, string> = {
@@ -46,7 +47,7 @@ function WorkflowDetailPage() {
         </div>
         <h2 className="text-lg font-medium text-zinc-50 mb-4">{t('steps')}</h2>
         <div className="space-y-3">
-          {workflow.steps.map((step, index) => (
+          {workflow.steps.map((step: WorkflowStep, index: number) => (
             <div key={step.id} className="flex items-center gap-4 rounded-md border border-zinc-800 bg-zinc-950 p-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-sm font-medium text-zinc-300">
                 {index + 1}

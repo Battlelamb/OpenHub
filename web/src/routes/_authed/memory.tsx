@@ -63,7 +63,7 @@ function MemoryPage() {
               </th>
             </tr>
           </ResponsiveList.Header>
-          {items.map((m) => (
+          {items.map((m: MemoryItem) => (
             <ResponsiveList.Row key={m.key}>
               <ResponsiveList.Cell header className="py-3 px-4">
                 <span className="font-mono text-xs text-zinc-50">{m.key}</span>
