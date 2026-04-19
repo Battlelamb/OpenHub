@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Backend Hardening** - Fix silent correctness bugs and security holes before any test is written
 - [ ] **Phase 2: WebSocket + Test Suite** - Stable real-time event contract and backend test coverage
 - [ ] **Phase 3: Vector Database** - Semantic search service via Turso/libSQL native vectors, shipped as opt-in beta
-- [ ] **Phase 4: Command Center UI** - React + Vite dashboard with live agent/task/workflow control
+- [x] **Phase 4: Command Center UI** - React + Vite dashboard with live agent/task/workflow control (completed 2026-04-19)
 - [ ] **Phase 5: Release Readiness** - Open source docs, pip install path, graceful shutdown, E2E tests
 
 ## Phase Details
@@ -130,5 +130,5 @@ Note: Phase 3 depends only on Phase 1 and can be planned in parallel with Phase 
 | 1. Backend Hardening | 0/7 | Not started | - |
 | 2. WebSocket + Test Suite | 0/6 | Not started | - |
 | 3. Vector Database | 0/6 | Not started | - |
-| 4. Command Center UI | 0/TBD | Not started | - |
+| 4. Command Center UI | 0/TBD | Complete    | 2026-04-19 |
 | 5. Release Readiness | 0/TBD | Not started | - |
