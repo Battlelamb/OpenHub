@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-06-PLAN.md
-last_updated: "2026-04-19T12:23:54.527Z"
+stopped_at: Completed 04-09-PLAN.md
+last_updated: "2026-04-19T14:08:01.603Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 30
-  completed_plans: 30
+  total_plans: 31
+  completed_plans: 31
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 04 (command-center-ui) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Plan: 3 of 9
 | Phase 03 P06 | 4m | 2 tasks | 6 files |
 | Phase 04-command-center-ui P08 | 6min | 3 tasks | 9 files |
 | Phase 04-command-center-ui P06 | 10min | 3 tasks | 22 files |
+| Phase 04-command-center-ui P09 | 45min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,9 @@ Recent decisions affecting current work:
 - [Phase 04-command-center-ui]: Plan 04-06: Used existing compositional ResponsiveList (Header/Row/Cell) instead of the plan's proposed generic <T> API to avoid regressing 04-05 and 04-05b routes
 - [Phase 04-command-center-ui]: Plan 04-06: Kept /v1/health handler in mocks/handlers/health.ts (plan said empty) because useHealth test + Topbar health dot depend on it - removing breaks Plan 04-04 contract
 - [Phase 04-command-center-ui]: Plan 04-06: JsonViewer primitive uses native <details open> for collapse with syntax-aware color tokens (emerald/sky/violet/zinc) - no third-party JSON viewer library added
+- [Phase 04-command-center-ui]: Plan 04-09: GET /v1/tasks/{task_id}/trace new endpoint chosen over schema change or WS event - zero schema work, reuses existing trace_events.task_id column, direct inverse of POST /v1/traces/event write path
+- [Phase 04-command-center-ui]: Plan 04-09: TraceSpan type hoisted to web/src/types/entities.ts so TraceTimeline and useTaskTrace share one definition; prevents silent drift between hook return shape and component prop shape
+- [Phase 04-command-center-ui]: Plan 04-09: animate-pulse div fallback instead of shadcn Skeleton (not installed); matches Skeleton visual without adding a shadcn dep for one loading indicator
 
 ### Pending Todos
 
@@ -120,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-19T12:23:54.524Z
-Stopped at: Completed 04-06-PLAN.md
+Last session: 2026-04-19T14:08:01.600Z
+Stopped at: Completed 04-09-PLAN.md
 Resume file: None
