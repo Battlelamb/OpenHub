@@ -5,23 +5,20 @@ source:
   - 04-VERIFICATION.md (human_verification items, deferred_to_uat: true)
 started: 2026-04-19T18:00:00Z
 updated: 2026-04-19T18:00:00Z
+deployed_to: hub.brunhilde.cloud (master @ ea9550c, 2026-04-19T14:45:26Z)
 supersedes: 04-UAT-initial.md
 ---
 
 ## Current Test
 
-number: 1
-name: Cold Start Smoke Test
+number: 2
+name: Live JWT Login - happy + invalid paths
 expected: |
-  Kill any running uvicorn and vite dev server. From a fresh shell:
-    1. `source .venv/bin/activate`
-    2. `cd web && npm run build && cd ..`
-    3. `uvicorn app.main:app --host 0.0.0.0 --port 7788`
-  Startup logs show no ModuleNotFoundError and include `dashboard_mounted`.
-  Then curl/open http://localhost:7788/v1/health - returns 200 JSON.
-  Then open http://localhost:7788/dashboard/ in a browser - the OpenHub shell
-  renders (login page or dashboard depending on auth state), NOT "Not Found"
-  and NOT a blank page.
+  At https://hub.brunhilde.cloud/dashboard/login submit valid admin credentials.
+  Verify: POST /v1/auth/login succeeds, you land in the dashboard, JWT is in
+  memory only (DevTools > Application > Local Storage shows NO access_token),
+  invalid creds show an inline RFC 7807 toast, reload keeps you signed in
+  until tab close (no persistence).
 awaiting: user response
 
 ## Tests
@@ -37,7 +34,19 @@ expected: |
   Then open http://localhost:7788/dashboard/ in a browser - the OpenHub shell
   renders (login page or dashboard depending on auth state), NOT "Not Found"
   and NOT a blank page.
-result: [pending]
+result: pass
+venue: VPS hub.brunhilde.cloud (not local)
+journey:
+  - Deploy attempt 1 failed at pip install -r requirements.txt (pydantic-core source build failed on Python 3.13; installed pydantic was 2.12.5, requirements.txt pinned 2.4.2; surgical psutil install worked instead)
+  - Deploy attempt 2 failed at npm run build (TS2307 "Cannot find module '@/lib/...'" because .gitignore:13 'lib/' rule silently excluded web/src/lib/ since phase 4 bootstrap — 6 utility files never committed; also 7 implicit-any errors surfaced by VPS clean build that local cached build had masked)
+  - Deploy attempt 3 green: git pull ea9550c, npm ci + npm run build + systemctl restart all succeeded, service active on pid 865234
+verification:
+  - curl http://127.0.0.1:7788/v1/health -> 200 JSON {"status":"healthy", version 0.1.0, pid 865234}
+  - curl https://hub.brunhilde.cloud/dashboard/ -> HTTP/2 200, <title>OpenHub Command Center</title>, body has id="root" and /dashboard/assets/ references
+  - curl https://hub.brunhilde.cloud/dashboard/agents/foo -> SPA fallback returns id="root" (deep link works)
+  - /v1/health, /docs still 200 (catch-all doesn't shadow backend routes)
+observation:
+  - Pre-existing HARD-09 leftover: journalctl shows "can't compare offset-naive and offset-aware datetimes" in heartbeat_service once at startup. Non-fatal, service continues. Tracked as phase 1 residual, not a phase 4 regression.
 
 ### 2. Live JWT Login - happy + invalid paths
 expected: |
@@ -111,9 +120,9 @@ result: [pending]
 ## Summary
 
 total: 7
-passed: 0
+passed: 1
 issues: 0
-pending: 7
+pending: 6
 skipped: 0
 blocked: 0
 
