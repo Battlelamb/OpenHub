@@ -16,7 +16,10 @@ const queryClient = new QueryClient({
   },
 })
 
-const router = createRouter({ routeTree, context: { queryClient } })
+// BASE_URL is '/dashboard/' in prod (vite.config.ts base) and '/' in dev.
+// TanStack Router wants a basepath without trailing slash, and uses '/' for root.
+const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+const router = createRouter({ routeTree, context: { queryClient }, basepath })
 setRouter(router)
 
 declare module '@tanstack/react-router' {

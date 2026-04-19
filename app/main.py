@@ -1,6 +1,7 @@
 """
 Agent Hub Main Application Entry Point
 """
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,14 +27,16 @@ settings = get_settings()
 setup_logging()
 logger = get_logger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan management"""
     # Startup
     logger.info("agent_hub_starting", version=__version__)
-    
+
     # Create necessary directories
     import os
+
     os.makedirs(settings.artifact_dir, exist_ok=True)
     db_dir = os.path.dirname(settings.db_path)
     if db_dir:
@@ -43,8 +46,11 @@ async def lifespan(app: FastAPI):
     from alembic.config import Config as AlembicConfig
     from alembic import command as alembic_command
     import os as _lifespan_os
+
     alembic_ini = _lifespan_os.path.join(
-        _lifespan_os.path.dirname(_lifespan_os.path.dirname(_lifespan_os.path.abspath(__file__))),
+        _lifespan_os.path.dirname(
+            _lifespan_os.path.dirname(_lifespan_os.path.abspath(__file__))
+        ),
         "alembic.ini",
     )
     alembic_cfg = AlembicConfig(alembic_ini)
@@ -53,6 +59,8 @@ async def lifespan(app: FastAPI):
 
     # Sync for Turso remote mode compatibility
     from .database.connection import get_database
+
+    db = None
     try:
         db = get_database()
         db.sync()
@@ -71,15 +79,23 @@ async def lifespan(app: FastAPI):
     # Pass broadcast callback so offline detection emits agent_status_changed
     # events to UI clients (WS-04).
     from .services.heartbeat_service import HeartbeatService
-    heartbeat_service = HeartbeatService(db, on_event=connection_manager.broadcast_to_ui)
-    await heartbeat_service.start_monitoring()
-    logger.info("heartbeat_monitor_started")
+
+    heartbeat_service = None
+    if db:
+        heartbeat_service = HeartbeatService(
+            db, on_event=connection_manager.broadcast_to_ui
+        )
+        await heartbeat_service.start_monitoring()
+        logger.info("heartbeat_monitor_started")
+    else:
+        logger.warning("heartbeat_monitor_skipped", reason="database_not_available")
 
     # Start embedding retry worker (Plan 03-04 / VEC-04). No-op on local SQLite.
     from .services.embedding_retry_worker import (
         start_retry_worker,
         stop_retry_worker,
     )
+
     try:
         await start_retry_worker()
         logger.info("embedding_retry_worker_lifespan_started")
@@ -90,6 +106,7 @@ async def lifespan(app: FastAPI):
     # Emit a clear warning so OSS users running on local SQLite without Turso
     # understand why /v1/search returns 503. Also logs on auto-detect failures.
     from .database.vector_availability import is_vector_enabled
+
     if not is_vector_enabled():
         logger.warning(
             "vector_search_disabled",
@@ -120,8 +137,9 @@ async def lifespan(app: FastAPI):
     await connection_manager.stop()
     logger.info("connection_manager_stopped")
 
-    await heartbeat_service.stop_monitoring()
-    logger.info("heartbeat_monitor_stopped")
+    if heartbeat_service:
+        await heartbeat_service.stop_monitoring()
+        logger.info("heartbeat_monitor_stopped")
     logger.info("agent_hub_shutting_down")
 
 
@@ -165,6 +183,7 @@ app.state.limiter = limiter
 
 async def rfc7807_rate_limit_handler(request, exc):
     from .models.errors import problem_rate_limit
+
     request_id = getattr(request.state, "request_id", str(__import__("uuid").uuid4()))
     retry_after = getattr(exc, "retry_after", "60")
     problem = problem_rate_limit(
@@ -173,6 +192,7 @@ async def rfc7807_rate_limit_handler(request, exc):
         trace_id=request_id,
     )
     from starlette.responses import JSONResponse
+
     return JSONResponse(
         status_code=429,
         content=problem.model_dump(exclude_none=True),
@@ -196,39 +216,48 @@ app.include_router(health_router)
 
 # Import and include auth router
 from .api.routes_auth import router as auth_router
+
 app.include_router(auth_router)
 
 # Import and include admin router
 from .api.routes_admin import router as admin_router
+
 app.include_router(admin_router)
 
 # Import and include agents router
 from .api.routes_agents import router as agents_router
+
 app.include_router(agents_router)
 
 # Import and include tasks router
 from .api.routes_tasks import router as tasks_router
+
 app.include_router(tasks_router)
 
 # Import and include workflows router
 from .api.routes_workflows import router as workflows_router
+
 app.include_router(workflows_router)
 
 # Import and include coordination router
 from .api.routes_coordination import router as coordination_router
+
 app.include_router(coordination_router)
 
 # Import and include ACN router
 from .api.routes_acn import router as acn_router
+
 app.include_router(acn_router)
 
 # Import and include messaging routers
 from .api.routes_messaging import router as messaging_router, thread_router
+
 app.include_router(messaging_router)
 app.include_router(thread_router)
 
 # Import and include WebSocket router
 from .api.routes_websocket import router as ws_router
+
 app.include_router(ws_router)
 
 # Include WebSocket UI router (WS-01) - module-level import at top of file
@@ -236,28 +265,34 @@ app.include_router(ws_ui_router)
 
 # Import and include memory router
 from .api.routes_memory import router as memory_router
+
 app.include_router(memory_router)
 
 # Import and include workflow engine router
 from .api.routes_workflow import router as workflow_engine_router
+
 app.include_router(workflow_engine_router)
 
 # Import and include artifact router
 from .api.routes_artifacts import router as artifacts_router
+
 app.include_router(artifacts_router)
 
 # Import and include vector search router (Phase 03 / VEC-05, experimental)
 from .api.routes_search import router as search_router
+
 app.include_router(search_router)
 
 # Import and include P1 routers (locks, tracing, costs)
 from .api.routes_p1 import lock_router, trace_router, cost_router
+
 app.include_router(lock_router)
 app.include_router(trace_router)
 app.include_router(cost_router)
 
 # Import and include P2 routers (tools, templates, DLQ)
 from .api.routes_p2 import tools_router, templates_router, dlq_router
+
 app.include_router(tools_router)
 app.include_router(templates_router)
 app.include_router(dlq_router)
@@ -267,13 +302,67 @@ app.include_router(metrics_router)
 
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 import os as _os
+
 _static_dir = _os.path.join(_os.path.dirname(__file__), "static")
+
 
 @app.get("/admin")
 async def admin_dashboard():
     """Admin dashboard UI"""
     return FileResponse(_os.path.join(_static_dir, "admin.html"))
+
+
+# Phase 4 D-08 + gap 04-08: mount React SPA at /dashboard with real SPA fallback.
+# StaticFiles(html=True) only serves index.html for directory requests, not for
+# arbitrary non-existent subpaths (UAT test 12). We therefore:
+#   1. Mount /dashboard/assets/ as StaticFiles so hashed JS/CSS/font bundles
+#      get correct cache-busting and content-type headers.
+#   2. Register a catch-all GET /dashboard/{full_path:path} that returns
+#      web/dist/index.html for anything else, so the TanStack Router can
+#      handle deep links on page refresh and shareable URLs.
+# /v1/*, /admin, /metrics, /docs, /openapi.json, /v1/ws/ui, and / all stay
+# intact because this catch-all only matches paths under /dashboard/.
+_WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+
+if _WEB_DIST.exists() and (_WEB_DIST / "index.html").exists():
+    _assets_dir = _WEB_DIST / "assets"
+    if _assets_dir.exists():
+        app.mount(
+            "/dashboard/assets",
+            StaticFiles(directory=str(_assets_dir)),
+            name="dashboard-assets",
+        )
+
+    _dashboard_index = _WEB_DIST / "index.html"
+
+    @app.get("/dashboard", include_in_schema=False)
+    async def _dashboard_root() -> FileResponse:
+        return FileResponse(str(_dashboard_index))
+
+    @app.get("/dashboard/{full_path:path}", include_in_schema=False)
+    async def _dashboard_spa_fallback(full_path: str) -> FileResponse:
+        # Serve bare static files from web/dist if they exist (favicon,
+        # vite.svg, manifest.json, etc.) - these live at dist root, not under
+        # /assets. Everything else -> index.html so the SPA router decides.
+        candidate = _WEB_DIST / full_path
+        if (
+            candidate.is_file()
+            and _WEB_DIST.resolve() in candidate.resolve().parents
+        ):
+            return FileResponse(str(candidate))
+        return FileResponse(str(_dashboard_index))
+
+    logger.info("dashboard_mounted", path=str(_WEB_DIST))
+else:
+    logger.warning(
+        "dashboard_not_mounted",
+        path=str(_WEB_DIST),
+        hint="Run `cd web && npm run build` to enable /dashboard",
+    )
+
 
 # Root endpoint
 @app.get("/")
@@ -285,7 +374,7 @@ async def root():
         "description": "Multi-agent coordination system for local development",
         "docs_url": "/docs",
         "health_url": "/v1/health",
-        "api_version": "v1"
+        "api_version": "v1",
     }
 
 
