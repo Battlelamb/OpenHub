@@ -14,6 +14,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedTracesRouteImport } from './routes/_authed/traces'
 import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedMemoryRouteImport } from './routes/_authed/memory'
 import { Route as AuthedLocksRouteImport } from './routes/_authed/locks'
 import { Route as AuthedHealthRouteImport } from './routes/_authed/health'
 import { Route as AuthedDlqRouteImport } from './routes/_authed/dlq'
@@ -47,6 +48,11 @@ const AuthedTracesRoute = AuthedTracesRouteImport.update({
 const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedMemoryRoute = AuthedMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedLocksRoute = AuthedLocksRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/dlq': typeof AuthedDlqRoute
   '/health': typeof AuthedHealthRoute
   '/locks': typeof AuthedLocksRoute
+  '/memory': typeof AuthedMemoryRoute
   '/settings': typeof AuthedSettingsRoute
   '/traces': typeof AuthedTracesRoute
   '/agents/$agentId': typeof AuthedAgentsAgentIdRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/dlq': typeof AuthedDlqRoute
   '/health': typeof AuthedHealthRoute
   '/locks': typeof AuthedLocksRoute
+  '/memory': typeof AuthedMemoryRoute
   '/settings': typeof AuthedSettingsRoute
   '/traces': typeof AuthedTracesRoute
   '/': typeof AuthedIndexRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/_authed/dlq': typeof AuthedDlqRoute
   '/_authed/health': typeof AuthedHealthRoute
   '/_authed/locks': typeof AuthedLocksRoute
+  '/_authed/memory': typeof AuthedMemoryRoute
   '/_authed/settings': typeof AuthedSettingsRoute
   '/_authed/traces': typeof AuthedTracesRoute
   '/_authed/': typeof AuthedIndexRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/dlq'
     | '/health'
     | '/locks'
+    | '/memory'
     | '/settings'
     | '/traces'
     | '/agents/$agentId'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/dlq'
     | '/health'
     | '/locks'
+    | '/memory'
     | '/settings'
     | '/traces'
     | '/'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/_authed/dlq'
     | '/_authed/health'
     | '/_authed/locks'
+    | '/_authed/memory'
     | '/_authed/settings'
     | '/_authed/traces'
     | '/_authed/'
@@ -243,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/memory': {
+      id: '/_authed/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof AuthedMemoryRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/locks': {
@@ -323,6 +342,7 @@ interface AuthedRouteChildren {
   AuthedDlqRoute: typeof AuthedDlqRoute
   AuthedHealthRoute: typeof AuthedHealthRoute
   AuthedLocksRoute: typeof AuthedLocksRoute
+  AuthedMemoryRoute: typeof AuthedMemoryRoute
   AuthedSettingsRoute: typeof AuthedSettingsRoute
   AuthedTracesRoute: typeof AuthedTracesRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
@@ -339,6 +359,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedDlqRoute: AuthedDlqRoute,
   AuthedHealthRoute: AuthedHealthRoute,
   AuthedLocksRoute: AuthedLocksRoute,
+  AuthedMemoryRoute: AuthedMemoryRoute,
   AuthedSettingsRoute: AuthedSettingsRoute,
   AuthedTracesRoute: AuthedTracesRoute,
   AuthedIndexRoute: AuthedIndexRoute,
