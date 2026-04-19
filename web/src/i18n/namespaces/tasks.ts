@@ -15,6 +15,8 @@ export const en = {
   trace: {
     emptyHeading: "No trace available",
     emptyBody: "Traces appear once the task is claimed and the agent emits spans.",
+    loading: "Loading trace...",
+    errorTitle: "Could not load trace",
   },
 } as const
 
@@ -35,5 +37,7 @@ export const tr = {
   trace: {
     emptyHeading: "Trace mevcut degil",
     emptyBody: "Gorev alindiginda ve ajan span'lar yayinladiginda trace'ler gorunur.",
+    loading: "Trace yukleniyor...",
+    errorTitle: "Trace yuklenemedi",
   },
 } as const

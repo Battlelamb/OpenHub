@@ -29,6 +29,34 @@ export const tasksHandlers: HttpHandler[] = [
       },
     ]),
   ),
+  http.get('/v1/tasks/:id/trace', ({ params }) =>
+    HttpResponse.json([
+      {
+        id: `${params.id}-span-1`,
+        name: 'read_file(app/config.py)',
+        category: 'tool',
+        duration_ms: 12.4,
+        level: 0,
+        started_at: new Date(Date.now() - 5_000).toISOString(),
+      },
+      {
+        id: `${params.id}-span-2`,
+        name: 'claude-3-opus completion',
+        category: 'llm',
+        duration_ms: 842.1,
+        level: 1,
+        started_at: new Date(Date.now() - 4_800).toISOString(),
+      },
+      {
+        id: `${params.id}-span-3`,
+        name: 'write_file(app/main.py)',
+        category: 'tool',
+        duration_ms: 5.2,
+        level: 1,
+        started_at: new Date(Date.now() - 3_900).toISOString(),
+      },
+    ]),
+  ),
   http.get('/v1/tasks/:id', ({ params }) =>
     HttpResponse.json({
       id: params.id,

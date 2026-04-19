@@ -1,14 +1,5 @@
 import { cn } from '@/lib/utils'
-
-interface TraceSpan {
-  id: string
-  name: string
-  category: 'llm' | 'tool' | 'db' | 'http' | 'internal' | 'error'
-  duration_ms: number
-  level: number
-  started_at: string
-  completed_at?: string
-}
+import type { TraceSpan } from '@/types/entities'
 
 interface TraceTimelineProps {
   spans?: TraceSpan[]

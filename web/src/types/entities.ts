@@ -82,3 +82,15 @@ export interface HealthResponse {
   version?: string
   uptime_seconds?: number
 }
+
+export type TraceCategory = 'llm' | 'tool' | 'db' | 'http' | 'internal' | 'error'
+
+export interface TraceSpan {
+  id: string
+  name: string
+  category: TraceCategory
+  duration_ms: number
+  level: number
+  started_at: string
+  completed_at?: string
+}
