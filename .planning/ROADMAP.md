@@ -94,7 +94,7 @@ Plans:
   4. The DLQ panel shows failed tasks and user can trigger a manual retry from the UI
   5. Cost tracking, distributed trace viewer, shared memory viewer, and resource lock panel are all accessible and show real data
   6. The layout is usable on a mobile browser - tables collapse to cards at small screen widths
-**Plans**: 7 plans
+**Plans**: 8 plans
 
 Plans:
 - [ ] 04-01-PLAN.md - Wave 0: scaffold web/ (Vite + React 19 + TS + Tailwind v4 + shadcn + Vitest + msw)
@@ -104,6 +104,7 @@ Plans:
 - [ ] 04-05-PLAN.md - Operations: agents, tasks (create/cancel/trace), workflows + ResponsiveList + TraceTimeline
 - [ ] 04-06-PLAN.md - Visibility: DLQ/costs/memory/locks/health/settings/traces + JsonViewer
 - [ ] 04-07-PLAN.md - Production integration: FastAPI StaticFiles mount at /dashboard + smoke tests + README
+- [ ] 04-08-PLAN.md - Gap closure: psutil manifest, router basepath + favicon, SPA fallback catch-all, strict deep-link tests
 
 ### Phase 5: Release Readiness
 **Goal**: OpenHub can be discovered, installed, and contributed to by open source developers - README quickstart works in under 5 minutes, pip install path exists, Docker Compose is hardened, graceful shutdown is implemented, and Playwright E2E tests cover critical flows
