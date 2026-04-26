@@ -9,8 +9,9 @@ export interface Agent {
   capabilities: string[]
   last_heartbeat?: string
   current_task_id?: string | null
-  created_at: string
-  updated_at: string
+  load_score?: number  // surfaces in /discover/available
+  created_at?: string  // optional - /discover/available does not include this
+  updated_at?: string  // optional - /discover/available does not include this
 }
 
 export interface Task {
@@ -19,11 +20,11 @@ export interface Task {
   description?: string
   status: TaskStatus
   priority: TaskPriority
-  agent_id?: string | null
+  agent_id?: string | null         // adapter renames from backend's assigned_agent_id
   required_capabilities?: string[]
   progress?: number
   result?: Record<string, unknown>
-  error?: string
+  error?: string                    // adapter renames from backend's last_error
   created_at: string
   updated_at: string
 }
