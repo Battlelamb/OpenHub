@@ -94,7 +94,7 @@ Plans:
   4. The DLQ panel shows failed tasks and user can trigger a manual retry from the UI
   5. Cost tracking, distributed trace viewer, shared memory viewer, and resource lock panel are all accessible and show real data
   6. The layout is usable on a mobile browser - tables collapse to cards at small screen widths
-**Plans**: 8 plans
+**Plans**: 11 plans
 
 Plans:
 - [x] 04-01-PLAN.md - Wave 0: scaffold web/ (Vite + React 19 + TS + Tailwind v4 + shadcn + Vitest + msw)
@@ -102,9 +102,12 @@ Plans:
 - [x] 04-03-PLAN.md - Auth layer: Zustand in-memory store + api-client RFC 7807 + LoginForm + _authed guard
 - [x] 04-04-PLAN.md - Data layer: query-key factory + all query hooks + useWebSocketSync hybrid merge/invalidate
 - [x] 04-05-PLAN.md - Operations: agents, tasks (create/cancel/trace), workflows + ResponsiveList + TraceTimeline
+- [x] 04-05b-PLAN.md - Operations gap-closure: ResponsiveList primitive cleanup and consumer wiring
 - [x] 04-06-PLAN.md - Visibility: DLQ/costs/memory/locks/health/settings/traces + JsonViewer
 - [x] 04-07-PLAN.md - Production integration: FastAPI StaticFiles mount at /dashboard + smoke tests + README
 - [x] 04-08-PLAN.md - Gap closure: psutil manifest, router basepath + favicon, SPA fallback catch-all, strict deep-link tests
+- [x] 04-09-PLAN.md - Distributed trace viewer (UI-12): GET /v1/tasks/{id}/trace + TraceTimeline integration
+- [x] 04-10-PLAN.md - Endpoint mismatch closure: 7 hooks aligned to real backend, 2 new list endpoints, dual-auth DLQ, integration test
 
 ### Phase 5: Release Readiness
 **Goal**: OpenHub can be discovered, installed, and contributed to by open source developers - README quickstart works in under 5 minutes, pip install path exists, Docker Compose is hardened, graceful shutdown is implemented, and Playwright E2E tests cover critical flows
@@ -130,5 +133,5 @@ Note: Phase 3 depends only on Phase 1 and can be planned in parallel with Phase 
 | 1. Backend Hardening | 0/7 | Not started | - |
 | 2. WebSocket + Test Suite | 0/6 | Not started | - |
 | 3. Vector Database | 0/6 | Not started | - |
-| 4. Command Center UI | 0/TBD | Complete    | 2026-04-19 |
+| 4. Command Center UI | 11/11 | Complete    | 2026-04-26 |
 | 5. Release Readiness | 0/TBD | Not started | - |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 04-09-PLAN.md
-last_updated: "2026-04-19T14:13:02.591Z"
+stopped_at: Completed 04-10-PLAN.md
+last_updated: "2026-04-26T17:10:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 31
-  completed_plans: 31
+  total_plans: 32
+  completed_plans: 32
 ---
 
 # Project State
@@ -65,6 +65,7 @@ Plan: Not started
 | Phase 04-command-center-ui P08 | 6min | 3 tasks | 9 files |
 | Phase 04-command-center-ui P06 | 10min | 3 tasks | 22 files |
 | Phase 04-command-center-ui P09 | 45min | 3 tasks | 10 files |
+| Phase 04-command-center-ui P10 | 70min | 5 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,10 @@ Recent decisions affecting current work:
 - [Phase 04-command-center-ui]: Plan 04-09: GET /v1/tasks/{task_id}/trace new endpoint chosen over schema change or WS event - zero schema work, reuses existing trace_events.task_id column, direct inverse of POST /v1/traces/event write path
 - [Phase 04-command-center-ui]: Plan 04-09: TraceSpan type hoisted to web/src/types/entities.ts so TraceTimeline and useTaskTrace share one definition; prevents silent drift between hook return shape and component prop shape
 - [Phase 04-command-center-ui]: Plan 04-09: animate-pulse div fallback instead of shadcn Skeleton (not installed); matches Skeleton visual without adding a shadcn dep for one loading indicator
+- [Phase 04-command-center-ui]: Plan 04-10: Hook adapter pattern - hook owns BackendShape -> UIShape conversion, consumer routes (.tsx) untouched. msw handlers mock real backend envelope so tests exercise the real adapter path. Seven hooks (agents, tasks, costs, memory, locks, workflows, dlq) aligned this way.
+- [Phase 04-command-center-ui]: Plan 04-10: Dual-auth FastAPI dep _dashboard_or_admin_key on DLQ routes - accepts JWT admin OR X-Admin-Key. Dashboard works with JWT only (no admin key in browser); legacy CLI scripts unaffected. Existing _admin function left untouched.
+- [Phase 04-command-center-ui]: Plan 04-10: FastAPI route ordering bug discovered - GET /v1/tasks/{task_id} was registered before GET /v1/tasks/search, causing 'search' to match as task_id. Static-prefix routes MUST be declared before parametric routes in same router (registration order matters, not specificity). Same pattern likely affects /agent/{agent_id} and /available/for-me but out of scope.
+- [Phase 04-command-center-ui]: Plan 04-10: sqlite3.Row guard inverted in routes_memory.py:179 and routes_p2.py:236 - `dict(r) if isinstance(r, dict) else r` only converted when r was already a dict, breaking r.get() on Row objects. Fixed in both. Six other route files have the same pattern but weren't exercised by this plan.
 
 ### Pending Todos
 
@@ -124,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-19T14:08:01.600Z
-Stopped at: Completed 04-09-PLAN.md
+Last session: 2026-04-26T17:10:00.000Z
+Stopped at: Completed 04-10-PLAN.md
 Resume file: None
