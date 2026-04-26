@@ -219,6 +219,28 @@ async def create_workflow_from_template(
         )
 
 
+@router.get("/", response_model=List[WorkflowResponse])
+async def list_workflows(
+    limit: int = Query(50, ge=1, le=200),
+    current_agent: CurrentAgent = None,
+    hatchet_service: HatchetService = Depends(get_hatchet_service),
+) -> List[WorkflowResponse]:
+    """
+    List active and recent workflows for the Phase 4 dashboard (UI-06).
+    JWT auth (read-only). Iterates the in-memory _running_workflows store the
+    same way /admin/all does, but without the admin requirement.
+    """
+    workflows: List[WorkflowResponse] = []
+    for run_id in list(hatchet_service._running_workflows.keys())[:limit]:
+        ws = await hatchet_service.get_workflow_status(run_id)
+        if ws:
+            workflows.append(WorkflowResponse(**ws))
+    logger.debug("workflows_list_requested",
+                by_agent=current_agent.agent_id if current_agent else "system",
+                returned_count=len(workflows))
+    return workflows
+
+
 @router.get("/{workflow_run_id}", response_model=WorkflowResponse)
 async def get_workflow_status(
     workflow_run_id: str,

@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..auth.dependencies import CurrentAgent
 
 logger = get_logger(__name__)
 
@@ -93,7 +94,7 @@ async def release_lock(
 @lock_router.get("/status")
 async def lock_status(
     resource: str,
-    key_info: ApiKeyAuth,
+    current_agent: CurrentAgent = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Check if a resource is locked."""
@@ -106,6 +107,47 @@ async def lock_status(
 
     r = dict(row) if isinstance(row, dict) else row
     return {"resource": resource, "locked": True, "locked_by": r.get("locked_by"), "expires_at": r.get("expires_at")}
+
+
+@lock_router.get("/")
+async def list_active_locks(
+    current_agent: CurrentAgent = None,
+    database: Database = Depends(get_database),
+) -> List[Dict[str, Any]]:
+    """
+    List currently held resource locks (active = not released yet).
+    Used by the Phase 4 dashboard locks panel (UI-14). JWT auth.
+
+    Returns ResourceLock[] matching web/src/types/entities.ts:
+    [{resource_id, agent_id, acquired_at, expires_at, conflict}]
+    """
+    rows = database.fetch_all(
+        "SELECT id, resource, locked_by, created_at, expires_at "
+        "FROM resource_locks WHERE released_at IS NULL "
+        "ORDER BY created_at DESC LIMIT 100"
+    )
+    locks: List[Dict[str, Any]] = []
+    now = datetime.now(timezone.utc)
+    for r in rows:
+        r = dict(r) if not isinstance(r, dict) else r
+        # An expired-but-not-released lock is a "conflict" (stale lock detection)
+        conflict = False
+        exp = r.get("expires_at")
+        if exp:
+            try:
+                exp_dt = datetime.fromisoformat(str(exp).replace("Z", "").replace("+00:00", ""))
+                if now.replace(tzinfo=None) > exp_dt.replace(tzinfo=None):
+                    conflict = True
+            except (ValueError, TypeError):
+                conflict = False
+        locks.append({
+            "resource_id": r.get("resource") or "",
+            "agent_id": r.get("locked_by") or "",
+            "acquired_at": r.get("created_at") or "",
+            "expires_at": r.get("expires_at") or "",
+            "conflict": conflict,
+        })
+    return locks
 
 
 # ========== TRACING ==========
@@ -220,7 +262,7 @@ async def log_cost(
 @cost_router.get("/summary")
 async def cost_summary(
     days: int = Query(7, ge=1, le=90),
-    key_info: ApiKeyAuth = None,
+    current_agent: CurrentAgent = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Get cost summary for last N days."""

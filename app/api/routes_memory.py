@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..auth.api_key_deps import ApiKeyAuth, resolve_agent_id
+from ..auth.dependencies import CurrentAgent
 from ..database.vector_availability import require_vector
 from ..models.vector_search import SearchRequest, SearchResponse
 from ..services.embedding_hooks import schedule_embedding
@@ -166,7 +167,7 @@ async def delete_memory(
 @router.get("/keys")
 async def list_keys(
     limit: int = Query(50, ge=1, le=200),
-    key_info: ApiKeyAuth = None,
+    current_agent: CurrentAgent = None,
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List all keys in shared memory."""

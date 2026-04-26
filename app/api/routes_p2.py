@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel as PydanticBaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, status
 
 from ..logging import get_logger
 from ..database.connection import get_database, Database
@@ -26,6 +26,41 @@ def _admin(x_admin_key: str = Header(..., alias="X-Admin-Key")):
     if not ak or x_admin_key != ak:
         raise HTTPException(status_code=401, detail="Invalid admin key")
     return True
+
+
+async def _dashboard_or_admin_key(
+    request: Request,
+    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
+) -> bool:
+    """
+    DLQ routes accept EITHER an X-Admin-Key (legacy CLI flow) OR a JWT admin
+    Authorization header (dashboard flow). Either is sufficient. This is the
+    minimum change that lets the React dashboard hit /v1/dlq/ without storing
+    a permanent admin key in the browser.
+    """
+    # Try X-Admin-Key first (cheap)
+    from ..config import get_settings
+    s = get_settings()
+    ak = getattr(s, 'acn_admin_key', None)
+    if ak and x_admin_key and x_admin_key == ak:
+        return True
+
+    # Try JWT admin
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if not auth_header or not auth_header.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="JWT admin or X-Admin-Key required")
+    token = auth_header.split(" ", 1)[1]
+    try:
+        from ..auth.jwt_auth import verify_token
+        payload = verify_token(token, expected_type="access")
+        # CurrentAdmin requires role==admin in the token; mirror that check here
+        if payload.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Admin role required")
+        return True
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid JWT")
 
 
 # ========== P2.1: MCP/TOOL SHARING ==========
@@ -190,7 +225,7 @@ async def get_template(
 
 @dlq_router.get("/")
 async def list_dead_letters(
-    _: bool = Depends(_admin),
+    _: bool = Depends(_dashboard_or_admin_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """List tasks in dead letter queue (failed all retries)."""
@@ -214,7 +249,7 @@ async def list_dead_letters(
 @dlq_router.post("/{task_id}/retry")
 async def retry_dead_letter(
     task_id: str,
-    _: bool = Depends(_admin),
+    _: bool = Depends(_dashboard_or_admin_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Retry a dead letter task (requeue it)."""
@@ -232,7 +267,7 @@ async def retry_dead_letter(
 @dlq_router.post("/{task_id}/dismiss")
 async def dismiss_dead_letter(
     task_id: str,
-    _: bool = Depends(_admin),
+    _: bool = Depends(_dashboard_or_admin_key),
     database: Database = Depends(get_database),
 ) -> Dict[str, Any]:
     """Dismiss a dead letter (mark as dead_letter status)."""
