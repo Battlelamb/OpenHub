@@ -56,18 +56,21 @@ export interface DlqItem {
 }
 
 export interface CostItem {
-  agent_id: string
+  agent_id: string         // adapter falls back to agent_name when backend lacks it
   agent_name: string
-  total_tokens: number
+  total_tokens: number     // adapter sums input_tokens + output_tokens from backend
   total_cost_usd: number
-  task_count: number
+  task_count: number       // adapter maps from backend's api_calls field
 }
 
 export interface MemoryItem {
   key: string
-  size_bytes: number
-  age_seconds: number
+  size_bytes: number       // backend /keys does not return size; adapter sets 0
+  age_seconds: number      // adapter computes from now - updated_at
   value_preview?: unknown
+  value_type?: string      // surfaces from backend for richer display in future
+  tags?: string[]
+  updated_at?: string
 }
 
 export interface ResourceLock {
