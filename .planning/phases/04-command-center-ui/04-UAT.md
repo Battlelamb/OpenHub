@@ -96,6 +96,29 @@ Phase 4 frontend was built against an idealized REST API that does not match the
 | useHealth | GET /v1/health | matches | OK |
 | useTaskTrace | GET /v1/tasks/{id}/trace | matches (shipped in 04-09) | OK |
 
+### Resolution (Plan 04-10, 2026-04-26)
+
+Plan 04-10 closed this gap. Updated table:
+
+| Frontend hook | Frontend path | Backend reality | Status |
+|---------------|---------------|-----------------|--------|
+| useAgents | GET /v1/agents/discover/available | matches; adapter renames agent_id->id, agent_name->name | RESOLVED |
+| useTasks | GET /v1/tasks/search?page=1&limit=100 | matches; adapter unwraps {tasks,total,page,limit} | RESOLVED |
+| useTask | GET /v1/tasks/{id} | matches; adapter renames assigned_agent_id->agent_id, last_error->error | UNCHANGED OK |
+| useCreateTask | POST /v1/tasks/ (trailing slash) | matches without 307 redirect | HARDENED |
+| useCancelTask | POST /v1/tasks/{id}/cancel | matches | UNCHANGED OK |
+| useWorkflows | GET /v1/workflows/ | NEW backend list endpoint added in 04-10 Task 1 | RESOLVED |
+| useWorkflow | GET /v1/workflows/{id} | matches; adapter renames run_id->id | UNCHANGED OK |
+| useDlq | GET /v1/dlq/ | matches; auth swap to JWT-or-X-Admin-Key in 04-10 Task 1 | RESOLVED |
+| useRetryDlq | POST /v1/dlq/{id}/retry | matches; same auth swap | UNCHANGED OK |
+| useCosts | GET /v1/costs/summary | matches; auth swap to JWT in 04-10 Task 1 | RESOLVED |
+| useMemoryEntries | GET /v1/memory/keys | matches; auth swap to JWT in 04-10 Task 1 | RESOLVED |
+| useLocks | GET /v1/locks/ | NEW backend list endpoint added in 04-10 Task 1 | RESOLVED |
+| useHealth | GET /v1/health | matches | UNCHANGED OK |
+| useTaskTrace | GET /v1/tasks/{id}/trace | matches (shipped in 04-09) | UNCHANGED OK |
+
+All previously broken hooks now resolve against real backend endpoints with correct auth (JWT). No fragile trailing-slash redirects remain.
+
 **Recommendation:** Phase 4 needs a second gap-closure plan (04-10) that systematically aligns the broken hooks (useAgents, useTasks-list, useCosts, useMemory, useLocks) and their msw handlers to real backend endpoints + response shapes. Five hooks broken; three more (workflows, dlq, tasks-create) only work because of FastAPI's auto-redirect from /path to /path/ on trailing slash, which is fragile.
 
 ### 3. Live Agent Status Updates via WebSocket
