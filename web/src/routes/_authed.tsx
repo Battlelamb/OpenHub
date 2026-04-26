@@ -1,4 +1,4 @@
-import { createRoute, Outlet } from '@tanstack/react-router'
+import { createRoute, Outlet, redirect } from '@tanstack/react-router'
 import { Route as rootRoute } from './__root'
 import { useAuthStore } from '@/stores/auth-store'
 import { AppShell } from '@/components/layout/AppShell'
@@ -9,7 +9,10 @@ export const Route = createRoute({
   beforeLoad: ({ location }) => {
     const { token, expiresAt } = useAuthStore.getState()
     if (!token || (expiresAt && expiresAt < Date.now())) {
-      throw new Error(`redirect:/login?redirect=${encodeURIComponent(location.href)}`)
+      throw redirect({
+        to: '/login',
+        search: { redirect: location.pathname + location.search },
+      })
     }
   },
   component: () => (
