@@ -212,7 +212,15 @@ These are tracked in this section but not addressed - they would expand scope be
 
 ## Deploy
 
-(Pending deploy step - to be appended after VPS push.)
+**Deployed:** 2026-04-26T17:13:42Z
+**Commit deployed:** `8f9980a` (master HEAD)
+**Steps:**
+1. `git push origin master` - succeeded (pushed `59f799d..8f9980a`)
+2. SSH to brunhilde: `git pull origin master`, `cd web && npm ci && npm run build`, `systemctl --user restart openhub.service` - all succeeded
+3. `systemctl --user is-active openhub.service` returned `active`
+4. `curl https://hub.brunhilde.cloud/v1/health` returned HTTP 200 with healthy status (cpu 4.8%, memory 43.1%, db ready, port 7788)
+
+The VPS is now serving the aligned dashboard with all seven hooks pointed at real backend endpoints.
 
 ## Self-Check: PASSED
 
