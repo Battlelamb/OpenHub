@@ -21,7 +21,9 @@ interface LoginResponse {
   access_token: string
   refresh_token: string
   expires_in: number
-  user: { id: string; name: string; role: 'admin' | 'agent' | 'viewer' }
+  agent_id: string | null
+  role: 'admin' | 'agent' | 'viewer'
+  permissions: string[]
 }
 
 export function LoginForm() {
@@ -46,12 +48,18 @@ export function LoginForm() {
 
   const onSubmit = async (values: LoginValues) => {
     try {
-      const res = await api<LoginResponse>('/v1/auth/login', {
+      const formBody = new URLSearchParams({ username: values.username, password: values.password }).toString()
+      const res = await api<LoginResponse>('/v1/auth/admin/login', {
         method: 'POST',
-        body: JSON.stringify(values),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formBody,
         skipAuth: true,
       })
-      setSession(res.access_token, res.refresh_token, res.expires_in, res.user)
+      setSession(res.access_token, res.refresh_token, res.expires_in, {
+        id: res.agent_id ?? values.username,
+        name: values.username,
+        role: res.role,
+      })
       const target = getRedirect()
       navigate({ to: target as any })
     } catch (err: any) {
