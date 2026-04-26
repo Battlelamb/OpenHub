@@ -30,12 +30,12 @@ export interface Task {
 }
 
 export interface Workflow {
-  id: string
+  id: string                // adapter renames from backend's run_id
   name: string
   status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
-  steps: WorkflowStep[]
+  steps: WorkflowStep[]     // adapter pulls from backend's progress.steps[] or defaults to []
   created_at: string
-  updated_at: string
+  updated_at?: string
 }
 
 export interface WorkflowStep {
@@ -50,9 +50,13 @@ export interface WorkflowStep {
 export interface DlqItem {
   task_id: string
   title: string
-  failed_at: string
-  error: string
-  retries: number
+  failed_at: string         // adapter renames from backend's created_at
+  error: string             // adapter renames from backend's last_error
+  retries: number           // adapter renames from backend's retry_count
+  task_type?: string
+  priority?: number
+  max_retries?: number
+  assigned_to?: string
 }
 
 export interface CostItem {
