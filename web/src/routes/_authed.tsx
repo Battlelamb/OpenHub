@@ -11,7 +11,7 @@ export const Route = createRoute({
     if (!token || (expiresAt && expiresAt < Date.now())) {
       throw redirect({
         to: '/login',
-        search: { redirect: location.pathname + location.search },
+        search: { redirect: location.pathname },
       })
     }
   },
