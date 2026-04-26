@@ -234,7 +234,9 @@ async def list_dead_letters(
     )
     items = []
     for r in rows:
-        r = dict(r) if isinstance(r, dict) else r
+        # sqlite3.Row needs explicit dict() conversion before .get() works.
+        # Original code had the conversion guard inverted; it skipped when r was a Row.
+        r = dict(r) if not isinstance(r, dict) else r
         items.append({
             "task_id": r["id"], "title": r["title"],
             "task_type": r.get("task_type"), "priority": r.get("priority"),

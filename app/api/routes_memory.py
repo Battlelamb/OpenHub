@@ -177,7 +177,9 @@ async def list_keys(
     )
     keys = []
     for r in rows:
-        r = dict(r) if isinstance(r, dict) else r
+        # sqlite3.Row needs explicit dict() conversion before .get() works.
+        # Original code had the conversion guard inverted; it skipped when r was a Row.
+        r = dict(r) if not isinstance(r, dict) else r
         keys.append({
             "key": r["key"],
             "value_type": r.get("value_type"),

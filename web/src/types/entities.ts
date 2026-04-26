@@ -35,7 +35,7 @@ export interface Workflow {
   status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
   steps: WorkflowStep[]     // adapter pulls from backend's progress.steps[] or defaults to []
   created_at: string
-  updated_at?: string
+  updated_at: string        // adapter falls back to created_at when backend omits this field
 }
 
 export interface WorkflowStep {

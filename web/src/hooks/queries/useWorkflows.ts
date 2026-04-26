@@ -20,7 +20,10 @@ function adaptWorkflow(b: BackendWorkflowResponse): Workflow {
     status: (b.status as Workflow['status']) ?? 'queued',
     steps: (b.progress && Array.isArray(b.progress.steps)) ? b.progress.steps : [],
     created_at: b.created_at,
-    updated_at: undefined,
+    // Backend WorkflowResponse does not include updated_at; consumer requires a string
+    // for `new Date(updated_at).toLocaleString()`. Fall back to created_at to keep the
+    // consumer untouched per Plan 04-10 minimal-change rule.
+    updated_at: b.created_at,
   }
 }
 

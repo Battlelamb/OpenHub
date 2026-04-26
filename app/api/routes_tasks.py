@@ -116,6 +116,85 @@ async def create_task(
         )
 
 
+# NOTE: Static-prefix routes (/search, /stats/overview, /agent/..., /available/...) MUST
+# be declared BEFORE the /{task_id} parametric route. FastAPI matches in registration
+# order; if /{task_id} comes first, "search" gets consumed as a task_id and returns 404.
+# Plan 04-10 reordered these out of the broken position they had in 04-04.
+@router.get("/search", response_model=Dict[str, Any])
+async def search_tasks(
+    search_query: Optional[str] = Query(None, description="Search in title/description"),
+    status: Optional[List[TaskStatus]] = Query(None, description="Filter by status"),
+    task_type: Optional[List[TaskType]] = Query(None, description="Filter by type"),
+    priority: Optional[List[TaskPriority]] = Query(None, description="Filter by priority"),
+    assigned_agent_id: Optional[str] = Query(None, description="Filter by assigned agent"),
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    sort_by: str = Query("created_at", description="Sort field"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
+    current_agent: CurrentAgent = None,
+    task_service: TaskService = Depends(get_task_service)
+) -> Dict[str, Any]:
+    """
+    Search and filter tasks with pagination
+    """
+    # Use task repository for search (would implement search method)
+    task_repo = task_service.task_repo
+
+    try:
+        # Convert enums to values
+        status_values = [s.value for s in status] if status else None
+        type_values = [t.value for t in task_type] if task_type else None
+        priority_values = [p.value for p in priority] if priority else None
+
+        search_result = task_repo.search_tasks(
+            search_query=search_query,
+            status_filter=status_values,
+            type_filter=type_values,
+            priority_filter=priority_values,
+            agent_filter=assigned_agent_id,
+            page=page,
+            limit=limit,
+            sort_by=sort_by,
+            sort_order=sort_order
+        )
+
+        # Convert tasks to response format
+        search_result["tasks"] = [_task_to_response(task) for task in search_result["tasks"]]
+
+        return search_result
+
+    except Exception as e:
+        logger.error("task_search_failed", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Task search failed"
+        )
+
+
+@router.get("/stats/overview", response_model=Dict[str, Any])
+async def get_task_statistics(
+    current_agent: CurrentAgent = None,
+    task_service: TaskService = Depends(get_task_service)
+) -> Dict[str, Any]:
+    """
+    Get comprehensive task statistics
+    """
+    try:
+        stats = task_service.task_repo.get_task_statistics()
+
+        logger.debug("task_statistics_requested",
+                    by_agent=current_agent.agent_id if current_agent else "system")
+
+        return stats
+
+    except Exception as e:
+        logger.error("task_statistics_failed", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve task statistics"
+        )
+
+
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: str,
@@ -444,81 +523,6 @@ async def get_available_tasks(
     available_tasks = task_service.get_available_tasks(current_agent.agent_id, limit)
     
     return [_task_to_response(task) for task in available_tasks]
-
-
-@router.get("/search", response_model=Dict[str, Any])
-async def search_tasks(
-    search_query: Optional[str] = Query(None, description="Search in title/description"),
-    status: Optional[List[TaskStatus]] = Query(None, description="Filter by status"),
-    task_type: Optional[List[TaskType]] = Query(None, description="Filter by type"),
-    priority: Optional[List[TaskPriority]] = Query(None, description="Filter by priority"),
-    assigned_agent_id: Optional[str] = Query(None, description="Filter by assigned agent"),
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page"),
-    sort_by: str = Query("created_at", description="Sort field"),
-    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
-    current_agent: CurrentAgent = None,
-    task_service: TaskService = Depends(get_task_service)
-) -> Dict[str, Any]:
-    """
-    Search and filter tasks with pagination
-    """
-    # Use task repository for search (would implement search method)
-    task_repo = task_service.task_repo
-    
-    try:
-        # Convert enums to values
-        status_values = [s.value for s in status] if status else None
-        type_values = [t.value for t in task_type] if task_type else None
-        priority_values = [p.value for p in priority] if priority else None
-        
-        search_result = task_repo.search_tasks(
-            search_query=search_query,
-            status_filter=status_values,
-            type_filter=type_values,
-            priority_filter=priority_values,
-            agent_filter=assigned_agent_id,
-            page=page,
-            limit=limit,
-            sort_by=sort_by,
-            sort_order=sort_order
-        )
-        
-        # Convert tasks to response format
-        search_result["tasks"] = [_task_to_response(task) for task in search_result["tasks"]]
-        
-        return search_result
-    
-    except Exception as e:
-        logger.error("task_search_failed", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Task search failed"
-        )
-
-
-@router.get("/stats/overview", response_model=Dict[str, Any])
-async def get_task_statistics(
-    current_agent: CurrentAgent = None,
-    task_service: TaskService = Depends(get_task_service)
-) -> Dict[str, Any]:
-    """
-    Get comprehensive task statistics
-    """
-    try:
-        stats = task_service.task_repo.get_task_statistics()
-        
-        logger.debug("task_statistics_requested", 
-                    by_agent=current_agent.agent_id if current_agent else "system")
-        
-        return stats
-    
-    except Exception as e:
-        logger.error("task_statistics_failed", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve task statistics"
-        )
 
 
 # Admin-only endpoints
