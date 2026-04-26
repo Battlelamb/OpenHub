@@ -58,7 +58,45 @@ expected: |
   alert). Finally, reload /dashboard/ while signed in - you remain
   authenticated within the tab, but closing and reopening the tab should
   land you back on the login page (no persistence).
-result: [pending]
+result: pass-after-fixes
+severity: blocker (3 sequential bugs surfaced, all fixed)
+journey:
+  - First Playwright run on /dashboard/agents -> "Something went wrong!" error boundary. Console: `Error: redirect:/login?redirect=%2Fagents`. Root cause web/src/routes/_authed.tsx threw plain Error('redirect:...') instead of TanStack Router's typed redirect() helper. Fix in commit 86d3030.
+  - Second run -> "TypeError: Cannot convert object to primitive value" from beforeLoad. location.search is an OBJECT in TanStack Router; concatenating with location.pathname coerced object to primitive and threw. Fix in commit da6a2ca - use location.pathname only.
+  - Third run -> POST /v1/auth/login -> 404. Backend has /v1/auth/admin/login (OAuth2PasswordRequestForm, form-encoded), NOT the JSON /v1/auth/login the frontend was hitting. Also backend response shape is {agent_id, role, permissions} not nested {user: {...}}. Fix in commit 5c8d0af.
+verification_pass:
+  - Login flow end-to-end on https://hub.brunhilde.cloud/dashboard/login with omer / OpenHub2026!
+  - JWT memory-only confirmed: localStorage empty, only sessionStorage has tsr-scroll-restoration-v1_3 (ephemeral, not auth)
+  - Sidebar all 11 nav items render correctly
+  - Topbar (brand, hub-status indicator, theme toggle, user menu) all present
+  - Auth guard redirect /dashboard/agents while signed-out -> /dashboard/login?redirect=%2Fagents works
+deferred_subitems:
+  - "test: invalid credential RFC 7807 toast (not yet exercised by Playwright run)"
+  - "test: F5 reload persistence within tab"
+  - "test: tab-close-and-reopen returns to login (token isn't in localStorage so should pass automatically)"
+
+## Major Gap Discovered: Backend / Frontend Endpoint Mismatch
+
+Phase 4 frontend was built against an idealized REST API that does not match the actual backend routes. msw mocks in unit tests masked this because they returned canned data at whatever path the frontend asked for. Once Test 2 unblocked the dashboard, every feature route 404s on its data fetch.
+
+| Frontend hook | Frontend path | Backend reality | Status |
+|---------------|---------------|-----------------|--------|
+| useAgents | GET /v1/agents | no flat list; closest GET /v1/agents/discover/available | BROKEN |
+| useTasks | GET /v1/tasks | no flat list; closest GET /v1/tasks/search | BROKEN |
+| useTask | GET /v1/tasks/{id} | matches: /v1/tasks/{task_id} | OK |
+| useCreateTask | POST /v1/tasks | matches with trailing slash: /v1/tasks/ | OK |
+| useCancelTask | POST /v1/tasks/{id}/cancel | matches | OK |
+| useWorkflows | GET /v1/workflows | matches with trailing slash: /v1/workflows/ | OK |
+| useWorkflow | GET /v1/workflows/{id} | matches | OK |
+| useDlq | GET /v1/dlq | matches with trailing slash: /v1/dlq/ | OK |
+| useRetryDlq | POST /v1/dlq/{id}/retry | matches | OK |
+| useCosts | GET /v1/costs | no flat list; backend has /v1/costs/summary | BROKEN |
+| useMemory | GET /v1/memory | no flat list; backend has /v1/memory/keys | BROKEN |
+| useLocks | GET /v1/locks | no flat list; backend has /v1/locks/status | BROKEN |
+| useHealth | GET /v1/health | matches | OK |
+| useTaskTrace | GET /v1/tasks/{id}/trace | matches (shipped in 04-09) | OK |
+
+**Recommendation:** Phase 4 needs a second gap-closure plan (04-10) that systematically aligns the broken hooks (useAgents, useTasks-list, useCosts, useMemory, useLocks) and their msw handlers to real backend endpoints + response shapes. Five hooks broken; three more (workflows, dlq, tasks-create) only work because of FastAPI's auto-redirect from /path to /path/ on trailing slash, which is fragile.
 
 ### 3. Live Agent Status Updates via WebSocket
 expected: |
@@ -120,11 +158,12 @@ result: [pending]
 ## Summary
 
 total: 7
-passed: 1
-issues: 0
-pending: 6
+passed: 2
+issues: 1
+pending: 5
 skipped: 0
 blocked: 0
+notes: Test 2 pass-after-fixes (3 sequential bugs fixed inline). Discovered larger backend/frontend endpoint mismatch affecting 5 hooks; tracked as gap requiring plan 04-10.
 
 ## Gaps
 
