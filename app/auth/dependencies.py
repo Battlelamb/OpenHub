@@ -117,7 +117,24 @@ async def get_current_agent(
     token_data: TokenData = Depends(verify_jwt_token),
     request: Request = None
 ) -> AuthenticatedAgent:
-    """Get current authenticated agent from database"""
+    """Get current authenticated principal from token/database.
+
+    Admin dashboard sessions are represented by synthetic JWT subjects
+    (``admin-<uuid>``) and intentionally do not have rows in the ``agents``
+    table. Treat them as authenticated admin principals directly from the
+    signed token claims; agent tokens still resolve through the database so
+    deactivation/offline checks keep working for real agents.
+    """
+
+    if token_data.role == "admin" or token_data.sub.startswith("admin-"):
+        return AuthenticatedAgent(
+            agent_id=token_data.sub,
+            agent_name=token_data.agent_name or settings.admin_user,
+            role="admin",
+            permissions=token_data.permissions or ["*"],
+            is_active=True,
+            last_seen=datetime.now(timezone.utc),
+        )
     
     database = get_database()
     

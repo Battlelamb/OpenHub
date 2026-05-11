@@ -29,17 +29,9 @@ interface LoginResponse {
 export function LoginForm() {
   const { t } = useTranslation('common')
   const navigate = useNavigate()
+  const search = useSearch({ strict: false }) as { redirect?: string }
   const setSession = useAuthStore((s) => s.setSession)
-  
-  // Get redirect from search params, default to /agents
-  const getRedirect = () => {
-    try {
-      const search = useSearch({ strict: false }) as { redirect?: string }
-      return search.redirect || '/agents'
-    } catch {
-      return '/agents'
-    }
-  }
+  const redirectTarget = search.redirect || '/agents'
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(schema),
@@ -60,8 +52,7 @@ export function LoginForm() {
         name: values.username,
         role: res.role,
       })
-      const target = getRedirect()
-      navigate({ to: target as any })
+      navigate({ to: redirectTarget as any })
     } catch (err: any) {
       if (err && typeof err === 'object' && 'problem' in err) {
         toast.error(err.problem.title || t('requestFailed'), { description: err.problem.detail })

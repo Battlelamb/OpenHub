@@ -337,29 +337,33 @@ async def refresh_access_token(
         payload = verify_token(refresh_data.refresh_token, expected_type="refresh")
         agent_id = payload["sub"]
         
-        # Get agent information
-        database = get_database()
-        agent_row = database.fetch_one(
-            "SELECT agent_name FROM agents WHERE id = :agent_id",
-            {"agent_id": agent_id}
-        )
-        
-        if not agent_row:
-            logger.warning("token_refresh_agent_not_found", agent_id=agent_id)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Agent not found"
-            )
-        
-        agent = dict(agent_row)
-        
-        # Determine role (admin tokens have different agent_id pattern)
+        # Determine role (admin tokens have synthetic admin-* subject IDs and
+        # are not stored in the agents table).
         role = "admin" if agent_id.startswith("admin-") else "agent"
+        if role == "admin":
+            agent_name = get_settings().admin_user
+        else:
+            # Get agent information
+            database = get_database()
+            agent_row = database.fetch_one(
+                "SELECT agent_name FROM agents WHERE id = :agent_id",
+                {"agent_id": agent_id}
+            )
+            
+            if not agent_row:
+                logger.warning("token_refresh_agent_not_found", agent_id=agent_id)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Agent not found"
+                )
+            
+            agent = dict(agent_row)
+            agent_name = agent["agent_name"]
         
         # Create new tokens
         tokens = create_agent_tokens(
             agent_id=agent_id,
-            agent_name=agent["agent_name"],
+            agent_name=agent_name,
             role=role
         )
         
