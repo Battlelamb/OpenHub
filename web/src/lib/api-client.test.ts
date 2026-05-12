@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/mocks/server'
-import { api } from './api-client'
+import { api, createAgentInvite } from './api-client'
 import { useAuthStore } from '@/stores/auth-store'
 
 describe('api-client', () => {
@@ -59,5 +59,25 @@ describe('api-client', () => {
     )
     await api('/v1/auth/login', { method: 'POST', body: '{}', skipAuth: true })
     expect(captured).toBeNull()
+  })
+
+  it('creates dashboard ACN invites with the current session token', async () => {
+    useAuthStore.getState().setSession('jwt-token', 'r', 900, { id: 'u1', name: 'a', role: 'admin' })
+    let method: string | null = null
+    let captured: string | null = null
+    server.use(
+      http.post('/v1/acn/dashboard/invite', ({ request }) => {
+        method = request.method
+        captured = request.headers.get('authorization')
+        return HttpResponse.json({ invite_code: 'inv_test', expires_in: '24 hours' })
+      }),
+    )
+
+    const invite = await createAgentInvite()
+
+    expect(method).toBe('POST')
+    expect(captured).toBe('Bearer jwt-token')
+    expect(invite.invite_code).toBe('inv_test')
+    expect(invite.expires_in).toBe('24 hours')
   })
 })

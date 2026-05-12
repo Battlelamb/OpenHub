@@ -21,6 +21,7 @@ from ..models.acn import ACNNode, ACNNodeCreate, RemoteAgentRegister
 from ..models.agents import Agent
 from ..models.tasks import TaskCreate, TaskType, TaskPriority, TaskStatus, TaskClaim, TaskComplete, TaskFail
 from ..auth.api_keys import APIKeyManager, APIKeyType, APIKeyScope
+from ..auth.dependencies import CurrentAdmin
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -34,6 +35,25 @@ _invite_store: Dict[str, Dict[str, Any]] = {}
 # Master admin key - set via env AGENTHUB_ACN_ADMIN_KEY
 # If not set, first request to /admin/invite creates it
 _admin_key: Optional[str] = None
+
+
+def _create_invite_record() -> str:
+    """Create a single-use invite code and store it in memory."""
+    invite_code = f"inv_{secrets.token_hex(16)}"
+    _invite_store[invite_code] = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+        "used": False,
+    }
+    return invite_code
+
+
+def _invite_response(invite_code: str) -> Dict[str, str]:
+    return {
+        "invite_code": invite_code,
+        "expires_in": "24 hours",
+        "usage": "POST /v1/acn/join with this invite_code to register your agent"
+    }
 
 
 def get_remote_agent_service() -> RemoteAgentService:
@@ -164,22 +184,34 @@ async def create_invite(
     Requires X-Admin-Key header.
     Invite expires in 24 hours.
     """
-    invite_code = f"inv_{secrets.token_hex(16)}"
-    _invite_store[invite_code] = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
-        "used": False,
-    }
+    invite_code = _create_invite_record()
 
     logger.info("acn_invite_created",
                invite_prefix=invite_code[:8],
                client_ip=request.client.host if request.client else None)
 
-    return {
-        "invite_code": invite_code,
-        "expires_in": "24 hours",
-        "usage": "POST /v1/acn/join with this invite_code to register your agent"
-    }
+    return _invite_response(invite_code)
+
+
+@router.post("/dashboard/invite")
+async def create_dashboard_invite(
+    request: Request,
+    current_admin: CurrentAdmin,
+) -> Dict[str, str]:
+    """
+    Create a single-use invite code for dashboard admins.
+
+    Uses the dashboard JWT session instead of exposing the ACN admin key to the
+    browser. Invite expires in 24 hours.
+    """
+    invite_code = _create_invite_record()
+
+    logger.info("acn_dashboard_invite_created",
+               invite_prefix=invite_code[:8],
+               admin_id=current_admin.agent_id,
+               client_ip=request.client.host if request.client else None)
+
+    return _invite_response(invite_code)
 
 
 @router.get("/admin/invites")

@@ -1,7 +1,33 @@
 export const en = {
   title: 'Settings',
+  appearanceTitle: 'Appearance',
+  appearanceDescription: 'Theme and language preferences for this dashboard.',
+  agentInviteTitle: 'Agent invites',
+  agentInviteDescription: 'Create a one-time invite so another agent can register itself and receive its own API key.',
+  agentInviteWarning: 'Keep the admin key private. Share only the inv_ invite code with the other agent.',
+  createInvite: 'Create agent invite',
+  creatingInvite: 'Creating invite…',
+  copyInvite: 'Copy invite',
+  inviteCode: 'Invite code',
+  inviteExpires: 'Expires in',
+  inviteCreated: 'Agent invite created',
+  inviteCopied: 'Invite copied',
+  inviteCopyFailed: 'Could not copy invite',
 } as const
 
 export const tr = {
   title: 'Ayarlar',
+  appearanceTitle: 'Görünüm',
+  appearanceDescription: 'Bu panel için tema ve dil tercihleri.',
+  agentInviteTitle: 'Ajan davetleri',
+  agentInviteDescription: 'Başka bir ajanın kayıt olup kendi API anahtarını alması için tek kullanımlık davet oluştur.',
+  agentInviteWarning: 'Admin anahtarını gizli tut. Diğer ajanla yalnızca inv_ davet kodunu paylaş.',
+  createInvite: 'Ajan daveti oluştur',
+  creatingInvite: 'Davet oluşturuluyor…',
+  copyInvite: 'Daveti kopyala',
+  inviteCode: 'Davet kodu',
+  inviteExpires: 'Geçerlilik',
+  inviteCreated: 'Ajan daveti oluşturuldu',
+  inviteCopied: 'Davet kopyalandı',
+  inviteCopyFailed: 'Davet kopyalanamadı',
 } as const

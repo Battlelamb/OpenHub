@@ -22,6 +22,12 @@ export interface ApiOptions extends RequestInit {
   skipAuth?: boolean
 }
 
+export interface AgentInviteResponse {
+  invite_code: string
+  expires_in: string
+  usage?: string
+}
+
 export async function api<T = unknown>(path: string, init: ApiOptions = {}): Promise<T> {
   const { skipAuth, ...rest } = init
   const token = useAuthStore.getState().token
@@ -54,4 +60,8 @@ export async function api<T = unknown>(path: string, init: ApiOptions = {}): Pro
   if (res.status === 204) return undefined as T
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
+}
+
+export function createAgentInvite(): Promise<AgentInviteResponse> {
+  return api<AgentInviteResponse>('/v1/acn/dashboard/invite', { method: 'POST' })
 }
