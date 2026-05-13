@@ -305,7 +305,14 @@ async def join_acn(
             ],
             description=f"ACN agent key for {agent_data.agent_name}",
             created_by="acn-join",
-            metadata={"agent_id": new_agent.id, "agent_name": new_agent.agent_name},
+            metadata={
+                "agent_id": new_agent.id,
+                "agent_name": new_agent.agent_name,
+                "node_id": service.node_repo.find_by_name(agent_data.node_name).id if service.node_repo.find_by_name(agent_data.node_name) else None,
+                "node_name": agent_data.node_name,
+                "allowed_capabilities": agent_data.capabilities or [],
+                "mcp_profiles": agent_data.mcp_servers or [],
+            },
         )
     except Exception as e:
         logger.error("acn_join_key_creation_failed", error=str(e))
@@ -365,7 +372,9 @@ async def node_heartbeat(
     node = service.get_node(node_id)
     if not node:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Node '{node_id}' not found")
-    service.heartbeat_node(node_id)
+    heartbeat_agent_id = (key_info.get("metadata") or {}).get("agent_id")
+    service.heartbeat_node(node_id, agent_id=heartbeat_agent_id)
+    _audit_acn_event("acn_node_heartbeat", node_id=node_id, agent_id=heartbeat_agent_id, key_id=key_info.get("key_id"))
     return {"status": "heartbeat_received", "node_id": node_id}
 
 
@@ -408,7 +417,63 @@ class ACNTaskCreate(PydanticBaseModel):
     payload: Optional[Dict[str, Any]] = None
 
 
+def _redact_audit_payload(value: Any) -> Any:
+    """Recursively redact secret-like fields before structured audit logging."""
+    secret_markers = ("key", "token", "secret", "password", "credential", "bearer")
+    if isinstance(value, dict):
+        redacted = {}
+        for key, item in value.items():
+            if any(marker in str(key).lower() for marker in secret_markers):
+                redacted[key] = "[REDACTED]"
+            else:
+                redacted[key] = _redact_audit_payload(item)
+        return redacted
+    if isinstance(value, list):
+        return [_redact_audit_payload(item) for item in value]
+    return value
+
+
+def _audit_acn_event(event: str, **payload: Any) -> None:
+    """Emit secret-safe ACN audit events via structured logs."""
+    logger.info(event, **_redact_audit_payload(payload))
+
+
+def _authenticated_agent_id(key_info: Dict[str, Any], provided_agent_id: Optional[str] = None) -> str:
+    """Resolve task caller identity from API key metadata, with legacy query fallback."""
+    metadata = key_info.get("metadata") or {}
+    metadata_agent_id = metadata.get("agent_id")
+    if metadata_agent_id:
+        if provided_agent_id and provided_agent_id != metadata_agent_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key does not belong to requested agent")
+        return metadata_agent_id
+    if provided_agent_id:
+        return provided_agent_id
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key metadata missing agent_id")
+
+
+def _serialize_task(t) -> Dict[str, Any]:
+    return {
+        "task_id": t.id,
+        "title": t.title,
+        "description": t.description,
+        "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
+        "priority": t.priority,
+        "status": t.status if isinstance(t.status, str) else t.status.value,
+        "assigned_to": t.owner_agent_id,
+        "required_capabilities": t.required_capabilities,
+        "payload": t.payload or {},
+        "result_summary": t.result_summary,
+        "output": t.output,
+        "last_error": t.last_error,
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "claimed_at": t.claimed_at.isoformat() if t.claimed_at else None,
+        "started_at": t.started_at.isoformat() if t.started_at else None,
+        "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+    }
+
+
 @router.post("/tasks/create")
+@router.post("/tasks")
 async def create_task(
     body: ACNTaskCreate,
     key_info: Dict = Depends(_require_api_key),
@@ -430,6 +495,13 @@ async def create_task(
             max_retries=3,
         )
         new_task = task_service.create_task(task_data, created_by=key_info.get("name"))
+        _audit_acn_event(
+            "acn_task_created",
+            task_id=new_task.id,
+            created_by=key_info.get("name"),
+            assigned_to=new_task.owner_agent_id,
+            required_capabilities=body.required_capabilities,
+        )
 
         return {
             "task_id": new_task.id,
@@ -446,115 +518,127 @@ async def create_task(
 @router.post("/tasks/{task_id}/claim")
 async def claim_task(
     task_id: str,
-    agent_id: str,
+    agent_id: Optional[str] = None,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
-    """Claim a task for a specific agent. Requires API key."""
-    claim = TaskClaim(agent_id=agent_id)
+    """Claim a task for the authenticated agent. Requires API key."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
+    claim = TaskClaim(agent_id=resolved_agent_id)
     success = task_service.claim_task(task_id, claim)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to claim task")
-    return {"status": "claimed", "task_id": task_id, "agent_id": agent_id}
+    _audit_acn_event("acn_task_claimed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"))
+    return {"status": "claimed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/start")
 async def start_task(
     task_id: str,
-    agent_id: str,
+    agent_id: Optional[str] = None,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """Start a claimed task. Requires API key."""
-    success = task_service.start_task(task_id, agent_id)
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
+    success = task_service.start_task(task_id, resolved_agent_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to start task")
-    return {"status": "started", "task_id": task_id}
+    _audit_acn_event("acn_task_started", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"))
+    return {"status": "started", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/complete")
 async def complete_task(
     task_id: str,
-    agent_id: str,
+    agent_id: Optional[str] = None,
     result_summary: Optional[str] = None,
     output: Optional[Dict[str, Any]] = None,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """Complete a task with results. Requires API key."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
     completion = TaskComplete(
         result_summary=result_summary or "Task completed",
         output=output or {},
     )
-    success = task_service.complete_task(task_id, agent_id, completion)
+    success = task_service.complete_task(task_id, resolved_agent_id, completion)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to complete task")
-    return {"status": "completed", "task_id": task_id}
+    _audit_acn_event("acn_task_completed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"), output=output or {})
+    return {"status": "completed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/fail")
 async def fail_task(
     task_id: str,
-    agent_id: str,
+    agent_id: Optional[str] = None,
     error_message: str = "Task failed",
     retryable: bool = True,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, str]:
     """Report task failure. Requires API key."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
     failure = TaskFail(error_message=error_message, retryable=retryable)
-    success = task_service.fail_task(task_id, agent_id, failure)
+    success = task_service.fail_task(task_id, resolved_agent_id, failure)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to process task failure")
-    return {"status": "failed", "task_id": task_id}
+    _audit_acn_event("acn_task_failed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"), retryable=retryable)
+    return {"status": "failed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.get("/tasks/available")
 async def get_available_tasks(
-    agent_id: str,
+    agent_id: Optional[str] = None,
     limit: int = 10,
     key_info: Dict = Depends(_require_api_key),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
-    """Get tasks available for a specific agent based on capabilities."""
-    tasks = task_service.get_available_tasks(agent_id, limit)
+    """Get tasks available for the authenticated agent based on capabilities."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
+    tasks = task_service.get_available_tasks(resolved_agent_id, limit)
+    return {"tasks": [_serialize_task(t) for t in tasks], "total": len(tasks)}
+
+
+@router.get("/tasks/poll")
+async def poll_tasks(
+    agent_id: Optional[str] = None,
+    limit: int = 5,
+    key_info: Dict = Depends(_require_api_key),
+    task_service: TaskService = Depends(get_task_service),
+) -> Dict[str, Any]:
+    """Poll queued and already-owned tasks for the authenticated agent."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
+    available = task_service.get_available_tasks(resolved_agent_id, limit)
+    owned = []
+    for status_val in ["claimed", "running"]:
+        for task in task_service.task_repo.find_by_status(status_val):
+            if task.owner_agent_id == resolved_agent_id:
+                owned.append(task)
     return {
-        "tasks": [
-            {
-                "task_id": t.id,
-                "title": t.title,
-                "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
-                "priority": t.priority,
-                "required_capabilities": t.required_capabilities,
-                "created_at": t.created_at.isoformat() if t.created_at else None,
-            }
-            for t in tasks
-        ],
-        "total": len(tasks),
+        "agent_id": resolved_agent_id,
+        "available": [_serialize_task(t) for t in available],
+        "owned": [_serialize_task(t) for t in owned],
     }
 
 
 @router.get("/tasks/mine")
 async def get_my_tasks(
-    agent_id: str,
+    agent_id: Optional[str] = None,
     key_info: Dict = Depends(_require_api_key),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
-    """Get tasks assigned to a specific agent (claimed/running)."""
+    """Get tasks assigned to the authenticated agent (claimed/running)."""
+    resolved_agent_id = _authenticated_agent_id(key_info, agent_id)
     tasks = []
     for status_val in ["claimed", "running"]:
         found = task_service.task_repo.find_by_status(status_val)
         for t in found:
-            if t.owner_agent_id == agent_id:
-                tasks.append({
-                    "task_id": t.id,
-                    "title": t.title,
-                    "description": t.description,
-                    "task_type": t.task_type if isinstance(t.task_type, str) else t.task_type.value,
-                    "priority": t.priority,
-                    "status": t.status if isinstance(t.status, str) else t.status.value,
-                })
-    return {"tasks": tasks, "total": len(tasks)}
+            if t.owner_agent_id == resolved_agent_id:
+                tasks.append(_serialize_task(t))
+    return {"agent_id": resolved_agent_id, "tasks": tasks, "total": len(tasks)}
 
 
 @router.get("/tasks/{task_id}")
@@ -787,6 +871,12 @@ async def approve_application(
                 APIKeyScope.TASK_UPDATE.value,
             ],
             description=f"Agent key for {agent_name}",
+            metadata={
+                "agent_id": agent_id,
+                "agent_name": agent_name,
+                "allowed_capabilities": data.get("capabilities") or [],
+                "mcp_profiles": data.get("mcp_servers") or [],
+            },
         )
 
         result_agent_id = agent_id
@@ -816,6 +906,14 @@ async def approve_application(
                 APIKeyScope.AGENT_HEARTBEAT.value, APIKeyScope.TASK_READ.value, APIKeyScope.TASK_UPDATE.value,
             ],
             description=f"ACN agent key for {agent_data.agent_name}",
+            metadata={
+                "agent_id": new_agent.id,
+                "agent_name": new_agent.agent_name,
+                "node_id": service.node_repo.find_by_name(agent_data.node_name).id if service.node_repo.find_by_name(agent_data.node_name) else None,
+                "node_name": agent_data.node_name,
+                "allowed_capabilities": agent_data.capabilities or [],
+                "mcp_profiles": agent_data.mcp_servers or [],
+            },
         )
 
         result_agent_id = new_agent.id
@@ -1017,5 +1115,22 @@ async def acn_status(
         "version": "0.1.0",
         "nodes": health["total_nodes"],
         "total_agents": len(agents),
-        "agents": [{"name": a["agent_name"], "status": a["status"]} for a in agents],
+        "agents": [
+            {
+                "agent_id": a.get("agent_id"),
+                "name": a["agent_name"],
+                "status": a["status"],  # Backwards-compatible alias for agent_status.
+                "agent_status": a.get("agent_status", a["status"]),
+                "capabilities": a.get("capabilities") or [],
+                "node_id": a.get("node_id"),
+                "node_name": a.get("node_name"),
+                "node_status": a.get("node_status"),
+                "last_heartbeat": a.get("last_heartbeat"),
+                "last_agent_heartbeat": a.get("last_agent_heartbeat", a.get("last_heartbeat")),
+                "last_node_heartbeat": a.get("last_node_heartbeat"),
+                "offline_reason": a.get("offline_reason"),
+                "mcp_profiles": a.get("mcp_profiles") or [],
+            }
+            for a in agents
+        ],
     }

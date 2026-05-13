@@ -4,7 +4,7 @@ ACN (Agent Collaboration Network) Pydantic models
 from enum import Enum
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .base import BaseModel, TimestampMixin, IDMixin, MetadataMixin
 
@@ -87,6 +87,29 @@ class RemoteAgentRegister(BaseModel):
     mcp_servers: Optional[List[str]] = Field(default=None, description="Connected MCP servers")
     languages: Optional[List[str]] = Field(default=None, description="Programming languages")
     context_window: Optional[int] = Field(default=None, description="Max context window size")
+
+    @field_validator("capabilities", "channels", "skills", "mcp_servers", "languages", mode="before")
+    @classmethod
+    def normalize_string_lists(cls, value):
+        """Normalize registry string lists for stable matching and safe display."""
+        if value is None:
+            return value
+        if isinstance(value, str):
+            value = [part for part in value.split(",")]
+        if not isinstance(value, list):
+            raise ValueError("Expected a list")
+        normalized = []
+        seen = set()
+        for item in value:
+            text = str(item).strip().lower().replace(" ", "_")
+            if not text:
+                continue
+            if len(text) > 100:
+                raise ValueError(f"List item too long: {text[:20]}...")
+            if text not in seen:
+                normalized.append(text)
+                seen.add(text)
+        return normalized
 
 
 class RemoteAgentMapping(IDMixin, TimestampMixin):

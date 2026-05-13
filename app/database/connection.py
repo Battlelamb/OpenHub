@@ -97,6 +97,19 @@ class Database:
 
         return self._local.connection
 
+    def _reset_thread_connection(self) -> None:
+        """Drop a stale thread-local connection so the next query reconnects."""
+        if hasattr(self._local, 'connection'):
+            try:
+                self._local.connection.close()
+            except Exception:
+                pass
+            delattr(self._local, 'connection')
+
+    def _is_stale_turso_connection_error(self, exc: Exception) -> bool:
+        message = str(exc).lower()
+        return self._use_turso and ("stream not found" in message or "connection closed" in message)
+
     def sync(self) -> None:
         """No-op in remote mode. Sync only needed for embedded replicas."""
         pass
@@ -145,22 +158,33 @@ class Database:
 
     def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
         """Execute a query synchronously. Auto-commits and syncs for write operations."""
-        with self.get_sync_connection() as conn:
-            query, params = self._adapt_params(query, params)
-            if params:
-                cursor = conn.execute(query, params)
-            else:
-                cursor = conn.execute(query)
+        query, params = self._adapt_params(query, params)
+        last_error = None
+        for attempt in range(2):
+            try:
+                with self.get_sync_connection() as conn:
+                    if params:
+                        cursor = conn.execute(query, params)
+                    else:
+                        cursor = conn.execute(query)
 
-            # Auto-commit for write operations
-            q = query.strip().upper()
-            if q.startswith(("INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER")):
-                try:
-                    conn.commit()
-                except Exception:
-                    pass
+                    # Auto-commit for write operations
+                    q = query.strip().upper()
+                    if q.startswith(("INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER")):
+                        try:
+                            conn.commit()
+                        except Exception:
+                            pass
 
-            return cursor
+                    return cursor
+            except Exception as exc:
+                last_error = exc
+                if attempt == 0 and self._is_stale_turso_connection_error(exc):
+                    logger.warning("turso_stale_connection_reconnecting", error=str(exc))
+                    self._reset_thread_connection()
+                    continue
+                raise
+        raise last_error
 
     def fetch_one(self, query: str, params: Optional[Dict[str, Any]] = None):
         """Fetch one row"""

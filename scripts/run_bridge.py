@@ -43,12 +43,16 @@ def main():
     parser = argparse.ArgumentParser(description="Run OpenHub Agent Bridge")
     parser.add_argument("--agent", required=True, help="Agent name (brunhilde, claude-code, qwen-code)")
     parser.add_argument("--hub", default="http://localhost:7788", help="OpenHub URL")
-    parser.add_argument("--api-key", required=True, help="API key for authentication (oh_...)")
+    parser.add_argument("--api-key", default=os.environ.get("OPENHUB_AGENT_KEY"), help="API key for authentication (or OPENHUB_AGENT_KEY env var)")
     parser.add_argument("--heartbeat", type=int, default=60, help="Heartbeat interval (seconds)")
     parser.add_argument("--poll", type=int, default=10, help="Task poll interval (seconds)")
+    parser.add_argument("--execute", action="store_true", help="Execute tasks with a registered handler; default is dry-run polling")
     args = parser.parse_args()
 
     config = AGENT_CONFIGS.get(args.agent)
+    if not args.api_key:
+        print("Missing API key: pass --api-key or set OPENHUB_AGENT_KEY")
+        sys.exit(1)
     if not config:
         print(f"Unknown agent: {args.agent}")
         print(f"Available: {', '.join(AGENT_CONFIGS.keys())}")
@@ -63,6 +67,7 @@ def main():
         description=config["description"],
         heartbeat_interval=args.heartbeat,
         task_poll_interval=args.poll,
+        dry_run=not args.execute,
     )
 
     print(f"Starting bridge: {args.agent} -> {args.hub}")

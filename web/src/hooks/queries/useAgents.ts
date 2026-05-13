@@ -16,11 +16,36 @@ interface BackendDiscoverResponse {
   agents: BackendDiscoveredAgent[]
 }
 
-function adaptAgent(b: BackendDiscoveredAgent): Agent {
+interface BackendAcnAgent {
+  agent_id?: string
+  name: string
+  status: string
+  agent_status?: string
+  capabilities?: string[]
+  node_id?: string
+  node_name?: string
+  node_status?: string
+  last_heartbeat?: string
+  last_agent_heartbeat?: string
+  last_node_heartbeat?: string
+  offline_reason?: string | null
+  mcp_profiles?: string[]
+}
+
+interface BackendAcnStatusResponse {
+  total_agents: number
+  agents: BackendAcnAgent[]
+}
+
+function coerceStatus(status: string | undefined): AgentStatus {
+  return status === 'online' || status === 'idle' || status === 'error' ? status : 'offline'
+}
+
+function adaptDiscoveredAgent(b: BackendDiscoveredAgent): Agent {
   return {
     id: b.agent_id,
     name: b.agent_name,
-    status: (b.status as AgentStatus) ?? 'offline',
+    status: coerceStatus(b.status),
     capabilities: b.capabilities ?? [],
     last_heartbeat: undefined,    // /discover/available does not include this; agent detail does
     current_task_id: null,
@@ -28,12 +53,43 @@ function adaptAgent(b: BackendDiscoveredAgent): Agent {
   }
 }
 
+function adaptAcnAgent(b: BackendAcnAgent): Agent {
+  return {
+    id: b.agent_id ?? b.name,
+    name: b.name,
+    status: coerceStatus(b.agent_status ?? b.status),
+    agent_status: coerceStatus(b.agent_status ?? b.status),
+    capabilities: b.capabilities ?? [],
+    last_heartbeat: b.last_agent_heartbeat ?? b.last_heartbeat,
+    last_agent_heartbeat: b.last_agent_heartbeat ?? b.last_heartbeat,
+    current_task_id: null,
+    node_id: b.node_id,
+    node_name: b.node_name,
+    node_status: coerceStatus(b.node_status),
+    last_node_heartbeat: b.last_node_heartbeat,
+    offline_reason: b.offline_reason,
+    mcp_profiles: b.mcp_profiles ?? [],
+  }
+}
+
 export function useAgents() {
   return useQuery({
     queryKey: qk.agents.all,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<Agent[]> => {
+      try {
+        const acn = await api<BackendAcnStatusResponse>('/v1/acn/status')
+        if (acn.agents?.length) return acn.agents.map(adaptAcnAgent)
+      } catch {
+        // Fall through to legacy discovery for older/self-hosted deployments.
+      }
+
+      // Legacy fallback for older/self-hosted deployments without ACN status.
       const res = await api<BackendDiscoverResponse>('/v1/agents/discover/available')
-      return (res.agents ?? []).map(adaptAgent)
+      return (res.agents ?? []).map(adaptDiscoveredAgent)
     },
   })
 }

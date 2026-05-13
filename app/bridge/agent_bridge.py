@@ -34,6 +34,7 @@ class AgentBridge:
         description: Optional[str] = None,
         heartbeat_interval: int = 60,
         task_poll_interval: int = 10,
+        dry_run: bool = True,
     ):
         self.hub_url = hub_url.rstrip("/")
         self.agent_name = agent_name
@@ -43,6 +44,7 @@ class AgentBridge:
         self.description = description or f"Remote agent: {agent_name}"
         self.heartbeat_interval = heartbeat_interval
         self.task_poll_interval = task_poll_interval
+        self.dry_run = dry_run
 
         self.client = httpx.AsyncClient(
             base_url=self.hub_url,
@@ -70,7 +72,7 @@ class AgentBridge:
             if resp.status_code == 200:
                 agents = resp.json().get("remote_agents", [])
                 for agent in agents:
-                    if agent["agent_name"] == self.agent_name:
+                    if agent.get("agent_name") == self.agent_name or agent.get("name") == self.agent_name:
                         self.agent_id = agent["agent_id"]
                         self.node_id = agent.get("node_id")
                         logger.info("bridge_agent_found",
@@ -122,47 +124,78 @@ class AgentBridge:
             await asyncio.sleep(self.heartbeat_interval)
 
     async def _task_poll_loop(self):
-        """Background task polling - checks for claimed tasks assigned to this agent"""
+        """Poll available and owned tasks.
+
+        Safe default: dry-run only observes and logs. If a task handler is
+        registered and dry_run is false, the bridge claims, starts, handles,
+        and submits completion/failure for available work.
+        """
         while self._running:
             try:
                 if self.agent_id:
-                    # Check for tasks assigned to me (claimed = needs start, or available = needs claim)
-                    resp = await self.client.get(
-                        f"/v1/acn/tasks/available?agent_id={self.agent_id}&limit=5"
-                    )
+                    resp = await self.client.get("/v1/acn/tasks/poll?limit=5")
                     if resp.status_code == 200:
                         data = resp.json()
-                        tasks = data.get("tasks", [])
-                        if tasks:
-                            logger.info("bridge_tasks_available", count=len(tasks))
+                        available = data.get("available", [])
+                        owned = data.get("owned", [])
+                        if available:
+                            logger.info("bridge_tasks_available", count=len(available), dry_run=self.dry_run)
+                        if owned:
+                            logger.info("bridge_tasks_owned", count=len(owned))
 
-                    # Also check my assigned tasks (claimed/running)
-                    resp2 = await self.client.get(
-                        f"/v1/acn/tasks/mine?agent_id={self.agent_id}"
-                    )
-                    if resp2.status_code == 200:
-                        my_tasks = resp2.json().get("tasks", [])
-                        for task in my_tasks:
-                            task_status = task.get("status", "")
-                            if task_status == "claimed":
-                                logger.info("bridge_task_claimed_found",
-                                           task_id=task.get("task_id"), title=task.get("title"))
-                                if self._task_handler:
-                                    try:
-                                        await self._task_handler(task)
-                                    except Exception as e:
-                                        logger.error("bridge_task_handler_error",
-                                                   task_id=task.get("task_id"), error=str(e))
+                        if self._task_handler and not self.dry_run:
+                            for task in available:
+                                await self._claim_start_handle(task)
+                            for task in owned:
+                                if task.get("status") == "claimed":
+                                    await self._start_and_handle(task)
             except Exception as e:
                 logger.warning("bridge_task_poll_error", error=str(e))
 
             await asyncio.sleep(self.task_poll_interval)
 
+    async def _claim_start_handle(self, task: Dict[str, Any]) -> None:
+        task_id = task.get("task_id")
+        if not task_id:
+            return
+        claim_resp = await self.client.post(f"/v1/acn/tasks/{task_id}/claim")
+        if claim_resp.status_code != 200:
+            logger.warning("bridge_task_claim_failed", task_id=task_id, status_code=claim_resp.status_code)
+            return
+        await self._start_and_handle(task)
+
+    async def _start_and_handle(self, task: Dict[str, Any]) -> None:
+        task_id = task.get("task_id")
+        if not task_id or not self._task_handler:
+            return
+        start_resp = await self.client.post(f"/v1/acn/tasks/{task_id}/start")
+        if start_resp.status_code != 200:
+            logger.warning("bridge_task_start_failed", task_id=task_id, status_code=start_resp.status_code)
+            return
+        try:
+            result = await self._task_handler(task)
+            summary = "Task completed"
+            output: Dict[str, Any] = {}
+            if isinstance(result, dict):
+                summary = str(result.get("result_summary") or result.get("summary") or summary)
+                output = result.get("output") if isinstance(result.get("output"), dict) else result
+            elif result is not None:
+                summary = str(result)
+            await self.submit_result(task_id, summary, output)
+        except Exception as e:
+            logger.error("bridge_task_handler_error", task_id=task_id, error=str(e))
+            await self.client.post(
+                f"/v1/acn/tasks/{task_id}/fail",
+                params={"error_message": str(e), "retryable": True},
+            )
+
     async def submit_result(self, task_id: str, result_summary: str, output: Optional[Dict] = None) -> bool:
         """Submit task result"""
         try:
             resp = await self.client.post(
-                f"/v1/acn/tasks/{task_id}/complete?agent_id={self.agent_id}&result_summary={result_summary}"
+                f"/v1/acn/tasks/{task_id}/complete",
+                params={"result_summary": result_summary},
+                json=output or {},
             )
             return resp.status_code == 200
         except Exception as e:

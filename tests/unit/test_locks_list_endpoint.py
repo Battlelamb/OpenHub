@@ -68,6 +68,8 @@ def test_locks_list_returns_active_locks_with_correct_shape(
     """Inserts 2 locks (1 active, 1 released). List returns only the active one with the UI shape."""
     from app.database.connection import get_database
     db = get_database()
+    # Clean any pre-existing rows from prior local runs; this repo's test DB can persist.
+    db.execute("DELETE FROM resource_locks WHERE resource LIKE 'test-active-%' OR resource LIKE 'test-released-%'")
     now = datetime.now(timezone.utc).isoformat()
     later = (datetime.now(timezone.utc) + timedelta(seconds=300)).isoformat()
     active_id = str(uuid4())

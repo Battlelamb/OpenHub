@@ -244,7 +244,6 @@ class APIKeyManager:
                 if secrets.compare_digest(computed_hash, key_data["key_hash"]):
                     # Key found! Validate scope if required
                     if required_scope:
-                        import json
                         key_scopes = json.loads(key_data["scopes"])
                         if required_scope not in key_scopes:
                             logger.warning("api_key_insufficient_scope", 
@@ -264,14 +263,20 @@ class APIKeyManager:
                                name=key_data["name"])
                     
                     # Return sanitized key info
-                    import json
+                    try:
+                        metadata = json.loads(key_data.get("metadata") or "{}")
+                    except (TypeError, json.JSONDecodeError):
+                        metadata = {}
+                    if not isinstance(metadata, dict):
+                        metadata = {}
                     return {
                         "key_id": key_data["id"],
                         "name": key_data["name"],
                         "key_type": key_data["key_type"],
                         "scopes": json.loads(key_data["scopes"]),
                         "created_by": key_data["created_by"],
-                        "last_used_at": key_data.get("last_used_at")
+                        "last_used_at": key_data.get("last_used_at"),
+                        "metadata": metadata,
                     }
             
             # Key not found

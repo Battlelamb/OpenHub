@@ -46,6 +46,8 @@ def temp_sqlite_db(monkeypatch):
     fd, path = tempfile.mkstemp(prefix="vec-mig-", suffix=".db")
     os.close(fd)
     monkeypatch.setenv("AGENTHUB_DB_PATH", path)
+    monkeypatch.delenv("AGENTHUB_TURSO_DATABASE_URL", raising=False)
+    monkeypatch.delenv("AGENTHUB_TURSO_AUTH_TOKEN", raising=False)
 
     # Reset cached settings so env.py picks up the new path on import-time read.
     from app import config as _config

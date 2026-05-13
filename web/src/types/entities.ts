@@ -6,9 +6,17 @@ export interface Agent {
   id: string
   name: string
   status: AgentStatus
+  agent_status?: AgentStatus
   capabilities: string[]
   last_heartbeat?: string
+  last_agent_heartbeat?: string
   current_task_id?: string | null
+  node_id?: string
+  node_name?: string
+  node_status?: AgentStatus
+  last_node_heartbeat?: string
+  offline_reason?: string | null
+  mcp_profiles?: string[]
   load_score?: number  // surfaces in /discover/available
   created_at?: string  // optional - /discover/available does not include this
   updated_at?: string  // optional - /discover/available does not include this

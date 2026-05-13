@@ -3,6 +3,9 @@ Remote agent service - ACN federation business logic
 """
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
+
+
+HEARTBEAT_TTL_SECONDS = 300
 from uuid import uuid4
 
 from ..logging import get_logger
@@ -17,6 +20,60 @@ from ..models.acn import (
 from ..models.agents import Agent, AgentCreate, AgentStatus
 
 logger = get_logger(__name__)
+
+
+def _coerce_datetime(value: Any) -> Optional[datetime]:
+    """Parse repository datetime values into timezone-aware UTC datetimes."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    else:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _isoformat(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+
+def _heartbeat_status(last_heartbeat: Any, declared_status: Any, now: datetime, ttl_seconds: int = HEARTBEAT_TTL_SECONDS) -> str:
+    status_value = declared_status if isinstance(declared_status, str) else getattr(declared_status, "value", declared_status)
+    if status_value == "offline":
+        return "offline"
+
+    heartbeat = _coerce_datetime(last_heartbeat)
+    if not heartbeat:
+        return "offline"
+
+    elapsed = (now - heartbeat).total_seconds()
+    return "online" if elapsed <= ttl_seconds else "offline"
+
+
+def _offline_reason(last_heartbeat: Any, declared_status: Any, now: datetime, ttl_seconds: int = HEARTBEAT_TTL_SECONDS) -> Optional[str]:
+    if _heartbeat_status(last_heartbeat, declared_status, now, ttl_seconds) == "online":
+        return None
+    status_value = declared_status if isinstance(declared_status, str) else getattr(declared_status, "value", declared_status)
+    if status_value == "offline":
+        heartbeat = _coerce_datetime(last_heartbeat)
+        if heartbeat and (now - heartbeat).total_seconds() > ttl_seconds:
+            return "stale_agent_heartbeat"
+        return "agent_marked_offline"
+    if not _coerce_datetime(last_heartbeat):
+        return "missing_agent_heartbeat"
+    return "stale_agent_heartbeat"
 
 
 class RemoteAgentService:
@@ -67,25 +124,29 @@ class RemoteAgentService:
         """Get all ACN nodes"""
         return self.node_repo.list_all()
 
-    def heartbeat_node(self, node_id: str) -> bool:
-        """Update node heartbeat + refresh agents on this node"""
+    def heartbeat_node(self, node_id: str, agent_id: Optional[str] = None) -> bool:
+        """Update the ACN node heartbeat and, when known, the caller agent.
 
-        logger.debug("acn_node_heartbeat_received", node_id=node_id)
+        A node heartbeat proves that the node/bridge is reachable; it does not
+        prove that every agent mapped to that node is actively running. When the
+        authenticated API key identifies a specific mapped agent, refresh only
+        that agent. Never fan out one node heartbeat to every mapped agent.
+        """
+
+        logger.debug("acn_node_heartbeat_received", node_id=node_id, agent_id=agent_id)
         success = self.node_repo.update_heartbeat(node_id)
+        if not success:
+            return False
 
-        # Also update all agents on this node
-        if success:
-            mappings = self.mapping_repo.find_by_node_id(node_id)
-            for mapping in mappings:
-                try:
-                    self.agent_repo.update(mapping.local_agent_id, {
-                        "status": "online",
-                        "last_heartbeat": datetime.now(timezone.utc),
-                    })
-                except Exception:
-                    pass
+        if agent_id:
+            mapping = self.mapping_repo.find_by_agent_id(agent_id)
+            if mapping and mapping.node_id == node_id:
+                self.agent_repo.update(agent_id, {
+                    "status": "online",
+                    "last_heartbeat": datetime.now(timezone.utc),
+                })
 
-        return success
+        return True
 
     def register_remote_agent(self, data: RemoteAgentRegister, client_ip: Optional[str] = None) -> Agent:
         """Register a remote agent - creates local Agent record + mapping"""
@@ -169,42 +230,51 @@ class RemoteAgentService:
         return created_agent
 
     def get_remote_agents(self) -> List[Dict[str, Any]]:
-        """List all remote agents with their mapping info. Auto-detects offline agents."""
+        """List remote agents with separate node and agent presence state."""
 
         mappings = self.mapping_repo.list_all()
         result = []
         now = datetime.now(timezone.utc)
-        offline_threshold = 300  # 5 minutes
 
         for mapping in mappings:
             agent = self.agent_repo.get_by_id(mapping.local_agent_id)
             node = self.node_repo.get_by_id(mapping.node_id)
 
             if agent:
-                # Check heartbeat staleness
-                agent_status = agent.status if isinstance(agent.status, str) else agent.status.value
-                if agent.last_heartbeat:
-                    try:
-                        hb = agent.last_heartbeat
-                        if isinstance(hb, str):
-                            hb = datetime.fromisoformat(hb.replace('Z', '+00:00').replace('+00:00', ''))
-                        elapsed = (now - hb).total_seconds()
-                        if elapsed > offline_threshold and agent_status != "offline":
-                            # Mark offline
-                            self.agent_repo.update(agent.id, {"status": "offline"})
-                            agent_status = "offline"
-                    except Exception:
-                        pass
+                agent_status = _heartbeat_status(agent.last_heartbeat, agent.status, now)
+                node_status = _heartbeat_status(
+                    node.last_heartbeat if node else None,
+                    node.status if node else "offline",
+                    now,
+                )
+
+                # Keep the stored status conservative for stale agents, but never
+                # let node heartbeat fan out into agent online status.
+                if agent_status == "offline":
+                    stored_status = agent.status if isinstance(agent.status, str) else agent.status.value
+                    if stored_status != "offline":
+                        self.agent_repo.update(agent.id, {"status": "offline"})
+
+                metadata = agent.metadata or {}
+                mcp_profiles = metadata.get("mcp_profiles") or metadata.get("mcp_servers") or []
+                if not isinstance(mcp_profiles, list):
+                    mcp_profiles = []
 
                 result.append({
                     "agent_id": agent.id,
                     "agent_name": agent.agent_name,
-                    "status": agent_status,
+                    "status": agent_status,  # Backwards-compatible alias for agent_status.
+                    "agent_status": agent_status,
                     "capabilities": agent.capabilities,
                     "node_id": mapping.node_id,
                     "node_name": node.node_name if node else "unknown",
+                    "node_status": node_status,
                     "callback_url": mapping.callback_url,
-                    "last_heartbeat": agent.last_heartbeat.isoformat() if agent.last_heartbeat and not isinstance(agent.last_heartbeat, str) else agent.last_heartbeat,
+                    "last_heartbeat": _isoformat(agent.last_heartbeat),  # Backwards-compatible alias.
+                    "last_agent_heartbeat": _isoformat(agent.last_heartbeat),
+                    "last_node_heartbeat": _isoformat(node.last_heartbeat) if node else None,
+                    "offline_reason": _offline_reason(agent.last_heartbeat, agent.status, now),
+                    "mcp_profiles": mcp_profiles,
                 })
 
         return result
