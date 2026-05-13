@@ -419,7 +419,16 @@ class ACNTaskCreate(PydanticBaseModel):
 
 def _redact_audit_payload(value: Any) -> Any:
     """Recursively redact secret-like fields before structured audit logging."""
+    import re
     secret_markers = ("key", "token", "secret", "password", "credential", "bearer")
+    
+    # Patterns to redact directly in string values
+    value_patterns = [
+        re.compile(r"Bearer\s+[\w\-]+", re.IGNORECASE),
+        re.compile(r"sk-[a-zA-Z0-9\-_]{20,}"),  # OpenAI/Anthropic style keys
+        re.compile(r"ghp_[a-zA-Z0-9]{36}")       # GitHub PATs
+    ]
+
     if isinstance(value, dict):
         redacted = {}
         for key, item in value.items():
@@ -430,6 +439,12 @@ def _redact_audit_payload(value: Any) -> Any:
         return redacted
     if isinstance(value, list):
         return [_redact_audit_payload(item) for item in value]
+    
+    # Check strings for obvious secrets
+    if isinstance(value, str):
+        for pattern in value_patterns:
+            value = pattern.sub("[REDACTED]", value)
+            
     return value
 
 
