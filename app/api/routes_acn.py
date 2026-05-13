@@ -348,7 +348,9 @@ async def register_node(
 ) -> ACNNode:
     """Register a new ACN node. Requires API key with acn:node_manage scope."""
     try:
-        return service.register_node(node_data)
+        node = service.register_node(node_data)
+        _audit_acn_event("acn_node_registered", node_id=node.id, node_name=node.node_name, key_id=key_info.get("key_id"))
+        return node
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
@@ -387,7 +389,9 @@ async def register_remote_agent(
 ) -> Agent:
     """Register a remote agent. Requires API key with acn:agent_register scope."""
     try:
-        return service.register_remote_agent(agent_data)
+        agent = service.register_remote_agent(agent_data)
+        _audit_acn_event("acn_agent_registered", agent_id=agent.id, agent_name=agent.agent_name, node_name=agent_data.node_name, key_id=key_info.get("key_id"))
+        return agent
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
