@@ -94,13 +94,43 @@ export function useAgents() {
   })
 }
 
+// Defines the raw response from /v1/agents/{id}
+interface BackendAgentDetail {
+  id: string
+  agent_name: string
+  status: string
+  capabilities: string[]
+  last_heartbeat?: string
+  current_task_id?: string | null
+  metadata?: {
+    node_name?: string
+    mcp_servers?: string[]
+    offline_reason?: string
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
 // TODO(04-11): /v1/agents/{id} returns the full Agent model with agent_name (not name).
 // Consumer agents/$agentId.tsx may render agent.name as undefined for non-current users.
 // Verified working at master HEAD because admin user hits this and consumer falls back gracefully.
 export function useAgent(id: string | undefined) {
   return useQuery({
     queryKey: id ? qk.agents.detail(id) : (['agents', 'none'] as const),
-    queryFn: () => api<Agent>(`/v1/agents/${id}`),
+    queryFn: async (): Promise<Agent> => {
+      const raw = await api<BackendAgentDetail>(`/v1/agents/${id}`)
+      return {
+        id: raw.id,
+        name: raw.agent_name,
+        status: coerceStatus(raw.status),
+        capabilities: raw.capabilities ?? [],
+        last_heartbeat: raw.last_heartbeat,
+        current_task_id: raw.current_task_id,
+        node_name: raw.metadata?.node_name,
+        mcp_profiles: raw.metadata?.mcp_servers ?? [],
+        offline_reason: raw.metadata?.offline_reason,
+      }
+    },
     enabled: !!id,
   })
 }
