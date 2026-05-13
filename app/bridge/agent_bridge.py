@@ -32,6 +32,7 @@ class AgentBridge:
         api_key: str,
         node_name: str = "default-node",
         description: Optional[str] = None,
+        mcp_servers: Optional[List[str]] = None,
         heartbeat_interval: int = 60,
         task_poll_interval: int = 10,
         dry_run: bool = True,
@@ -42,6 +43,7 @@ class AgentBridge:
         self.api_key = api_key
         self.node_name = node_name
         self.description = description or f"Remote agent: {agent_name}"
+        self.mcp_servers = mcp_servers or []
         self.heartbeat_interval = heartbeat_interval
         self.task_poll_interval = task_poll_interval
         self.dry_run = dry_run
@@ -94,6 +96,7 @@ class AgentBridge:
                 "capabilities": self.capabilities,
                 "node_name": self.node_name,
                 "description": self.description,
+                "mcp_servers": self.mcp_servers,
             })
             if resp.status_code == 200:
                 data = resp.json()

@@ -20,18 +20,21 @@ from app.bridge.agent_bridge import AgentBridge
 AGENT_CONFIGS = {
     "brunhilde": {
         "capabilities": ["code_edit", "code_review", "research", "email", "telegram", "discord"],
+        "mcp_servers": ["filesystem", "github", "discord", "openhub"],
         "description": "Brunhilde von Nacht - OpenClaw AI Agent (gpt-5.3-codex)",
         "node_name": "brunhilde-vps",
         "node_url": "http://localhost:18789",
     },
     "claude-code": {
         "capabilities": ["code_edit", "code_review", "testing", "analysis", "refactoring", "documentation"],
+        "mcp_servers": ["filesystem", "bash"],
         "description": "Claude Code (Opus 4.6) - WSL local agent",
         "node_name": "brunhilde-vps",
         "node_url": "http://localhost:7788",
     },
     "qwen-code": {
         "capabilities": ["code_edit", "code_review", "browser_automation", "security_analysis", "research"],
+        "mcp_servers": ["filesystem", "bash", "playwright"],
         "description": "Qwen Code (qwen3.5-plus) - VPS agent",
         "node_name": "brunhilde-vps",
         "node_url": "http://localhost:7788",
@@ -65,6 +68,7 @@ def main():
         api_key=args.api_key,
         node_name=config["node_name"],
         description=config["description"],
+        mcp_servers=config.get("mcp_servers", []),
         heartbeat_interval=args.heartbeat,
         task_poll_interval=args.poll,
         dry_run=not args.execute,
