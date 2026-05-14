@@ -9,6 +9,9 @@ import type { Agent, Task } from '@/types/entities'
 type WSEvent =
   | { event: 'connected'; data: { client_id: string } }
   | { event: 'agent_status_changed'; timestamp: string; data: { agent_id: string; status: Agent['status'] } }
+  | { event: 'acn_agent_registered'; timestamp: string; data: { agent_id: string; agent_name?: string; node_name?: string } }
+  | { event: 'acn_node_registered'; timestamp: string; data: { node_id: string; node_name?: string } }
+  | { event: 'acn_node_heartbeat'; timestamp: string; data: { node_id: string; agent_id?: string | null } }
   | { event: 'task_status_changed'; timestamp: string; data: { task_id: string; status: Task['status'] } }
   | { event: 'task_progress'; timestamp: string; data: { task_id: string; progress: number } }
   | { event: 'workflow_step_changed'; timestamp: string; data: { workflow_id: string; step_id: string; status: string } }
@@ -25,7 +28,7 @@ export function buildWsUrl(): string {
   return `${proto}//${host}/v1/ws/ui`
 }
 
-function handleEvent(qc: ReturnType<typeof useQueryClient>, msg: WSEvent) {
+export function handleEvent(qc: ReturnType<typeof useQueryClient>, msg: WSEvent) {
   switch (msg.event) {
     case 'agent_status_changed':
       qc.setQueryData<Agent[]>(qk.agents.all, (prev) =>
@@ -35,6 +38,11 @@ function handleEvent(qc: ReturnType<typeof useQueryClient>, msg: WSEvent) {
         prev ? { ...prev, status: msg.data.status } : prev,
       )
       break
+    case 'acn_agent_registered':
+    case 'acn_node_registered':
+    case 'acn_node_heartbeat':
+      qc.invalidateQueries({ queryKey: qk.agents.all })
+      break
     case 'task_status_changed':
       qc.setQueryData<Task[]>(qk.tasks.all, (prev) =>
         prev?.map((t) => (t.id === msg.data.task_id ? { ...t, status: msg.data.status } : t)),
@@ -42,6 +50,7 @@ function handleEvent(qc: ReturnType<typeof useQueryClient>, msg: WSEvent) {
       qc.setQueryData<Task | undefined>(qk.tasks.detail(msg.data.task_id), (prev) =>
         prev ? { ...prev, status: msg.data.status } : prev,
       )
+      qc.invalidateQueries({ queryKey: qk.tasks.all })
       break
     case 'task_progress':
       qc.setQueryData<Task | undefined>(qk.tasks.detail(msg.data.task_id), (prev) =>

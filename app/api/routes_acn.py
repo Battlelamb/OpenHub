@@ -350,6 +350,11 @@ async def register_node(
     try:
         node = service.register_node(node_data)
         _audit_acn_event("acn_node_registered", node_id=node.id, node_name=node.node_name, key_id=key_info.get("key_id"))
+        await _broadcast_acn_ui_event(
+            request,
+            "acn_node_registered",
+            {"node_id": node.id, "node_name": node.node_name},
+        )
         return node
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
@@ -367,6 +372,7 @@ async def list_nodes(
 @router.post("/nodes/{node_id}/heartbeat")
 async def node_heartbeat(
     node_id: str,
+    request: Request,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_NODE_MANAGE.value)),
     service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Dict[str, str]:
@@ -377,6 +383,12 @@ async def node_heartbeat(
     heartbeat_agent_id = (key_info.get("metadata") or {}).get("agent_id")
     service.heartbeat_node(node_id, agent_id=heartbeat_agent_id)
     _audit_acn_event("acn_node_heartbeat", node_id=node_id, agent_id=heartbeat_agent_id, key_id=key_info.get("key_id"))
+    await _broadcast_acn_ui_event(
+        request,
+        "acn_node_heartbeat",
+        {"node_id": node_id, "agent_id": heartbeat_agent_id},
+        critical=False,
+    )
     return {"status": "heartbeat_received", "node_id": node_id}
 
 
@@ -391,6 +403,17 @@ async def register_remote_agent(
     try:
         agent = service.register_remote_agent(agent_data)
         _audit_acn_event("acn_agent_registered", agent_id=agent.id, agent_name=agent.agent_name, node_name=agent_data.node_name, key_id=key_info.get("key_id"))
+        agent_status = agent.status.value if hasattr(agent.status, "value") else str(agent.status)
+        await _broadcast_acn_ui_event(
+            request,
+            "acn_agent_registered",
+            {"agent_id": agent.id, "agent_name": agent.agent_name, "node_name": agent_data.node_name},
+        )
+        await _broadcast_acn_ui_event(
+            request,
+            "agent_status_changed",
+            {"agent_id": agent.id, "status": agent_status, "reason": "acn_registered"},
+        )
         return agent
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
@@ -457,6 +480,23 @@ def _audit_acn_event(event: str, **payload: Any) -> None:
     logger.info(event, **_redact_audit_payload(payload))
 
 
+async def _broadcast_acn_ui_event(
+    request: Request,
+    event_type: str,
+    data: Dict[str, Any],
+    critical: bool = True,
+) -> int:
+    """Broadcast an ACN event to dashboard UI clients, never failing the request."""
+    connection_manager = getattr(request.app.state, "connection_manager", None)
+    if connection_manager is None:
+        return 0
+    try:
+        return await connection_manager.broadcast_to_ui(event_type, data, critical)
+    except Exception as exc:
+        logger.warning("acn_ws_broadcast_failed", event=event_type, error=str(exc))
+        return 0
+
+
 def _authenticated_agent_id(key_info: Dict[str, Any], provided_agent_id: Optional[str] = None) -> str:
     """Resolve task caller identity from API key metadata, with legacy query fallback."""
     metadata = key_info.get("metadata") or {}
@@ -495,6 +535,7 @@ def _serialize_task(t) -> Dict[str, Any]:
 @router.post("/tasks")
 async def create_task(
     body: ACNTaskCreate,
+    request: Request,
     key_info: Dict = Depends(_require_api_key),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
@@ -521,6 +562,18 @@ async def create_task(
             assigned_to=new_task.owner_agent_id,
             required_capabilities=body.required_capabilities,
         )
+        task_status = new_task.status if isinstance(new_task.status, str) else new_task.status.value
+        await _broadcast_acn_ui_event(
+            request,
+            "task_status_changed",
+            {
+                "task_id": new_task.id,
+                "status": task_status,
+                "previous_status": None,
+                "agent_id": new_task.owner_agent_id,
+                "reason": "acn_task_created",
+            },
+        )
 
         return {
             "task_id": new_task.id,
@@ -537,6 +590,7 @@ async def create_task(
 @router.post("/tasks/{task_id}/claim")
 async def claim_task(
     task_id: str,
+    request: Request,
     agent_id: Optional[str] = None,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
@@ -548,12 +602,18 @@ async def claim_task(
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to claim task")
     _audit_acn_event("acn_task_claimed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"))
+    await _broadcast_acn_ui_event(
+        request,
+        "task_status_changed",
+        {"task_id": task_id, "status": "claimed", "previous_status": "queued", "agent_id": resolved_agent_id},
+    )
     return {"status": "claimed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/start")
 async def start_task(
     task_id: str,
+    request: Request,
     agent_id: Optional[str] = None,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_TASK_SUBMIT.value)),
     task_service: TaskService = Depends(get_task_service),
@@ -564,12 +624,18 @@ async def start_task(
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to start task")
     _audit_acn_event("acn_task_started", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"))
+    await _broadcast_acn_ui_event(
+        request,
+        "task_status_changed",
+        {"task_id": task_id, "status": "running", "previous_status": "claimed", "agent_id": resolved_agent_id},
+    )
     return {"status": "started", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/complete")
 async def complete_task(
     task_id: str,
+    request: Request,
     agent_id: Optional[str] = None,
     result_summary: Optional[str] = None,
     output: Optional[Dict[str, Any]] = None,
@@ -586,12 +652,18 @@ async def complete_task(
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to complete task")
     _audit_acn_event("acn_task_completed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"), output=output or {})
+    await _broadcast_acn_ui_event(
+        request,
+        "task_status_changed",
+        {"task_id": task_id, "status": "completed", "previous_status": "running", "agent_id": resolved_agent_id},
+    )
     return {"status": "completed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
 @router.post("/tasks/{task_id}/fail")
 async def fail_task(
     task_id: str,
+    request: Request,
     agent_id: Optional[str] = None,
     error_message: str = "Task failed",
     retryable: bool = True,
@@ -605,6 +677,11 @@ async def fail_task(
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to process task failure")
     _audit_acn_event("acn_task_failed", task_id=task_id, agent_id=resolved_agent_id, key_id=key_info.get("key_id"), retryable=retryable)
+    await _broadcast_acn_ui_event(
+        request,
+        "task_status_changed",
+        {"task_id": task_id, "status": "failed", "previous_status": "running", "agent_id": resolved_agent_id},
+    )
     return {"status": "failed", "task_id": task_id, "agent_id": resolved_agent_id}
 
 
