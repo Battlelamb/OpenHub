@@ -182,6 +182,29 @@ def test_task_create_triggers_embedding(
     assert call_args[0] == "task"
 
 
+def test_acn_task_create_triggers_embedding(
+    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service, admin_api_key
+):
+    resp = test_client.post(
+        "/v1/acn/tasks",
+        headers={"X-API-Key": admin_api_key},
+        json={
+            "title": "acn auto-index task",
+            "description": "acn task description text",
+            "task_type": "feature",
+            "priority": 3,
+            "required_capabilities": ["general"],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    fake_backend.embed.assert_called()
+    args, _ = fake_backend.embed.call_args
+    assert args[0] == ["acn task description text"]
+    fake_vector_service.write_embedding.assert_called()
+    call_args, _ = fake_vector_service.write_embedding.call_args
+    assert call_args[0] == "task"
+
+
 def test_memory_write_noop_when_vector_disabled(
     test_client: TestClient, monkeypatch, fake_backend, fake_vector_service, admin_api_key
 ):

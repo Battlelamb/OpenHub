@@ -10,13 +10,14 @@ Flow:
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request, Header
 
 from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database, Database
 from ..services.remote_agent_service import RemoteAgentService
 from ..services.task_service import TaskService
+from ..services.embedding_hooks import schedule_embedding
 from ..models.acn import ACNNode, ACNNodeCreate, RemoteAgentRegister
 from ..models.agents import Agent
 from ..models.tasks import TaskCreate, TaskType, TaskPriority, TaskStatus, TaskClaim, TaskComplete, TaskFail
@@ -536,6 +537,7 @@ def _serialize_task(t) -> Dict[str, Any]:
 async def create_task(
     body: ACNTaskCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     key_info: Dict = Depends(_require_api_key),
     task_service: TaskService = Depends(get_task_service),
 ) -> Dict[str, Any]:
@@ -574,6 +576,7 @@ async def create_task(
                 "reason": "acn_task_created",
             },
         )
+        schedule_embedding(background_tasks, "task", new_task.id, new_task.description)
 
         return {
             "task_id": new_task.id,
