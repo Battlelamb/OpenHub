@@ -46,6 +46,31 @@ ENTITY_CONFIG: Dict[str, Tuple[str, str, str]] = {
 
 _ALLOWED_FILTER_KEYS = {"owner_agent_id", "created_after", "created_before"}
 
+_AGENT_TEXT_COLUMNS = [
+    ("Agent", "agent_name"),
+    ("Description", "description"),
+    ("Model", "model"),
+    ("Platform", "platform"),
+    ("Capabilities", "capabilities"),
+    ("Skills", "skills"),
+    ("MCP profiles", "mcp_servers"),
+    ("Languages", "languages"),
+    ("Channels", "channels"),
+]
+
+
+def _agent_registry_text_expr(alias: str = "") -> str:
+    """Build secret-safe SQL text from public agent registry metadata."""
+    prefix = f"{alias}." if alias else ""
+    chunks = []
+    for label, column in _AGENT_TEXT_COLUMNS:
+        col = f"{prefix}{column}"
+        chunks.append(
+            f"CASE WHEN COALESCE({col}, '') != '' "
+            f"THEN '{label}: ' || {col} || char(10) ELSE '' END"
+        )
+    return f"TRIM({(' || '.join(chunks))}, char(10))"
+
 
 class VectorSearchService:
     """Service layer wrapping Turso vector_top_k / vector32 / vector_distance_cos."""
@@ -153,6 +178,9 @@ class VectorSearchService:
         """
         table, content_col, id_col = self._resolve(entity_type)
         index_name = f"idx_{table}_embedding"
+        content_expr = (
+            _agent_registry_text_expr("t") if entity_type == "agent" else f"t.{content_col}"
+        )
 
         params: Dict[str, Any] = {
             "qvec": json.dumps(query_vector),
@@ -181,7 +209,7 @@ class VectorSearchService:
         where_sql = " AND ".join(where_clauses)
         sql = (
             f"SELECT t.{id_col} AS id, "
-            f"       t.{content_col} AS content, "
+            f"       {content_expr} AS content, "
             "       vector_distance_cos(t.embedding, vector32(:qvec)) AS distance "
             f"FROM vector_top_k(:idx, vector32(:qvec), :k) AS v "
             f"JOIN {table} t ON t.rowid = v.id "
@@ -222,6 +250,9 @@ class VectorSearchService:
         Plan 05 / D-15 documents this as the bulk-backfill scope knob.
         """
         table, content_col, id_col = self._resolve(entity_type)
+        content_expr = (
+            _agent_registry_text_expr() if entity_type == "agent" else content_col
+        )
         params: Dict[str, Any] = {"limit": limit}
         where = (
             "embedding_status IS NULL "
@@ -238,7 +269,7 @@ class VectorSearchService:
                 "AND COALESCE(updated_at, created_at) >= :since"
             )
         sql = (
-            f"SELECT {id_col} AS id, {content_col} AS content "
+            f"SELECT {id_col} AS id, {content_expr} AS content "
             f"FROM {table} "
             f"WHERE {where} "
             "LIMIT :limit"

@@ -38,7 +38,7 @@ Implemented:
    - `embedding_error`
    - `embedded_at`
 2. Search contract now includes `agent` as a valid entity type.
-3. `VectorSearchService.ENTITY_CONFIG` maps `agent` to `agents.description` for search/reindex result content.
+3. `VectorSearchService.ENTITY_CONFIG` maps `agent` to the `agents` table, while search/reindex content now uses rich public registry text rather than description alone.
 4. ACN agent registration and invite-based join schedule embeddings using safe, public registry metadata text:
    - agent name
    - description
@@ -51,11 +51,20 @@ Implemented:
 5. The text intentionally excludes credentials, callback secrets, API keys, tokens, and private runtime payloads.
 6. Integration and migration tests cover the behavior.
 
+## Completed Slice 3 — Real Turso Smoke + Sparse Agent Reindex Hardening
+
+Gap closed: agent write-path embeddings used rich registry metadata, but reindex/retry/search content could collapse to sparse `agents.description` only.
+
+Implemented/verified:
+
+1. Real Turso smoke created a unique ACN agent, embedded it through the actual vector stack, and found it through `/v1/search` with `types=["agent"]`.
+2. `VectorSearchService` now builds safe agent registry text for search/reindex/retry from public metadata fields.
+3. Sparse-description agents still produce useful reindex content from capabilities/skills/model/platform/etc.
+4. Unit coverage proves sparse agent metadata is not reduced to an empty string.
+
 ## Remaining Work — Not Yet Complete
 
-- Search UX/API verification with real Turso vector data for `agent` results.
 - Optional dashboard semantic search exposure for agents/tasks if product direction wants it.
-- Optional reindex hardening for sparse agent descriptions, because agent write-path embeddings use richer metadata while reindex currently uses `agents.description`.
 - Optional cleanup of pre-existing frontend `ResponsiveList` HTML nesting warning.
 
 ## Acceptance Criteria for Current Slice
