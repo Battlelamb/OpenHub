@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Single source of truth for valid entity_type strings. Mirrors
 # app.services.vector_search_service.ENTITY_CONFIG keys.
-ENTITY_TYPES: List[str] = ["memory", "task", "artifact", "message"]
+ENTITY_TYPES: List[str] = ["memory", "task", "artifact", "message", "agent"]
 
 
 class SearchRequest(BaseModel):
@@ -69,6 +69,7 @@ class ReindexByType(BaseModel):
     task: int = 0
     artifact: int = 0
     message: int = 0
+    agent: int = 0
 
 
 class ReindexResponse(BaseModel):

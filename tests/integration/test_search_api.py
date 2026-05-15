@@ -238,7 +238,7 @@ def test_unified_defaults_to_all_types(
     types_called = [
         call.args[0] for call in mock_vector_service.search_entity.call_args_list
     ]
-    assert sorted(types_called) == ["artifact", "memory", "message", "task"]
+    assert sorted(types_called) == ["agent", "artifact", "memory", "message", "task"]
 
 
 def test_unified_respects_types(
@@ -450,9 +450,9 @@ def test_reindex_default_scope(
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    # 4 entity types * 2 rows each
-    assert body["reindexed"] == 8
-    assert mock_vector_service.list_unindexed.call_count == 4
+    # 5 entity types * 2 rows each
+    assert body["reindexed"] == 10
+    assert mock_vector_service.list_unindexed.call_count == 5
 
 
 def test_reindex_entity_type_scope(
@@ -532,7 +532,7 @@ def test_reindex_response_shape(
     assert r.status_code == 200
     body = r.json()
     assert set(body.keys()) == {"reindexed", "failed", "skipped", "by_type"}
-    assert set(body["by_type"].keys()) == {"memory", "task", "artifact", "message"}
+    assert set(body["by_type"].keys()) == {"memory", "task", "artifact", "message", "agent"}
 
 
 def test_reindex_embedding_backend_unavailable(

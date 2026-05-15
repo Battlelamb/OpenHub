@@ -93,12 +93,12 @@ async def test_run_once_iterates_all_entity_types(monkeypatch, patched_db, patch
         {"id": f"{et}-1", "content": "x"}
     ]
     result = await embedding_retry_worker._run_once()
-    assert result == 4
-    assert patched_service.write_embedding.call_count == 4
+    assert result == 5
+    assert patched_service.write_embedding.call_count == 5
     types_processed = {
         c.args[0] for c in patched_service.write_embedding.call_args_list
     }
-    assert types_processed == {"memory", "task", "artifact", "message"}
+    assert types_processed == {"memory", "task", "artifact", "message", "agent"}
 
 
 @pytest.mark.asyncio

@@ -42,6 +42,26 @@ def fake_vector_service(monkeypatch):
     return svc
 
 
+@pytest.fixture(autouse=True)
+def stable_api_key_auth(monkeypatch):
+    """Keep these embedding-hook tests focused on indexing, not remote API-key consistency."""
+    from app.auth.api_keys import APIKeyManager, APIKeyScope
+
+    def _validate(self, api_key, required_scope=None):
+        scopes = [scope.value for scope in APIKeyScope]
+        if required_scope and required_scope not in scopes:
+            return None
+        return {
+            "key_id": "test-admin",
+            "name": "test-auto-index",
+            "key_type": "admin",
+            "scopes": scopes,
+            "metadata": {},
+        }
+
+    monkeypatch.setattr(APIKeyManager, "validate_api_key", _validate)
+
+
 @pytest.fixture()
 def seeded_admin_agent():
     """Insert the test-admin agent row so task/message routes find a sender."""
@@ -203,6 +223,62 @@ def test_acn_task_create_triggers_embedding(
     fake_vector_service.write_embedding.assert_called()
     call_args, _ = fake_vector_service.write_embedding.call_args
     assert call_args[0] == "task"
+
+
+def test_acn_agent_register_triggers_embedding(
+    test_client: TestClient, vector_enabled, fake_backend, fake_vector_service
+):
+    from uuid import uuid4
+
+    from app.auth.api_keys import APIKeyManager, APIKeyType, APIKeyScope
+    from app.database.connection import get_database
+
+    suffix = uuid4().hex[:8]
+    node_name = f"test-node-{suffix}"
+    agent_name = f"semantic-agent-{suffix}"
+
+    db = get_database()
+    mgr = APIKeyManager(db)
+    key = mgr.create_api_key(
+        name=f"test-acn-agent-register-index-{suffix}",
+        key_type=APIKeyType.ADMIN,
+        scopes=[APIKeyScope.ACN_AGENT_REGISTER.value, APIKeyScope.ACN_NODE_MANAGE.value],
+        created_by="test-admin",
+    )["api_key"]
+
+    node_resp = test_client.post(
+        "/v1/acn/nodes",
+        headers={"X-API-Key": key},
+        json={"node_name": node_name, "node_url": "http://test-node.local"},
+    )
+    assert node_resp.status_code in (200, 409), node_resp.text
+
+    resp = test_client.post(
+        "/v1/acn/agents/register",
+        headers={"X-API-Key": key},
+        json={
+            "agent_name": agent_name,
+            "description": "Handles semantic search and Turkish support",
+            "capabilities": ["semantic_search", "code_edit"],
+            "node_name": node_name,
+            "model": "gpt-test",
+            "platform": "openhub-test",
+            "skills": ["vector-memory"],
+            "mcp_servers": ["filesystem", "github"],
+            "languages": ["python", "typescript"],
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    fake_backend.embed.assert_called()
+    args, _ = fake_backend.embed.call_args
+    text = args[0][0]
+    assert "semantic-agent" in text
+    assert "semantic_search" in text
+    assert "filesystem" in text
+    assert "github" in text
+    fake_vector_service.write_embedding.assert_called()
+    call_args, _ = fake_vector_service.write_embedding.call_args
+    assert call_args[0] == "agent"
 
 
 def test_memory_write_noop_when_vector_disabled(

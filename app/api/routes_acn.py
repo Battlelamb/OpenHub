@@ -236,6 +236,7 @@ async def list_invites(
 @router.post("/join")
 async def join_acn(
     agent_data: RemoteAgentRegister,
+    background_tasks: BackgroundTasks,
     invite_code: str = Header(..., alias="X-Invite-Code"),
     request: Request = None,
     service: RemoteAgentService = Depends(get_remote_agent_service),
@@ -326,6 +327,7 @@ async def join_acn(
                agent_id=new_agent.id,
                agent_name=new_agent.agent_name,
                client_ip=request.client.host if request.client else None)
+    schedule_embedding(background_tasks, "agent", new_agent.id, _agent_embedding_text(agent_data))
 
     return {
         "agent_id": new_agent.id,
@@ -397,6 +399,7 @@ async def node_heartbeat(
 async def register_remote_agent(
     agent_data: RemoteAgentRegister,
     request: Request,
+    background_tasks: BackgroundTasks,
     key_info: Dict = Depends(_require_scope(APIKeyScope.ACN_AGENT_REGISTER.value)),
     service: RemoteAgentService = Depends(get_remote_agent_service),
 ) -> Agent:
@@ -415,6 +418,7 @@ async def register_remote_agent(
             "agent_status_changed",
             {"agent_id": agent.id, "status": agent_status, "reason": "acn_registered"},
         )
+        schedule_embedding(background_tasks, "agent", agent.id, _agent_embedding_text(agent_data))
         return agent
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
@@ -496,6 +500,28 @@ async def _broadcast_acn_ui_event(
     except Exception as exc:
         logger.warning("acn_ws_broadcast_failed", event=event_type, error=str(exc))
         return 0
+
+
+def _join_text(label: str, values: Optional[List[Any]]) -> str:
+    items = [str(item).strip() for item in (values or []) if str(item).strip()]
+    return f"{label}: {', '.join(items)}" if items else ""
+
+
+def _agent_embedding_text(agent_data: RemoteAgentRegister) -> str:
+    """Build secret-safe semantic text from public registry metadata."""
+    parts = [
+        f"Agent: {agent_data.agent_name}",
+        f"Description: {agent_data.description}" if agent_data.description else "",
+        f"Node: {agent_data.node_name}",
+        f"Model: {agent_data.model}" if agent_data.model else "",
+        f"Platform: {agent_data.platform}" if agent_data.platform else "",
+        _join_text("Capabilities", agent_data.capabilities),
+        _join_text("Skills", agent_data.skills),
+        _join_text("MCP profiles", agent_data.mcp_servers),
+        _join_text("Languages", agent_data.languages),
+        _join_text("Channels", agent_data.channels),
+    ]
+    return "\n".join(part for part in parts if part)
 
 
 def _authenticated_agent_id(key_info: Dict[str, Any], provided_agent_id: Optional[str] = None) -> str:

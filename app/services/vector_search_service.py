@@ -31,12 +31,16 @@ logger = get_logger(__name__)
 
 
 # (table, content_column, id_column) for each indexable entity type.
-# Per D-12: shared_memory.value, tasks.description, artifacts.content, messages.content.
+# OpenHub indexes shared_memory.value, tasks.description, artifacts.content,
+# messages.content, and agents.description. Agent write-path embeddings may use
+# richer registry metadata text while search/reindex still returns the stable
+# description column as result content.
 ENTITY_CONFIG: Dict[str, Tuple[str, str, str]] = {
     "memory": ("shared_memory", "value", "id"),
     "task": ("tasks", "description", "id"),
     "artifact": ("artifacts", "content", "id"),
     "message": ("messages", "content", "id"),
+    "agent": ("agents", "description", "id"),
 }
 
 

@@ -12,7 +12,7 @@ from alembic import command
 from alembic.config import Config
 
 
-TARGET_TABLES = ["shared_memory", "tasks", "artifacts", "messages"]
+TARGET_TABLES = ["shared_memory", "tasks", "artifacts", "messages", "agents"]
 EXPECTED_COLUMNS = [
     "embedding",
     "embedding_model",
