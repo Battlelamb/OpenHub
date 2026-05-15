@@ -62,9 +62,20 @@ Implemented/verified:
 3. Sparse-description agents still produce useful reindex content from capabilities/skills/model/platform/etc.
 4. Unit coverage proves sparse agent metadata is not reduced to an empty string.
 
+## Completed Slice 4 — Dashboard Semantic Search Exposure
+
+Gap closed: backend vector memory worked, but command center had no visible semantic search surface.
+
+Implemented:
+
+1. Dashboard now renders a `SemanticSearchPanel` above primary cards.
+2. Frontend hook `useSemanticSearch` calls `/v1/search` with `types=["agent", "task"]` and `top_k=8`.
+3. Search results show entity type, id, preview content, and cosine distance.
+4. Agent/task results link to their existing detail routes.
+5. Frontend tests cover hook request shape and rendered agent/task results.
+
 ## Remaining Work — Not Yet Complete
 
-- Optional dashboard semantic search exposure for agents/tasks if product direction wants it.
 - Optional cleanup of pre-existing frontend `ResponsiveList` HTML nesting warning.
 
 ## Acceptance Criteria for Current Slice

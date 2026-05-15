@@ -85,6 +85,19 @@ export interface MemoryItem {
   updated_at?: string
 }
 
+export interface SemanticSearchHit {
+  entity_type: 'agent' | 'task' | 'memory' | 'artifact' | 'message'
+  id: string
+  content: string
+  distance: number
+}
+
+export interface SemanticSearchResponse {
+  query: string
+  total: number
+  hits: SemanticSearchHit[]
+}
+
 export interface ResourceLock {
   resource_id: string
   agent_id: string

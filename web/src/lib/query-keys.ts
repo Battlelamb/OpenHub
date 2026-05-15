@@ -18,4 +18,7 @@ export const qk = {
   costs: ['costs'] as const,
   memory: ['memory'] as const,
   locks: ['locks'] as const,
+  search: {
+    semantic: (query: string) => ['search', 'semantic', query] as const,
+  },
 } as const
