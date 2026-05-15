@@ -74,9 +74,21 @@ Implemented:
 4. Agent/task results link to their existing detail routes.
 5. Frontend tests cover hook request shape and rendered agent/task results.
 
+## Completed Slice 5 — ResponsiveList DOM Hygiene
+
+Gap closed: frontend tests passed but emitted React/HTML nesting warnings from `ResponsiveList` because mobile `<div>` nodes and desktop `<td>` nodes were rendered under the same table tree.
+
+Implemented:
+
+1. `ResponsiveList` now renders separate valid desktop and mobile structures.
+2. Desktop mode uses `table > thead + tbody > tr > td`.
+3. Mobile mode uses a separate `div[data-responsive-list-mobile]` card list.
+4. Regression test spies on `console.error` and asserts no React nesting warnings are emitted.
+5. Full frontend test run is clean of the previous ResponsiveList warning.
+
 ## Remaining Work — Not Yet Complete
 
-- Optional cleanup of pre-existing frontend `ResponsiveList` HTML nesting warning.
+- No Phase 2.4 vector/dashboard items remain open in this plan.
 
 ## Acceptance Criteria for Current Slice
 
