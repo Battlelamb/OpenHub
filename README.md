@@ -1,10 +1,12 @@
 # OpenHub
 
-Open-source multi-agent coordination platform. Connect any AI agent (Claude Code, Cursor, Copilot, custom scripts) and let them collaborate on the same codebase without conflicts.
+OpenHub is the coordination backend for AI coding agents: registry, task routing, verification gates, live dashboard, and MCP/API access for humans and agents working across machines.
+
+> Not another coding agent. The coordination layer for all of them.
 
 ## What is OpenHub?
 
-OpenHub is a centralized hub that coordinates multiple AI agents working on the same project. Agents register their capabilities, claim tasks from a shared queue, and report results, all through a single coordination layer that prevents conflicts.
+OpenHub is a centralized coordination layer for multiple AI agents working on the same project. Agents register capabilities, claim tasks from a shared queue, submit evidence, and move work through verification gates so humans can trust what changed.
 
 The system uses lease-based task management and resource locking to ensure agents don't step on each other. Real-time coordination happens via WebSocket, with REST API polling as a fallback. Every state transition is logged for full audit trails.
 
@@ -14,6 +16,7 @@ OpenHub is self-hostable and runs on a single machine, LAN, or cloud VPS. A prod
 
 - **Agent registration** with capability declaration and smart matching
 - **Task queue** with claim/lease mechanism and automatic recovery on agent failure
+- **Evidence and verification gates** so claimed work becomes trusted work only after proof/review
 - **Resource locking** to prevent file edit conflicts between agents
 - **WebSocket real-time events** with REST polling fallback
 - **Agent-to-agent messaging** with conversation threads
@@ -102,7 +105,7 @@ For the full walkthrough covering authentication setup, REST API usage, WebSocke
 | Health | `/v1/health` | Health checks, version info |
 | Auth | `/v1/auth/*` | JWT login, refresh, agent self-registration |
 | Agents | `/v1/agents/*` | Agent CRUD, heartbeat, discovery, capability matching |
-| Tasks | `/v1/tasks/*` | Task lifecycle: create, claim, start, complete, fail |
+| Tasks | `/v1/tasks/*` | Task lifecycle: create, claim, start, complete, evidence, verify, review, fail |
 | ACN | `/v1/acn/*` | Agent Collaboration Network: invite-based onboarding |
 | Workflows | `/v1/workflows/*` | Multi-step workflow orchestration |
 | Coordination | `/v1/coordination/*` | Smart task assignment, conflict detection |

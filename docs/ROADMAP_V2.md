@@ -19,6 +19,15 @@
 
 ## P0 - Core (Olmadan "agent hub" sayilmaz)
 
+### P0.0: Verification-First Task Lifecycle
+OpenHub'in ana farki: ajan "done" dedi diye is bitmis sayilmaz; kanit ve dogrulama gerekir.
+- Task state akisi: `queued` -> `claimed` -> `running` -> `completed_claimed` -> `verification_running` -> `verified` / `needs_review` / `failed`
+- Evidence bundle zorunlu: test sonucu, log, diff, artifact, PR/branch referansi, reviewer/judge sonucu
+- Low-risk isler icin otomatik verification
+- Security/auth/database/deploy/secrets isleri icin human review gate
+- Dashboard task detayinda evidence + verification timeline
+- "Merge allowed" yalnizca verification/review gecerse
+
 ### P0.1: Agent-to-Agent Mesajlasma
 Agent'lar birbirine direkt mesaj gonderebilmeli.
 - `POST /v1/messages/send` - DM gonder
@@ -62,32 +71,45 @@ Cok adimli is akislari.
 
 ## P1 - Production Grade
 
-### P1.1: Artifact / Dosya Paylasimi
+### P1.1: Task Evidence / Kanit Paketi
+- `POST /v1/tasks/{id}/evidence` - test/log/diff/artifact/PR kaniti ekle
+- `GET /v1/tasks/{id}/evidence` - task kanitlarini oku
+- Evidence tipleri: `test`, `log`, `diff`, `artifact`, `pr`, `review`, `command`
+- Secret-safe metadata sanitation
+- Evidence eventleri WebSocket/SSE ile dashboard'a akar
+
+### P1.2: Artifact / Dosya Paylasimi
 - `POST /v1/artifacts/upload` - dosya yukle
 - `GET /v1/artifacts/{id}/download` - dosya indir
 - Task'a artifact baglama
 - Versiyon kontrolu
 - Boyut limiti + temizlik politikasi
 
-### P1.2: Human-in-the-Loop
+### P1.3: Human-in-the-Loop
 - Task'ta onay noktasi (waiting_approval state)
 - Dashboard'da onay/ret butonu
 - Workflow'da approval adimi
 - Bildirim: Telegram/email ile admin'e haber
 
-### P1.3: Resource Locking
+### P1.4: Rich Agent State Vocabulary
+- Online/offline disinda durumlar: `idle`, `working`, `blocked`, `needs_approval`, `stale`, `failed`, `recovering`
+- Durum sadece `status='online'` satirindan degil heartbeat freshness + aktif task/session eventlerinden turetilir
+- Dashboard ajan listesinde state reason gosterilir
+- Stale heartbeat asla gercek online gibi sunulmaz
+
+### P1.5: Resource Locking
 - `POST /v1/locks/acquire` - kaynak kilitle (dosya, repo, vs)
 - `POST /v1/locks/release` - kilidi birak
 - TTL bazli otomatik kilit birakma
 - Cakisma tespiti ve bildirim
 
-### P1.4: Observability / Tracing
+### P1.6: Observability / Tracing
 - Her task icin trace ID
 - Agent cagri zinciri izleme
 - Performans metrikleri (response time, error rate)
 - Structured log aggregation
 
-### P1.5: Cost Tracking
+### P1.7: Cost Tracking
 - Agent basi token kullanimi
 - Task basi maliyet hesaplama
 - Gunluk/haftalik rapor
@@ -155,12 +177,18 @@ Cok adimli is akislari.
 
 ---
 
-## Rust Rewrite
+## Function-Specific Language Strategy
 
-Tum sistem Rust'ta yeniden yazilacak:
-- Axum web framework
-- SQLx + libsql-rs (Turso)
-- Tokio async runtime
-- ~5MB RAM vs Python 55MB
-- ~0 latency vs Python 100ms+
-- Production-grade hata yonetimi
+Tum sistemi topyekun yeniden yazmak yerine kontrollu, islev bazli dil stratejisi izlenecek:
+
+- **Python/FastAPI:** control plane; API, auth/session, ACN registry, task routing, verification orchestration, LLM/provider adapterlari, embedding/vector hooks
+- **TypeScript/React:** dashboard, live task detail, frontend typed contracts
+- **Go:** ileride bridge daemon, process/session monitor, heartbeat sidecar, file watcher, tek binary dagitim ihtiyaci dogarsa
+- **Rust:** yalnizca sandbox helper, secure credential helper, PTY/log collector, diff/indexing engine gibi guvenlik/performance-kritik dar sinirlar icin
+- **Node/TypeScript worker:** VSCode/Cursor veya JS-first extension/adapter ihtiyaci dogarsa
+
+Boundary kurali:
+
+> Core task/agent/event state Python API ve Turso/libSQL katmaninda kalir. Diger servisler sadece net kontratlarla event/heartbeat/evidence raporlar; ayni state'in sahipligi dagitilmaz.
+
+Ilk hedef modular monolith + service-boundary-ready mimari. Go/Rust servisleri RFC ve contract testleri olmadan eklenmez.
