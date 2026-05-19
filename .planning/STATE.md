@@ -120,7 +120,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- Continue OpenHub with a GSD-style operating loop: refresh codebase map/state, discuss phase decisions, plan small executable slices, execute in isolated contexts/worktrees where practical, verify with tests/docs/evidence/manual acceptance, then ship/archive.
+- Apply this loop first to release readiness + verification-first coordination work: README/demo polish, durable agent work history, stuck-work recovery UX, coordinator-first command surface, and evidence/verification closeout.
 
 ### Blockers/Concerns
 

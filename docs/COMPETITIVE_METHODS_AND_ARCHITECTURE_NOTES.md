@@ -19,6 +19,7 @@ Closest practical neighbors:
 - Relai (`phillipsio/relai`)
 - taskboard-mcp (`hazardland/taskboard-mcp`)
 - Gas Town / Gastown (`gastownhall/gastown`)
+- Get Shit Done / GSD (`gsd-build/get-shit-done`)
 
 Broader framework references:
 
@@ -255,6 +256,37 @@ OpenHub's differentiation to keep:
 Positioning line inspired by this benchmark:
 
 > OpenHub keeps multi-agent work durable, visible, and verifiable after the chat window dies.
+
+### 12. Spec-driven phase pipeline and context hygiene
+
+Benchmark: Get Shit Done / GSD (`gsd-build/get-shit-done`).
+
+GSD's strongest lesson for OpenHub is workflow discipline: keep the user's main context clean, put phase decisions into durable artifacts, plan in small executable slices, run work in fresh contexts, verify before shipping, and repeat. OpenHub already has `.planning/` and `.gsd/` artifacts; the next development push should use this style deliberately rather than treating docs as after-the-fact notes.
+
+Good patterns to adopt for OpenHub execution:
+
+- **Six-step loop:** initialize/map context -> discuss phase decisions -> plan phase -> execute isolated slices -> verify work -> ship/archive.
+- **Context hygiene:** keep the orchestration conversation light; move long-lived facts into `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, and per-phase `CONTEXT.md` / plan files.
+- **Small plans, fresh contexts:** each plan should be executable independently, preferably in a fresh agent/subagent context, with an atomic commit.
+- **Verification as a product habit:** every phase closes only after explicit acceptance checks, not only passing unit tests.
+- **Quota-aware execution:** avoid dragging one bloated context through research, planning, coding, review, and debug.
+- **Codebase mapping first:** before a new phase, refresh stack/conventions/architecture notes so new agents do not rediscover the same project facts.
+
+OpenHub-specific adaptation:
+
+- Use the GSD loop as the **development operating system** for OpenHub v1.0 release readiness.
+- Keep OpenHub's own product principles unchanged: hub-first coordination, verification-first task state, evidence bundles, dashboard/API/MCP access, and multi-machine agent onboarding.
+- Do not import GSD's permission-skipping posture as a default for production OpenHub agents; OpenHub should preserve scoped API keys, review gates, evidence, and safe execution policies.
+
+Practical next workflow:
+
+```text
+1. Refresh OpenHub codebase map and current state.
+2. Start the next phase discussion for release readiness + verification-first coordination.
+3. Convert approved decisions into small plan files.
+4. Execute each plan in an isolated context/worktree where practical.
+5. Require evidence, tests, docs updates, and review notes before shipping.
+```
 
 ## Language / microservice architecture guidance
 

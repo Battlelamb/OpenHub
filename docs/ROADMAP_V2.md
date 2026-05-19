@@ -145,6 +145,16 @@ OpenHub'un ilk 5 dakika deneyimi guclendirilecek.
 - `docs/demo/` altinda kisa demo scripti
 - Landing copy: "multi-agent work durable, visible, verifiable"
 
+### P1.12: GSD-Style Development Operating Loop
+OpenHub devaminda GSD'nin iyi yani olan spec-driven, context-clean, phase-based calisma disiplini kullanilacak.
+- Her buyuk is oncesi codebase map / state refresh
+- Phase discussion: kararlar, UX/API sekilleri, riskler ve acceptance criteria once yazilir
+- Phase plan: kucuk, bagimsiz, atomic commit'lenebilir plan dosyalari
+- Execute: mumkunse fresh context/subagent/worktree ile plan bazli uygulama
+- Verify: test + docs + evidence + manual acceptance notu olmadan phase kapanmaz
+- Ship: changelog/release notes/PR veya tag hazirligi tek kapanis adimi olur
+- Uyari: GSD'nin frictionless automation ruhu alinacak; OpenHub production agent'lari icin scoped key, review gate ve kanit zorunlulugu korunacak
+
 ---
 
 ## P2 - Rekabet
