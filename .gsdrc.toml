@@ -7,8 +7,10 @@ version = "1.0.0"
 description = "Multi-agent coordination platform for local development environments"
 
 [auth]
-# Run 'gsd auth login' to authenticate
-# Provider: claude.ai (same login)
+# Use Claude Code / Anthropic credentials from the local environment.
+# Required runtime credential: ANTHROPIC_API_KEY or Claude Code OAuth login.
+# Do not commit real credential values.
+provider = "anthropic"
 
 [workflow]
 # Git workflow settings
@@ -31,12 +33,14 @@ verify = [
 # token_ceiling = 1000000
 
 [model]
-# Qwen models via DashScope API
-default = "qwen3.5-plus"
-research = "qwen3.5-plus"
-planning = "qwen3-max-2026-01-23"
-implementation = "qwen3.5-plus"
-verification = "qwen3-coder-plus"
+# All GSD phases and variations should run on Claude Opus 4.7 unless explicitly overridden by the human operator.
+# Claude Code accepts the alias `opus`; GSD's catalog resolves Anthropic opus to `claude-opus-4-7`.
+default = "claude-opus-4-7"
+research = "claude-opus-4-7"
+planning = "claude-opus-4-7"
+implementation = "claude-opus-4-7"
+verification = "claude-opus-4-7"
+effort = "max"
 
 [paths]
 # GSD-2 directory structure
