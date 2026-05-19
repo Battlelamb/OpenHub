@@ -18,6 +18,7 @@ Closest practical neighbors:
 - OpenBotX (`openbotx/openbotx`)
 - Relai (`phillipsio/relai`)
 - taskboard-mcp (`hazardland/taskboard-mcp`)
+- Gas Town / Gastown (`gastownhall/gastown`)
 
 Broader framework references:
 
@@ -226,6 +227,34 @@ For coding tasks, support explicit isolation metadata:
 - PR id/url
 
 This reduces conflicts and makes parallel work safer.
+
+### 11. Workspace-first durability language
+
+Benchmark: Gas Town / Gastown (`gastownhall/gastown`).
+
+What is worth adopting is not a rewrite or a copy of its local workspace model; it is the clarity of the promise: agents can restart, sessions can die, but the work history and coordination trail remain durable. OpenHub already has the stronger hub-side primitives for this through tasks, evidence, audit events, heartbeats, ACN identity, and dashboard state. The product language should make that strength obvious.
+
+Good patterns to preserve from this benchmark:
+
+- **Persistent agent identity:** every agent should feel like a durable participant, not a disposable chat session.
+- **Work survives session loss:** task state, evidence, logs, artifacts, and handoff notes stay in OpenHub even when an agent process exits.
+- **Coordinator-first experience:** users should be able to speak to one command surface, then watch OpenHub route, supervise, and verify the swarm.
+- **Stuck-work recovery:** heartbeats, leases, stale detection, and retry/reroute behavior should be marketed as a core reliability feature.
+- **Merge/verification queue framing:** OpenHub's evidence and verification gates should be presented as the trust layer before work is accepted.
+- **Friendly quickstart:** the first demo should show one user command, one connected agent, one task, one evidence bundle, and one verified result.
+
+OpenHub's differentiation to keep:
+
+- hub-first API and dashboard, not only a local CLI workspace;
+- invite-based multi-machine agent onboarding;
+- verification-first task lifecycle;
+- resource locks and audit trails;
+- MCP/API access for heterogeneous agents;
+- centralized live visibility for humans.
+
+Positioning line inspired by this benchmark:
+
+> OpenHub keeps multi-agent work durable, visible, and verifiable after the chat window dies.
 
 ## Language / microservice architecture guidance
 

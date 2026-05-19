@@ -115,6 +115,36 @@ Cok adimli is akislari.
 - Gunluk/haftalik rapor
 - Budget limitleri ve uyari
 
+### P1.8: Durable Agent Work History
+Benchmark: Gas Town / Gastown'un guzel yani; ajan session'i olse bile is gecmisi ve koordinasyon izi kaybolmaz.
+- Agent identity kalici katilimci gibi gorunur; sadece gecici chat/session degil
+- Task timeline: claim/start/log/evidence/blocker/handoff/verification olaylari tek yerde gorunur
+- Session restart sonrasi ajan kendi son islerini ve handoff notlarini okuyabilir
+- Dashboard agent detayinda son session, aktif task, onceki evidence, son heartbeat ve stale reason gorunur
+- Handoff notes zorunlu/kolay girilebilir olur: "nerede kaldim, ne denedim, ne bekliyor"
+
+### P1.9: Stuck Work Recovery UX
+Benchmark: Gastown watchdog/stall fikrinin OpenHub tarzi.
+- Heartbeat + lease + task eventlerinden `stale` / `blocked` / `recovering` tespiti
+- Stale task icin retry, release, reroute veya human review aksiyonlari
+- Dashboard'da "stuck work" paneli
+- Agent offline olunca task evidence/handoff korunur, yeni ajan devralabilir
+
+### P1.10: Coordinator-First Command Surface
+Kullanici tek bir komut yuzeyinden is verir; OpenHub arka planda dogru agent'a route eder ve sonucu dogrulatir.
+- Dashboard'da "Create coordinated task" / command center akisi
+- Capability matching + human confirmation
+- Task dagitimi, heartbeat, evidence ve verification tek timeline'da
+- Mesaj/yorum/thread ile ajanlarin koordinasyonu ayni task altinda kalir
+
+### P1.11: Launch-Ready Friendly Demo
+OpenHub'un ilk 5 dakika deneyimi guclendirilecek.
+- Docker quickstart: hub baslat, dashboard ac, invite olustur, ajan bagla
+- Tek demo task: create -> claim -> evidence -> verified
+- README hero screenshot/GIF
+- `docs/demo/` altinda kisa demo scripti
+- Landing copy: "multi-agent work durable, visible, verifiable"
+
 ---
 
 ## P2 - Rekabet
