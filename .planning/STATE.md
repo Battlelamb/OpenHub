@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 05 GSD operating loop initialized
-stopped_at: Started 05-01-PLAN.md
-last_updated: "2026-05-19T08:58:02.000Z"
+status: Phase 05-02 release-readiness snapshot complete
+stopped_at: Completed 05-02-RELEASE-READINESS.md
+last_updated: "2026-05-20T10:35:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-07)
 ## Current Position
 
 Phase: 5
-Plan: 05-01 — Make the GSD Runtime Reproducible
+Plan: 05-02 — Release-Readiness Snapshot
 
 ## Performance Metrics
 
@@ -121,7 +121,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Validate Claude Code execution after a local credential source is available: `ANTHROPIC_API_KEY`, Claude Code OAuth, or an API-key helper. Current `claude auth status` reports not logged in.
-- Run the Phase 05 release-readiness snapshot: backend tests, frontend typecheck/build, runtime health, docs freshness, stale task/evidence gaps.
+- [DONE 2026-05-20] Phase 05 release-readiness snapshot — see .planning/phases/05-gsd-operating-loop/05-02-RELEASE-READINESS.md (verdict: conditional GO).
 - Continue OpenHub with a GSD-style operating loop: refresh codebase map/state, discuss phase decisions, plan small executable slices, execute in isolated contexts/worktrees where practical, verify with tests/docs/evidence/manual acceptance, then ship/archive.
 - Apply this loop first to release readiness + verification-first coordination work: README/demo polish, durable agent work history, stuck-work recovery UX, coordinator-first command surface, and evidence/verification closeout.
 
