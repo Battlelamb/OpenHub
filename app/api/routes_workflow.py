@@ -233,7 +233,9 @@ async def get_workflow(
     }
 
 
-@router.get("/")
+# Explicit operation_id avoids an OpenAPI collision with routes_workflows.py::list_workflows
+# (both routers mount GET /v1/workflows/).
+@router.get("/", operation_id="list_engine_workflows")
 async def list_workflows(
     key_info: Dict = Depends(_require_api_key),
     database: Database = Depends(get_database),
