@@ -9,20 +9,28 @@ services:
     volumes:
       - ./data/state:/app/data/state
       - ./data/artifacts:/app/data/artifacts
-      - ./app:/app/app:ro  # Read-only for development
     environment:
       - AGENTHUB_HOST=0.0.0.0
       - AGENTHUB_PORT=7788
       - AGENTHUB_DB_PATH=/app/data/state/agenthub.db
       - AGENTHUB_ARTIFACT_DIR=/app/data/artifacts
       # REQUIRED: Override these in production via .env file or secrets manager
-      - AGENTHUB_ADMIN_USER=admin
-      - AGENTHUB_ADMIN_PASSWORD=changeme-set-in-production
-      - AGENTHUB_LOG_LEVEL=INFO
+      - AGENTHUB_ADMIN_USER=${AGENTHUB_ADMIN_USER:-admin}
+      - AGENTHUB_ADMIN_PASSWORD=${AGENTHUB_ADMIN_PASSWORD:?Set AGENTHUB_ADMIN_PASSWORD}
+      - AGENTHUB_SECRET_KEY=${AGENTHUB_SECRET_KEY:?Set AGENTHUB_SECRET_KEY}
+      - AGENTHUB_JWT_SECRET_KEY=${AGENTHUB_JWT_SECRET_KEY:?Set AGENTHUB_JWT_SECRET_KEY}
+      - AGENTHUB_LOG_LEVEL=${AGENTHUB_LOG_LEVEL:-INFO}
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7788/v1/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
     networks:
       - agenthub-network
 
@@ -35,6 +43,11 @@ services:
       - redis_data:/data
     command: redis-server --save 60 1 --loglevel warning
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - agenthub-network
 
