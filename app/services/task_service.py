@@ -591,7 +591,38 @@ class TaskService:
             return suitable_tasks[:limit]
         
         except Exception as e:
-            logger.error("get_available_tasks_failed", 
+            logger.error("get_available_tasks_failed",
                         agent_id=agent_id,
                         error=str(e))
+            return []
+
+    def find_stale_tasks(self) -> List[Task]:
+        """Find every task stuck with an expired lease.
+
+        Scans CLAIMED and RUNNING tasks and returns those whose lease has
+        already expired (see ``Task.is_stale``). This is detection only --
+        no task state is mutated here; recovery is a separate concern.
+
+        Returns:
+            A list of stale tasks (empty if none, or on error).
+        """
+        try:
+            active_tasks = (
+                self.task_repo.find_by_status(TaskStatus.CLAIMED.value)
+                + self.task_repo.find_by_status(TaskStatus.RUNNING.value)
+            )
+
+            stale_tasks = [task for task in active_tasks if task.is_stale()]
+
+            if stale_tasks:
+                logger.warning(
+                    "stale_tasks_detected",
+                    count=len(stale_tasks),
+                    task_ids=[t.id for t in stale_tasks],
+                )
+
+            return stale_tasks
+
+        except Exception as e:
+            logger.error("find_stale_tasks_failed", error=str(e))
             return []

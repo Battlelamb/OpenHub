@@ -2,7 +2,7 @@
 Task-related Pydantic models
 """
 from enum import Enum, IntEnum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from pydantic import Field, field_validator
 
@@ -374,6 +374,48 @@ class Task(IDMixin, TimestampMixin):
         ge=0.0,
         description="Total execution duration"
     )
+
+    def is_stale(self, now: Optional[datetime] = None) -> bool:
+        """Return True if this task is stuck with an expired lease.
+
+        A task is "stale" when an agent still holds it (status CLAIMED or
+        RUNNING) but its ``lease_until`` deadline has already passed -- a
+        strong signal the agent died or hung without releasing the work.
+        Terminal and unclaimed tasks (COMPLETED, FAILED, QUEUED, ...) are
+        never stale, even if an old lease timestamp sits in the past.
+
+        This is a pure detection predicate: it never mutates the task.
+
+        Args:
+            now: Reference time to compare the lease against. Defaults to
+                the current UTC time; tests inject a fixed value so the
+                result is deterministic.
+
+        Returns:
+            True if the task is stale, False otherwise.
+        """
+        # 1. Only CLAIMED or RUNNING tasks can be stale.
+        status_str = self.status if isinstance(self.status, str) else self.status.value
+        if status_str not in ("claimed", "running"):
+            return False
+
+        # 2. No lease deadline -> not stale.
+        if self.lease_until is None:
+            return False
+
+        # 3. Default now to current UTC.
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # 4. Normalise both sides to timezone-aware UTC.
+        lease = self.lease_until
+        if lease.tzinfo is None:
+            lease = lease.replace(tzinfo=timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+
+        # 5. Stale if lease deadline is before now.
+        return lease < now
 
 
 class TaskResponse(BaseModel):
