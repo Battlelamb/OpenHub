@@ -1,27 +1,67 @@
 # Changelog
 
-All notable changes to OpenHub are documented in this file.
+All notable changes to OpenHub will be documented in this file.
 
-## [Phase 3 - Vector Database] - 2026-04-13
+## [0.1.0] — 2026-05-20
 
-### Added (BETA / Experimental)
+### 🚀 Highlights
 
-- VEC-01: Turso/libSQL native vector columns (F32_BLOB) replacing zvec
-- VEC-02: Semantic search via vector_distance_cos with DiskANN index lookup
-- VEC-03: DiskANN indexing via libsql_vector_idx (cosine metric)
-- VEC-04: Auto-indexing hooks on memory/task/artifact/message write paths (async via FastAPI BackgroundTasks) plus a 5-minute polling retry worker for failed/missing embeddings
-- VEC-05: POST /v1/search unified endpoint, per-entity shortcuts (/v1/memory/search, /v1/tasks/search, /v1/artifacts/search, /v1/messages/search), admin-only POST /v1/search/reindex and DELETE /v1/search/{entity_type}/{entity_id}
-- VEC-06: Opt-in beta gated by AGENTHUB_VECTOR_SEARCH_ENABLED with startup advisory log, OpenAPI BETA tag description, and full README documentation
-- New settings: AGENTHUB_EMBEDDING_PROVIDER (local|openai), AGENTHUB_OPENAI_API_KEY, AGENTHUB_VECTOR_SEARCH_ENABLED
-- New endpoints tagged "search [experimental]" in OpenAPI /docs so consumers can identify the beta surface
+First public release of OpenHub — a self-hosted coordination backend for AI coding agents.
 
-### Removed
+### ✨ Added
 
-- zvec dependency (replaced by native Turso vector columns)
-- AGENTHUB_ZVEC_PATH config setting
+**Backend (Phase 1–3)**
+- Real JWT + API key authentication with Casbin RBAC (admin, agent, viewer)
+- Agent registration with capability declaration and smart matching
+- Task queue with claim/lease mechanism and automatic recovery on agent failure
+- WebSocket real-time events with first-frame JWT auth
+- Heartbeat-based offline agent detection
+- RFC 7807 Problem Details error format across all endpoints
+- SlowAPI rate limiting with Prometheus metrics
+- Alembic migration system for schema versioning
+- Vector semantic search (opt-in beta) via Turso/libSQL native F32_BLOB columns
+- Local + OpenAI embedding backends with auto-indexing hooks
+- Agent-to-agent messaging with conversation threads
+- Shared memory store, artifact/file sharing, resource locking
+- Workflow orchestration for multi-step DAG pipelines
+- 60+ REST API endpoints with interactive Swagger docs
 
-### Notes
+**Command Center UI (Phase 4)**
+- React + Vite dashboard with live agent/task/workflow control
+- DLQ panel, cost tracking, distributed trace viewer
+- Shared memory viewer, resource lock panel
+- Mobile-responsive layout (tables → cards at small widths)
+- i18n support (English + Turkish)
+- Dark/light theme
 
-- Vector search requires Turso configuration. On local SQLite, all vector endpoints return RFC 7807 503 responses and the rest of OpenHub continues to work normally.
-- sentence-transformers and openai are now declared in requirements.txt. The local backend is the default.
-- See the README "Vector Search (Beta)" section for setup instructions, supported endpoints, and known limitations.
+**Release Readiness (Phase 5)**
+- `pip install openhub` — PEP 621 metadata with hatchling build backend
+- `openhub` console command starts the server
+- Docker Compose with health checks, restart policies, non-root user
+- Graceful shutdown — in-flight tasks drained to queue on server stop
+- Stuck work recovery — stale task detection + admin recovery endpoint
+- Playwright E2E tests (login, navigation, validation)
+- `.env.example` with all required/optional variables
+
+### 🔒 Security
+
+- Auth stub removed — all protected endpoints require valid JWT or API key
+- Admin credentials via environment variables (no hardcoded defaults in production)
+- CORS lockdown with configurable origins
+- Non-root user in Docker container
+- Secrets fail-fast in Docker Compose (`${VAR:?error}`)
+
+### 📦 Infrastructure
+
+- Python 3.11+ / FastAPI / SQLite (WAL mode)
+- React 19 + Vite + Tailwind v4 + shadcn/ui
+- Pydantic v2 data validation
+- structlog structured JSON logging
+- Prometheus metrics endpoint
+
+### 📝 Known Limitations
+
+- Vector search requires Turso (local SQLite returns 503)
+- Vector search is English-only (sentence-transformers/all-MiniLM-L6-v2)
+- No cross-encoder re-ranking in vector search
+- Redis optional (graceful degradation to in-memory)
