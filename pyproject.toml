@@ -1,49 +1,89 @@
-[tool.poetry]
-name = "codex-agenthub-local"
-version = "0.1.0"
-description = "Multi-agent coordination system for local development"
-authors = ["Agent Hub Team"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.11"
-fastapi = "^0.104.1"
-uvicorn = {extras = ["standard"], version = "^0.24.0"}
-websockets = "^12.0"
-sqlalchemy = "^2.0.23"
-alembic = "^1.12.1"
-redis = "^5.0.1"
-pydantic = "^2.4.2"
-pydantic-settings = "^2.0.3"
-httpx = "^0.25.2"
-python-multipart = "^0.0.6"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-bcrypt = "^5.0.0"
-prometheus-client = "^0.19.0"
-python-dotenv = "^1.0.0"
-structlog = "^23.2.0"
-click = "^8.1.7"
-psutil = "^5.9.8"
-
-# Optional vector search backends (Phase 3) - install with `poetry install -E vector`
-sentence-transformers = {version = "^3.3.1", optional = true}
-openai = {version = "^1.54.0", optional = true}
-
-[tool.poetry.extras]
-vector = ["sentence-transformers", "openai"]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
-pytest-asyncio = "^0.21.1"
-pytest-cov = "^4.1.0"
-black = "^23.11.0"
-isort = "^5.12.0"
-flake8 = "^6.1.0"
-mypy = "^1.7.1"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openhub"
+version = "0.1.0"
+description = "Multi-agent coordination platform — registry, task routing, verification gates, live dashboard."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "OpenHub Team" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.12.1",
+    "sqlalchemy-libsql>=0.2.0",
+    "redis>=5.0.1",
+    "pydantic>=2.4.2",
+    "pydantic-settings>=2.0.3",
+    "httpx>=0.25.2",
+    "python-multipart>=0.0.6",
+    "pyjwt[crypto]>=2.8.0",
+    "bcrypt>=5.0.0",
+    "slowapi>=0.1.9",
+    "casbin>=1.25.0",
+    "prometheus-client>=0.19.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.2.0",
+    "click>=8.1.7",
+    "psutil>=5.9.8",
+]
+
+[project.optional-dependencies]
+vector = [
+    "sentence-transformers>=3.3.1",
+    "openai>=1.54.0",
+]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+    "pytest-cov>=4.1.0",
+    "black>=23.11.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.1",
+]
+
+[project.scripts]
+openhub = "app.main:run_server"
+
+[project.urls]
+Homepage = "https://github.com/Battlelamb/OpenHub"
+Repository = "https://github.com/Battlelamb/OpenHub"
+Issues = "https://github.com/Battlelamb/OpenHub/issues"
+Documentation = "https://github.com/Battlelamb/OpenHub#readme"
+
+# ── Hatch ────────────────────────────────────────────────────────────
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# ── Pytest ───────────────────────────────────────────────────────────
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov=app --cov-report=html --cov-report=term"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "turso: requires live Turso DB for vector tests",
+]
+
+# ── Formatting / Linting ─────────────────────────────────────────────
 
 [tool.black]
 line-length = 88
@@ -58,12 +98,3 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q --cov=app --cov-report=html --cov-report=term"
-testpaths = ["tests"]
-asyncio_mode = "auto"
-markers = [
-    "turso: requires live Turso DB for vector tests",
-]
