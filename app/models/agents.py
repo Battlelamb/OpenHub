@@ -51,8 +51,8 @@ class AgentCreate(BaseModel):
     
     capabilities: List[str] = Field(
         description="List of agent capabilities",
-        min_items=1,
-        max_items=50
+        min_length=1,
+        max_length=50
     )
     
     labels: Dict[str, str] = Field(
@@ -109,8 +109,8 @@ class AgentUpdate(BaseModel):
     
     capabilities: Optional[List[str]] = Field(
         default=None,
-        min_items=1,
-        max_items=50,
+        min_length=1,
+        max_length=50,
         description="Updated capabilities"
     )
     

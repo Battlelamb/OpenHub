@@ -68,8 +68,8 @@ class TaskCreate(BaseModel):
     
     required_capabilities: List[str] = Field(
         description="Required agent capabilities",
-        min_items=1,
-        max_items=20
+        min_length=1,
+        max_length=20
     )
     
     priority: int = Field(

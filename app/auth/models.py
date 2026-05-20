@@ -37,7 +37,7 @@ class AgentLogin(BaseModel):
     capabilities: List[str] = Field(
         default_factory=list,
         description="Agent capabilities",
-        max_items=50
+        max_length=50
     )
     
     @field_validator('agent_name')

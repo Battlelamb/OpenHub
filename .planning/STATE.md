@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Phase 05-02 release-readiness snapshot complete
 stopped_at: Completed 05-02-RELEASE-READINESS.md
-last_updated: "2026-05-20T10:35:00.000Z"
+last_updated: "2026-05-20T12:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -117,6 +117,7 @@ Recent decisions affecting current work:
 - [Phase 04-command-center-ui]: Plan 04-10: Dual-auth FastAPI dep _dashboard_or_admin_key on DLQ routes - accepts JWT admin OR X-Admin-Key. Dashboard works with JWT only (no admin key in browser); legacy CLI scripts unaffected. Existing _admin function left untouched.
 - [Phase 04-command-center-ui]: Plan 04-10: FastAPI route ordering bug discovered - GET /v1/tasks/{task_id} was registered before GET /v1/tasks/search, causing 'search' to match as task_id. Static-prefix routes MUST be declared before parametric routes in same router (registration order matters, not specificity). Same pattern likely affects /agent/{agent_id} and /available/for-me but out of scope.
 - [Phase 04-command-center-ui]: Plan 04-10: sqlite3.Row guard inverted in routes_memory.py:179 and routes_p2.py:236 - `dict(r) if isinstance(r, dict) else r` only converted when r was already a dict, breaking r.get() on Row objects. Fixed in both. Six other route files have the same pattern but weren't exercised by this plan.
+- [Phase 05-gsd-operating-loop]: Release-readiness blocker slice - replaced unmaintained passlib with the bcrypt library directly in jwt_auth.py (passlib 1.7.4 is incompatible with bcrypt 5.x; hash_password was broken for fresh installs); cleared all Pydantic v2 deprecations (class Config -> model_config, min_items/max_items -> min_length/max_length); realigned CLAUDE.md phase status to the GSD roadmap. Backend suite: 185 passed / 9 skipped.
 
 ### Pending Todos
 

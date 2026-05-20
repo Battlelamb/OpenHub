@@ -2,7 +2,7 @@
 RFC 7807 Problem Details for HTTP Problems
 """
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FieldError(BaseModel):
@@ -46,8 +46,8 @@ class ProblemDetail(BaseModel):
         description="Field-level validation errors"
     )
     
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "type": "about:blank",
                 "title": "Unauthorized",
@@ -57,6 +57,7 @@ class ProblemDetail(BaseModel):
                 "trace_id": "f76aad78-d29c-45d2-9cef-b959b6a61cce"
             }
         }
+    )
 
 
 # Pre-built problem instances for common errors

@@ -35,7 +35,7 @@ python-multipart==0.0.6
 
 # Authentication - Updated Security Stack
 pyjwt[crypto]==2.8.0
-passlib[bcrypt]==1.7.4
+bcrypt==5.0.0
 slowapi==0.1.9
 casbin==1.25.0
 

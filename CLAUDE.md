@@ -18,7 +18,7 @@ This file provides guidance to Claude Code when working with the OpenHub project
 **OpenHub** is a multi-agent coordination platform that enables multiple AI agents (Claude Code, Cursor, Copilot, etc.) to work together on the same codebase without conflicts.
 
 **GitHub**: https://github.com/Battlelamb/OpenHub.git
-**Location**: `D:\OneDrive\OLD\Documents\OpenHub`
+**Location**: `/home/brunhilde/OpenHub` (Linux / WSL2 development environment)
 
 ## Repository Structure
 
@@ -124,16 +124,16 @@ QUEUED → CLAIMED → RUNNING → COMPLETED/FAILED
 
 ## Implementation Progress
 
-### Completed Phases:
-- ✅ **Phase 1**: Foundation & Security (FastAPI, database, JWT, API keys, RBAC, Redis)
-- ✅ **Phase 2.1**: Agent Management (registration, heartbeat, capability matching, discovery)
-- ✅ **Phase 2.2.1**: Basic Task Management (CRUD, assignment, tracking, search)
-- ✅ **Phase 2.2.2**: Hatchet Integration (workflow orchestration, templates)
-- ✅ **Phase 2.2.3**: Agent-Workflow Coordination (smart assignment, planning, monitoring)
+Phase tracking follows the GSD roadmap in `.planning/ROADMAP.md` (5 phases; 1-4 complete, 5 in progress).
 
-### Next Phases:
-- 🔄 **Phase 2.3**: Real-time Communication (WebSocket)
-- 🔄 **Phase 2.4**: Vector Database Integration
+### Completed Phases:
+- ✅ **Phase 1 — Backend Hardening**: real auth enforcement, capabilities stored as JSON, heartbeat monitor, CORS lockdown, Alembic migrations, RFC 7807 errors, rate limiting, OpenAPI docs
+- ✅ **Phase 2 — WebSocket + Test Suite**: first-frame JWT WebSocket auth, `ConnectionManager` with live agent/task events, backend test suite (auth, capability matching, lifecycle)
+- ✅ **Phase 3 — Vector Database**: Turso/libSQL native F32_BLOB vectors, local + OpenAI embedding backends, `/v1/search` — shipped as opt-in beta
+- ✅ **Phase 4 — Command Center UI**: React + Vite dashboard with live agent/task/workflow control, DLQ, cost tracking, distributed trace viewer
+
+### Current Phase:
+- 🔄 **Phase 5 — Release Readiness**: open source docs, pip install path, hardened Docker Compose, graceful shutdown, Playwright E2E tests (GSD operating loop in progress)
 
 ## Configuration
 

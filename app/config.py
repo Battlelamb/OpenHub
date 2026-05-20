@@ -3,7 +3,7 @@ Configuration management for Agent Hub
 """
 from dotenv import load_dotenv
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 import os
 
@@ -159,9 +159,10 @@ class Settings(BaseSettings):
     workflow_step_default_timeout_sec: int = Field(default=300, description="Default workflow step timeout in seconds")
     workflow_max_retries: int = Field(default=3, description="Maximum workflow retries")
 
-    class Config:
-        env_prefix = "AGENTHUB_"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_prefix="AGENTHUB_",
+        case_sensitive=False,
+    )
 
 
 # Global settings instance

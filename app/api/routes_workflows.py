@@ -38,7 +38,7 @@ class WorkflowStepCreate(BaseModel):
 class WorkflowCreate(BaseModel):
     """Model for creating workflow"""
     workflow_name: str = Field(..., min_length=1, max_length=200, description="Workflow name")
-    steps: List[WorkflowStepCreate] = Field(..., min_items=1, description="Workflow steps")
+    steps: List[WorkflowStepCreate] = Field(..., min_length=1, description="Workflow steps")
     input_data: Optional[Dict[str, Any]] = Field(default=None, description="Initial workflow data")
     description: Optional[str] = Field(default=None, max_length=1000, description="Workflow description")
 

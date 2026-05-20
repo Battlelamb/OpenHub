@@ -106,22 +106,21 @@ def test_jwt_get_remaining_time():
 
 
 def test_password_hash_and_verify():
-    """hash_password + verify_password round-trips, and wrong password fails.
-
-    Note: passlib 1.7.4 has a known incompatibility with bcrypt >= 4.1 where
-    it cannot read the backend version and mis-classifies valid passwords as
-    too long. Skip rather than fail when the backend is broken in this env -
-    this is a dependency pin issue tracked separately from auth logic.
-    """
-    plain = "s3cret!"  # very short to dodge length-check false positives
-    try:
-        hashed = hash_password(plain)
-    except ValueError as exc:
-        pytest.skip(f"passlib/bcrypt backend incompatibility: {exc}")
+    """hash_password + verify_password round-trips, and wrong password fails."""
+    plain = "s3cret!"
+    hashed = hash_password(plain)
 
     assert hashed != plain
+    assert hashed.startswith("$2b$")  # standard bcrypt modular-crypt format
     assert verify_password(plain, hashed) is True
     assert verify_password("wrong-password", hashed) is False
+
+
+def test_password_hash_handles_long_input():
+    """Passwords over bcrypt's 72-byte limit are truncated, not rejected."""
+    long_password = "x" * 200
+    hashed = hash_password(long_password)
+    assert verify_password(long_password, hashed) is True
 
 
 # ---------------------------------------------------------------------------

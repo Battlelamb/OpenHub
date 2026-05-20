@@ -1,19 +1,16 @@
 """
 JWT authentication system for OpenHub agents
 """
+import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Union
-from passlib.context import CryptContext
 
 from ..config import get_settings
 from ..logging import get_logger
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class JWTManager:
@@ -205,14 +202,27 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
     return jwt_manager.verify_token(token, expected_type)
 
 
+# bcrypt operates on bytes and hard-rejects inputs longer than 72 bytes
+# (bcrypt >= 4.x). Encode to UTF-8 and cap at 72 bytes so long passwords
+# degrade gracefully instead of raising - matching prior passlib behavior.
+_BCRYPT_MAX_BYTES = 72
+
+
 def hash_password(password: str) -> str:
-    """Hash password for admin users"""
-    return pwd_context.hash(password)
+    """Hash a password for admin users using bcrypt."""
+    password_bytes = password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    return bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a plaintext password against a stored bcrypt hash."""
+    password_bytes = plain_password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    try:
+        return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
+    except ValueError:
+        # Malformed or empty stored hash - fail closed rather than crash.
+        logger.warning("password_verify_invalid_hash")
+        return False
 
 
 def create_agent_tokens(agent_id: str, agent_name: str, role: str = "agent") -> Dict[str, str]:

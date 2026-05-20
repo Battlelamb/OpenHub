@@ -1,5 +1,14 @@
 # Agent Hub Project Roadmap - Modular Sub-Steps
 
+> **⚠️ SUPERSEDED (2026-05-20).** This is the original pre-GSD planning roadmap and
+> no longer reflects how OpenHub is built or tracked. The checkboxes below are stale.
+>
+> Current sources of truth:
+> - **Phase status & execution:** `.planning/ROADMAP.md` (GSD roadmap — Phases 1-4 complete, Phase 5 in progress)
+> - **Forward-looking feature roadmap:** `docs/ROADMAP_V2.md`
+>
+> Retained for historical reference only.
+
 ## Phase 1: Foundation & Setup (MVP Core)
 **Estimated Time: 2-3 weeks**
 

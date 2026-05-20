@@ -83,3 +83,32 @@ Conditions:
 - Blockers 3–7 are tracked debt — they do not gate this snapshot or the next product slice.
 
 Cleared to continue into release-prep work and Slice 05-03.
+
+---
+
+## Resolution Update — 2026-05-20
+
+Follow-up slice closing Blockers 3 and 5 plus the docs-freshness recommendation.
+Verification-first: claims below are backed by commands run in this slice.
+
+### Blocker 3 (Pydantic v2 deprecations) — RESOLVED
+- Class-based `Config` → `model_config`: `app/config.py` (`SettingsConfigDict`), `app/models/errors.py` (`ConfigDict`).
+- `min_items`/`max_items` → `min_length`/`max_length`: `app/models/agents.py` (×2), `app/auth/models.py`, `app/models/tasks.py`, `app/api/routes_workflows.py`.
+- The snapshot cited only two files; the actual sweep covered all 9 deprecation sites so the warnings fully clear.
+- Evidence: pytest warnings summary now contains zero `PydanticDeprecated*` entries.
+
+### Blocker 5 (skipped auth test) — RESOLVED
+- Deeper than recorded: the ">72 bytes" error came from passlib 1.7.4's internal backend probe — passlib is unmaintained and cannot read bcrypt 5.x. "Truncate input" could not have fixed it, and `hash_password` was in fact broken for any fresh install.
+- Fix: replaced passlib with the `bcrypt` library directly in `app/auth/jwt_auth.py` — the resolution already named in `02-websocket-test-suite/deferred-items.md`. `requirements.txt` and `pyproject.toml` now declare `bcrypt` instead of `passlib[bcrypt]`.
+- `test_auth.py::test_password_hash_and_verify` un-skipped; `test_password_hash_handles_long_input` added to pin the 72-byte truncation path.
+
+### Docs freshness — DONE
+- `CLAUDE.md`: "Implementation Progress" realigned to the GSD roadmap (Phases 1-4 complete, Phase 5 in progress); Windows `D:\...` path replaced with the Linux path.
+- `docs/PROJECT_ROADMAP.md`: marked SUPERSEDED with pointers to `.planning/ROADMAP.md` and `docs/ROADMAP_V2.md`.
+
+### Evidence
+- `.venv/bin/python -m pytest tests/ --no-cov` → exit 0, **185 passed, 9 skipped** (was 183 / 10; the 9 remaining skips are all Turso vector tests).
+
+### Still open / newly flagged
+- Unchanged from the snapshot: Blockers 1, 2, 4, 6, 7.
+- New (flagged, not fixed): admin login in `app/api/routes_auth.py:291` uses a plaintext, non-constant-time `!=` password compare; `hash_password`/`verify_password` are imported there but unused. Candidate for a future hardening slice (`hmac.compare_digest`).
