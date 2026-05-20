@@ -478,6 +478,30 @@ class TaskResponse(BaseModel):
     assigned_agent_status: Optional[str] = Field(default=None, description="Agent status")
 
 
+class StaleTaskResponse(BaseModel):
+    """Compact API row for a stale task in the ``GET /v1/tasks/stale`` listing.
+
+    A *stale* task is one an agent claimed or started but never released --
+    its lease (``lease_until``) has expired (see ``Task.is_stale``), so the
+    work is silently stuck. This shape is intentionally small: just enough for
+    an operator to spot the stuck task and see how long it has been stuck.
+    """
+
+    id: str = Field(description="Task ID")
+    title: str = Field(description="Task title")
+    status: TaskStatus = Field(description="Current status (claimed or running)")
+    owner_agent_id: Optional[str] = Field(
+        default=None, description="Agent holding the expired lease"
+    )
+    lease_until: Optional[datetime] = Field(
+        default=None, description="When the task's lease expired"
+    )
+    stale_seconds: float = Field(
+        description="How long the task has been stale, in seconds "
+        "(elapsed time since lease_until expired)"
+    )
+
+
 class TaskFilter(BaseModel):
     """Filter criteria for task queries"""
 

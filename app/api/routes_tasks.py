@@ -2,6 +2,7 @@
 Task management endpoints - clean and simple
 """
 import json as _json
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, status, Query
 
@@ -12,7 +13,8 @@ from ..services.task_service import TaskService
 from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
     Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, TaskRecover,
-    TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter
+    TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter,
+    StaleTaskResponse,
 )
 from ..auth.dependencies import CurrentAgent, CurrentAdmin, get_current_admin
 from ..database.vector_availability import require_vector
@@ -193,6 +195,68 @@ async def get_task_statistics(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve task statistics"
         )
+
+
+def _stale_age_seconds(lease_until: Optional[datetime], now: datetime) -> float:
+    """How long a task has been stale, in seconds: elapsed time since its
+    lease expired.
+
+    A task turns stale the moment ``lease_until`` passes (see
+    ``Task.is_stale``), so its staleness age is ``now - lease_until``.
+    ``TaskService.find_stale_tasks`` only ever yields tasks with a real,
+    already-expired lease -- so ``lease_until`` is expected to be set and in
+    the past -- but this helper stays defensive at the boundary.
+
+    Args:
+        lease_until: The task's lease-expiry timestamp. May be naive or
+            timezone-aware; Task rows loaded from SQLite are often naive,
+            so normalise before subtracting (mirror ``Task.is_stale``).
+        now: Reference time, timezone-aware UTC.
+
+    Returns:
+        Seconds the task has been stale, as a non-negative float.
+    """
+    if lease_until is None:
+        return 0.0
+    if lease_until.tzinfo is None:
+        lease_until = lease_until.replace(tzinfo=timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    delta = now - lease_until
+    return max(delta.total_seconds(), 0.0)
+
+
+@router.get("/stale", response_model=List[StaleTaskResponse])
+async def list_stale_tasks(
+    task_service: TaskService = Depends(get_task_service),
+) -> List[StaleTaskResponse]:
+    """List every task currently stuck with an expired lease.
+
+    A *stale* task is one an agent claimed or started but never released --
+    its lease has expired (see ``Task.is_stale``), so the work is silently
+    blocked. This endpoint is read-only discovery (no auth required): it
+    surfaces stuck tasks so an operator -- or an automated sweeper -- can
+    decide what to recover via ``POST /v1/tasks/{task_id}/recover``.
+
+    Detection only: no task state is mutated. Returns an empty list when
+    nothing is stale.
+    """
+    now = datetime.now(timezone.utc)
+    stale_tasks = task_service.find_stale_tasks()
+
+    logger.debug("stale_task_listing_requested", count=len(stale_tasks))
+
+    return [
+        StaleTaskResponse(
+            id=task.id,
+            title=task.title,
+            status=task.status,
+            owner_agent_id=task.owner_agent_id,
+            lease_until=task.lease_until,
+            stale_seconds=_stale_age_seconds(task.lease_until, now),
+        )
+        for task in stale_tasks
+    ]
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
