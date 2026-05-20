@@ -99,3 +99,4 @@ coverage/
 web/node_modules
 web/dist
 web/coverage
+web/test-results/
