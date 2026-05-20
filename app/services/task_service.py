@@ -700,3 +700,50 @@ class TaskService:
             reason=reason,
         )
         return updated
+
+    def drain_tasks(self) -> int:
+        """Reset all claimed/running tasks back to QUEUED for graceful shutdown.
+
+        Called during server shutdown to ensure no tasks are silently dropped.
+        Every in-flight task is returned to the queue so a future restart can
+        pick it up.
+
+        Returns:
+            Number of tasks drained.
+        """
+        try:
+            active_tasks = (
+                self.task_repo.find_by_status(TaskStatus.CLAIMED.value)
+                + self.task_repo.find_by_status(TaskStatus.RUNNING.value)
+            )
+
+            drained = 0
+            for task in active_tasks:
+                drain_payload = {
+                    **(task.payload or {}),
+                    "drain": {
+                        "reason": "server_shutdown",
+                        "drained_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                }
+                update_data = {
+                    "status": TaskStatus.QUEUED.value,
+                    "owner_agent_id": None,
+                    "lease_until": None,
+                    "claimed_at": None,
+                    "started_at": None,
+                    "payload": _json.dumps(drain_payload),
+                }
+                self.task_repo.update(task.id, update_data)
+                drained += 1
+
+            if drained:
+                logger.info("tasks_drained", count=drained)
+            else:
+                logger.info("tasks_drained_none")
+
+            return drained
+
+        except Exception as e:
+            logger.error("drain_tasks_failed", error=str(e))
+            return 0

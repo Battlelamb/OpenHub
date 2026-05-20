@@ -124,7 +124,24 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown - stop the embedding retry worker first so its in-flight DB
+    # ── Graceful Shutdown Sequence ──────────────────────────────────
+    # Order matters: drain in-flight work first, then tear down background
+    # workers, then close connections, then stop monitors.
+    logger.info("shutdown_sequence_starting")
+
+    # 1. Drain in-flight tasks back to queue (Phase 05-04)
+    try:
+        from .database.connection import get_database as _get_db
+        from .services.task_service import TaskService
+
+        _db = _get_db()
+        _task_svc = TaskService(_db)
+        _drained = _task_svc.drain_tasks()
+        logger.info("shutdown_tasks_drained", count=_drained)
+    except Exception as e:
+        logger.warning("shutdown_task_drain_failed", error=str(e))
+
+    # 2. Stop the embedding retry worker so its in-flight DB
     # operations finish before the connection layer is torn down.
     try:
         await stop_retry_worker()
@@ -132,15 +149,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("embedding_retry_worker_stop_failed", error=str(e))
 
-    # Stop WebSocket manager before heartbeat so open sockets are closed
+    # 3. Stop WebSocket manager before heartbeat so open sockets are closed
     # cleanly while the rest of the runtime is still live.
     await connection_manager.stop()
     logger.info("connection_manager_stopped")
 
+    # 4. Stop heartbeat monitor last.
     if heartbeat_service:
         await heartbeat_service.stop_monitoring()
         logger.info("heartbeat_monitor_stopped")
-    logger.info("agent_hub_shutting_down")
+
+    logger.info("shutdown_sequence_complete")
 
 
 # OpenAPI tag metadata. The "search [experimental]" tag matches the prefix used
