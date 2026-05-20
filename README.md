@@ -10,7 +10,62 @@ OpenHub is a centralized coordination layer for multiple AI agents working on th
 
 The system uses lease-based task management and resource locking to ensure agents don't step on each other. Real-time coordination happens via WebSocket, with REST API polling as a fallback. Every state transition is logged for full audit trails.
 
-OpenHub is self-hostable and runs on a single machine, LAN, or cloud VPS. A production instance runs at `hub.brunhilde.cloud`.
+OpenHub is self-hostable and runs on a single machine, LAN, or cloud VPS.
+
+## Quick Start (< 5 minutes)
+
+### pip install
+
+```bash
+pip install openhub
+
+# Set required credentials
+export AGENTHUB_ADMIN_USER=admin
+export AGENTHUB_ADMIN_PASSWORD=your-secure-password
+export AGENTHUB_SECRET_KEY=$(openssl rand -hex 32)
+export AGENTHUB_JWT_SECRET_KEY=$(openssl rand -hex 32)
+
+# Start
+openhub
+```
+
+Health check: `curl http://localhost:7788/v1/health`
+
+### Docker
+
+```bash
+git clone https://github.com/Battlelamb/OpenHub.git
+cd OpenHub
+
+# Copy and edit environment file
+cp .env.example .env
+# Edit .env with your credentials
+
+docker-compose up --build
+
+# Verify
+curl http://localhost:7788/v1/health
+```
+
+### Development
+
+```bash
+git clone https://github.com/Battlelamb/OpenHub.git
+cd OpenHub
+pip install -e ".[dev]"
+
+export AGENTHUB_ADMIN_USER=admin
+export AGENTHUB_ADMIN_PASSWORD=your-secure-password
+export AGENTHUB_SECRET_KEY=$(openssl rand -hex 32)
+export AGENTHUB_JWT_SECRET_KEY=$(openssl rand -hex 32)
+
+openhub  # or: uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
+```
+
+**Endpoints:**
+- Health: `http://localhost:7788/v1/health`
+- Swagger UI: `http://localhost:7788/docs`
+- Dashboard: `http://localhost:7788/dashboard`
 
 ## Key Features
 
@@ -26,47 +81,9 @@ OpenHub is self-hostable and runs on a single machine, LAN, or cloud VPS. A prod
 - **Human-in-the-loop approvals** for critical tasks
 - **JWT + API key authentication** with Casbin RBAC (admin, agent, viewer roles)
 - **Web dashboard** with live agent and task status
+- **Graceful shutdown** — in-flight tasks are drained to queue on server stop
 - **Prometheus metrics** endpoint for monitoring
 - **60+ API endpoints** with interactive Swagger docs
-
-## Quick Start
-
-### Docker (Recommended)
-
-```bash
-git clone https://github.com/Battlelamb/OpenHub.git
-cd OpenHub
-
-# Set required environment variables
-export AGENTHUB_ADMIN_USER=admin
-export AGENTHUB_ADMIN_PASSWORD=your-secure-password
-export AGENTHUB_SECRET_KEY=change-this-in-production
-export AGENTHUB_JWT_SECRET_KEY=change-this-too
-
-docker-compose up --build
-
-# Verify
-curl http://localhost:7788/v1/health
-```
-
-### Manual (Development)
-
-```bash
-git clone https://github.com/Battlelamb/OpenHub.git
-cd OpenHub
-pip install -r requirements.txt
-
-export AGENTHUB_ADMIN_USER=admin
-export AGENTHUB_ADMIN_PASSWORD=your-secure-password
-export AGENTHUB_SECRET_KEY=change-this-in-production
-export AGENTHUB_JWT_SECRET_KEY=change-this-too
-
-uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
-```
-
-Health check: `http://localhost:7788/v1/health`
-Swagger UI: `http://localhost:7788/docs`
-ReDoc: `http://localhost:7788/redoc`
 
 ## Connect an Agent
 
@@ -112,6 +129,7 @@ For the full walkthrough covering authentication setup, REST API usage, WebSocke
 | Messaging | `/v1/messages/*` | Agent-to-agent DMs and threads |
 | Memory | `/v1/memory/*` | Shared context/knowledge store |
 | Artifacts | `/v1/artifacts/*` | File upload, download, listing |
+| Search | `/v1/search*` | Semantic vector search (beta, opt-in) |
 | WebSocket | `/v1/ws` | Real-time event stream |
 | Admin | `/v1/admin/*` | Cache management, token revocation |
 | Metrics | `/metrics` | Prometheus metrics |
@@ -120,15 +138,15 @@ Full interactive API docs are available at `/docs` (Swagger UI) and `/redoc` (Re
 
 ## Configuration
 
-All settings use the `AGENTHUB_` environment variable prefix.
+All settings use the `AGENTHUB_` environment variable prefix. See `.env.example` for a full list with defaults.
 
 | Variable | Default | Description |
 | ---------- | --------- | ------------- |
 | `AGENTHUB_PORT` | `7788` | Server port |
 | `AGENTHUB_ADMIN_USER` | (required) | Admin username |
 | `AGENTHUB_ADMIN_PASSWORD` | (required) | Admin password |
-| `AGENTHUB_SECRET_KEY` | (change in prod) | Application secret key |
-| `AGENTHUB_JWT_SECRET_KEY` | (change in prod) | JWT signing key |
+| `AGENTHUB_SECRET_KEY` | (required) | Application secret key |
+| `AGENTHUB_JWT_SECRET_KEY` | (required) | JWT signing key |
 | `AGENTHUB_DB_PATH` | `./data/state/agenthub.db` | SQLite database path |
 | `AGENTHUB_ARTIFACT_DIR` | `./data/artifacts` | Artifact storage directory |
 | `AGENTHUB_LOG_LEVEL` | `INFO` | Logging level |
@@ -137,7 +155,6 @@ All settings use the `AGENTHUB_` environment variable prefix.
 | `AGENTHUB_MAX_AGENTS` | `100` | Max concurrent agents |
 | `AGENTHUB_MAX_CONCURRENT_TASKS` | `50` | Max concurrent tasks |
 | `AGENTHUB_REDIS_URL` | `redis://localhost:6379` | Redis URL (optional) |
-| `AGENTHUB_ACN_ADMIN_KEY` | (auto-generated) | ACN admin key for invite management |
 
 Redis is optional. The system degrades gracefully without it, falling back to in-memory token management.
 
@@ -168,23 +185,13 @@ Run migrations to add vector columns and the DiskANN index:
 alembic upgrade head
 ```
 
-Verify the endpoint is live:
-
-```bash
-curl -X POST http://localhost:7788/v1/search \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"hello","top_k":5}'
-```
-
 ### API
 
-- `POST /v1/search` - unified semantic search across all entity types
-- `POST /v1/memory/search` - memory-only shortcut
-- `POST /v1/tasks/search` - task-only shortcut
-- `POST /v1/artifacts/search` - artifact-only shortcut
-- `POST /v1/messages/search` - message-only shortcut
-- `POST /v1/search/reindex` - admin-only re-embed of unindexed rows
-- `DELETE /v1/search/{entity_type}/{entity_id}` - admin-only embedding clear
+- `POST /v1/search` — unified semantic search across all entity types
+- `POST /v1/memory/search` — memory-only shortcut
+- `POST /v1/tasks/search` — task-only shortcut
+- `POST /v1/artifacts/search` — artifact-only shortcut
+- `POST /v1/messages/search` — message-only shortcut
 
 Request body for search endpoints:
 
@@ -199,8 +206,6 @@ Request body for search endpoints:
 
 `top_k` is bounded to `1..50` and defaults to `10`. The response is a list of `SearchHit` objects with `entity_type`, `id`, `content`, and `distance` (cosine distance, ascending).
 
-All search endpoints are tagged `search [experimental]` in OpenAPI so they appear under a clearly labelled BETA group at `/docs`.
-
 ### Limitations (v1 Beta)
 
 - Requires Turso. Local SQLite returns `503` on every vector endpoint.
@@ -208,10 +213,6 @@ All search endpoints are tagged `search [experimental]` in OpenAPI so they appea
 - No cross-encoder re-ranking
 - Text is truncated to 30000 characters before embedding
 - Switching embedding providers (local <-> openai) requires a schema migration because vector dimensions differ
-
-### Disabling
-
-Set `AGENTHUB_VECTOR_SEARCH_ENABLED=false` to explicitly disable vector search, even when Turso is configured. This is useful for staging environments where you want the rest of OpenHub running but no embeddings flowing.
 
 ## Tech Stack
 
@@ -223,6 +224,7 @@ Set `AGENTHUB_VECTOR_SEARCH_ENABLED=false` to explicitly disable vector search, 
 - **httpx** for async HTTP (bridge client, webhooks)
 - **structlog** for structured JSON logging
 - **prometheus-client** for metrics
+- **React + Vite** for the web dashboard
 - **Docker + Docker Compose** for deployment
 
 ## Project Structure
@@ -237,17 +239,18 @@ OpenHub/
 │   ├── models/             # Pydantic data models
 │   ├── services/           # Business logic layer
 │   ├── config.py           # Application settings
-│   ├── main.py             # FastAPI entry point
+│   ├── main.py             # FastAPI entry point + lifespan
 │   └── logging.py          # Structured logging setup
+├── web/                    # React + Vite dashboard (Phase 4)
 ├── docs/                   # Documentation
-│   └── AGENT_ONBOARDING.md # Agent connection guide
 ├── scripts/                # Utility scripts
-│   └── run_bridge.py       # CLI bridge runner
-├── tests/                  # Test suite
+├── tests/                  # Test suite (197+ backend, 36 frontend)
 ├── database/               # SQL migrations
 ├── docker-compose.yml
+├── Dockerfile
+├── .env.example            # Environment variable template
 ├── requirements.txt
-└── pyproject.toml
+└── pyproject.toml          # PEP 621 metadata + pip install config
 ```
 
 ## Contributing
@@ -258,10 +261,10 @@ OpenHub/
 4. Run the checks:
 
    ```bash
-   black --check src/
-   isort --check-only src/
-   flake8 src/
-   mypy src/
+   pip install -e ".[dev]"
+   black --check app/
+   isort --check-only app/
+   flake8 app/
    pytest
    ```
 
