@@ -626,3 +626,77 @@ class TaskService:
         except Exception as e:
             logger.error("find_stale_tasks_failed", error=str(e))
             return []
+
+    def recover_task(
+        self,
+        task_id: str,
+        recovered_by: str,
+        reason: Optional[str] = None,
+    ) -> Optional[Task]:
+        """Reset a stale task back to QUEUED so it can be re-claimed.
+
+        A *stale* task (see ``Task.is_stale``) is one an agent claimed or
+        started but never released -- its lease expired, so the work is
+        silently stuck. Recovery hands it back to the queue for a healthy
+        agent to pick up.
+
+        Args:
+            task_id: ID of the task to recover.
+            recovered_by: ID of the admin performing the recovery (audit).
+            reason: Optional operator note explaining the recovery (audit).
+
+        Returns:
+            The updated ``Task``, or ``None`` if no task has that ID.
+
+        Raises:
+            ValueError: If the task exists but is not stale. Recovering a
+                live or already-finished task would corrupt its state, so
+                the caller must surface this as a 400.
+        """
+        task = self.task_repo.get_by_id(task_id)
+        if not task:
+            logger.warning("task_recovery_not_found", task_id=task_id)
+            return None
+
+        if not task.is_stale():
+            current_status = (
+                task.status if isinstance(task.status, str) else task.status.value
+            )
+            logger.warning(
+                "task_recovery_rejected_not_stale",
+                task_id=task_id,
+                current_status=current_status,
+            )
+            raise ValueError(
+                f"Task '{task_id}' is not stale (status={current_status}); "
+                "only stale tasks can be recovered"
+            )
+
+        now = datetime.now(timezone.utc)
+
+        recovery_payload = {
+            **(task.payload or {}),
+            "recovery": {
+                "recovered_by": recovered_by,
+                "reason": reason,
+                "recovered_at": now.isoformat(),
+            },
+        }
+
+        update_data = {
+            "status": TaskStatus.QUEUED.value,
+            "owner_agent_id": None,
+            "lease_until": None,
+            "claimed_at": None,
+            "started_at": None,
+            "payload": _json.dumps(recovery_payload),
+        }
+
+        updated = self.task_repo.update(task_id, update_data)
+        logger.info(
+            "task_recovered",
+            task_id=task_id,
+            recovered_by=recovered_by,
+            reason=reason,
+        )
+        return updated

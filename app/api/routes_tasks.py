@@ -3,7 +3,7 @@ Task management endpoints - clean and simple
 """
 import json as _json
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, status, Query
 
 from ..config import get_settings
 from ..logging import get_logger
@@ -11,10 +11,10 @@ from ..database.connection import get_database
 from ..services.task_service import TaskService
 from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
-    Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail,
+    Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, TaskRecover,
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter
 )
-from ..auth.dependencies import CurrentAgent, CurrentAdmin
+from ..auth.dependencies import CurrentAgent, CurrentAdmin, get_current_admin
 from ..database.vector_availability import require_vector
 from ..models.vector_search import SearchRequest, SearchResponse
 
@@ -526,6 +526,56 @@ async def get_available_tasks(
 
 
 # Admin-only endpoints
+@router.post("/{task_id}/recover", response_model=TaskResponse)
+async def recover_task(
+    task_id: str,
+    recovery: TaskRecover,
+    current_admin = Depends(get_current_admin),
+    task_service: TaskService = Depends(get_task_service),
+) -> TaskResponse:
+    """
+    Recover a stale task by resetting it to QUEUED (admin only).
+
+    A stale task is one an agent claimed or started but never released --
+    its lease has expired (see Task.is_stale). Recovery returns the work to
+    the queue so a healthy agent can re-claim it.
+
+    Responses:
+      * 200 - task recovered, returns the updated task
+      * 400 - task is not stale (recovering live/finished work is unsafe)
+      * 404 - no task with that ID
+    """
+    reason = recovery.reason
+
+    logger.info(
+        "task_recovery_request",
+        task_id=task_id,
+        admin_id=current_admin.agent_id,
+        reason=reason,
+    )
+
+    try:
+        recovered = task_service.recover_task(
+            task_id,
+            recovered_by=current_admin.agent_id,
+            reason=reason,
+        )
+    except ValueError as e:
+        # Task exists but is not stale - a business-rule violation.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    if recovered is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found",
+        )
+
+    return _task_to_response(recovered)
+
+
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: str,

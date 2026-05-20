@@ -240,6 +240,20 @@ class TaskFail(BaseModel):
     )
 
 
+class TaskRecover(BaseModel):
+    """Model for recovering a stale task back to the queue.
+
+    The recovery endpoint accepts this body optionally; when supplied,
+    ``reason`` is recorded for the recovery audit trail.
+    """
+
+    reason: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Why the task is being recovered (for the audit trail)"
+    )
+
+
 class TaskAttempt(IDMixin, TimestampMixin):
     """Model for task execution attempts"""
     
