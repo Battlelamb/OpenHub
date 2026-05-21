@@ -105,3 +105,20 @@ export function useCancelTask() {
     },
   })
 }
+
+export function useTransitionTaskStatus() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }): Promise<Task> => {
+      const b = await api<BackendTaskResponse>(`/v1/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+      return adaptTask(b)
+    },
+    onSuccess: (task) => {
+      qc.invalidateQueries({ queryKey: qk.tasks.all })
+      qc.invalidateQueries({ queryKey: qk.tasks.detail(task.id) })
+    },
+  })
+}
