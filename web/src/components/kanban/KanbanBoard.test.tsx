@@ -16,6 +16,18 @@ const dndState = vi.hoisted(() => ({
   },
 }))
 
+const routerState = vi.hoisted(() => ({
+  navigate: vi.fn(),
+}))
+
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
+  return {
+    ...actual,
+    useNavigate: () => routerState.navigate,
+  }
+})
+
 vi.mock('@hello-pangea/dnd', () => ({
   DragDropContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (result: unknown) => void }) => (
     <div>
@@ -135,6 +147,7 @@ describe('KanbanBoard', () => {
       source: { droppableId: 'queued', index: 0 },
       destination: { droppableId: 'cancelled', index: 0 },
     }
+    routerState.navigate.mockClear()
   })
 
   it('renders all lifecycle columns including cancelled and groups task cards by status', async () => {
@@ -151,14 +164,17 @@ describe('KanbanBoard', () => {
     expect(screen.getByTestId('column-cancelled')).toContainElement(screen.getByText('Cancelled task'))
   })
 
-  it('opens the workflow canvas when a task card is clicked', async () => {
+  it('navigates to the task detail route when a task card is clicked', async () => {
     mockTasks()
 
     renderWithQuery(<KanbanBoard />)
 
     await userEvent.click(await screen.findByText('Queued task'))
 
-    expect(screen.getByRole('dialog')).toHaveTextContent('Workflow canvas for Queued task')
+    expect(routerState.navigate).toHaveBeenCalledWith({
+      to: '/tasks/$taskId',
+      params: { taskId: 'task-queued' },
+    })
   })
 
   it('calls the status transition API and shows an updating state while a drag-drop mutation is pending', async () => {

@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { toast } from 'sonner'
 import { KanbanColumn } from './KanbanColumn'
 import { useTasks, useTransitionTaskStatus } from '@/hooks/queries/useTasks'
 import { TaskCreateForm } from '@/components/forms/TaskCreateForm'
-import { WorkflowCanvas } from '@/components/canvas/WorkflowCanvas'
 import { ApiError } from '@/lib/api-client'
 import {
   Inbox,
@@ -33,10 +33,9 @@ const COLUMNS: {
 ]
 
 export function KanbanBoard() {
+  const navigate = useNavigate()
   const { data: tasks, isLoading } = useTasks()
   const transitionStatus = useTransitionTaskStatus()
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [canvasOpen, setCanvasOpen] = useState(false)
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null)
 
   // Group tasks by status
@@ -61,9 +60,11 @@ export function KanbanBoard() {
   }, [tasks])
 
   const handleTaskClick = useCallback((task: Task) => {
-    setSelectedTask(task)
-    setCanvasOpen(true)
-  }, [])
+    navigate({
+      to: '/tasks/$taskId',
+      params: { taskId: task.id },
+    })
+  }, [navigate])
 
   const handleDragEnd = useCallback(
     (result: DropResult) => {
@@ -154,17 +155,6 @@ export function KanbanBoard() {
         </div>
       </DragDropContext>
 
-      {/* Workflow Canvas Modal */}
-      {selectedTask && (
-        <WorkflowCanvas
-          task={selectedTask}
-          open={canvasOpen}
-          onClose={() => {
-            setCanvasOpen(false)
-            setSelectedTask(null)
-          }}
-        />
-      )}
     </>
   )
 }
