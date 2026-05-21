@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 05-08 Playwright E2E tests complete — Phase 5 DONE
-stopped_at: Completed 05-08-PLAYWRIGHT
-last_updated: "2026-05-20T13:55:00.000Z"
+status: Phase 06 Kanban + Canvas — planning complete, execution starting
+stopped_at: "06-PLAN"
+last_updated: "2026-05-21T06:30:00.000Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 38
-  completed_plans: 38
+  total_plans: 39
+  completed_plans: 39
 ---
 
 # Project State
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Any developer can self-host OpenHub, connect their AI agents, and coordinate multi-agent workflows from a single command center - reliably and without conflicts.
-**Current focus:** Phase 5 COMPLETE — all release readiness criteria met
+**Current focus:** Phase 06 — Kanban Board + Workflow Canvas
 
 ## Current Position
 
-Phase: 5 (COMPLETE)
-Plan: 05-08 — Playwright E2E tests
+Phase: 06 (IN PROGRESS)
+Plan: 06-PLAN — Kanban + Canvas implementation
 
-## Phase 05 Progress
+## Phase 05 Progress (COMPLETE)
 
 | Slice | Description | Status | Commit |
 |-------|-------------|--------|--------|
@@ -39,23 +39,26 @@ Plan: 05-08 — Playwright E2E tests
 | 05-07 | README quickstart polish | ✅ | 6747d11 |
 | 05-08 | Playwright E2E tests | ✅ | 4cab1db |
 
-## Phase 5 Success Criteria
+## Phase 06 Progress (IN PROGRESS)
 
-1. ✅ A developer unfamiliar with the project can follow the README and have OpenHub running locally within 5 minutes
-2. ✅ `pip install openhub && openhub start` produces a running server
-3. ✅ Docker Compose starts with health checks and restart policies
-4. ✅ Stopping the server drains in-flight tasks and closes WebSocket connections cleanly
-5. ✅ Playwright E2E tests pass for login, agent list view, task navigation
+| Slice | Description | Status | Commit |
+|-------|-------------|--------|--------|
+| 06-01 | Backend unit tests: admin_transition_status | ⏳ | — |
+| 06-02 | Backend integration tests: PATCH endpoint | ⏳ | — |
+| 06-03 | Fix Kanban: cancelled column + error toast + loading | ⏳ | — |
+| 06-04 | Frontend component tests: KanbanBoard | ⏳ | — |
+| 06-05 | E2E verification: drag-drop cycle | ⏳ | — |
+| 06-06 | Full verification + STATE.md update | ⏳ | — |
 
 ## Test Status
 
-- **Backend:** 197+ passed, 9 skipped (Turso credential)
+- **Backend:** 136 passed, 1 failed (pre-existing capability_matcher)
 - **Frontend:** 36 passed (Vitest)
-- **E2E:** 8 passed (Playwright, 25.7s)
-- **Coverage:** ~56% backend
+- **E2E:** 8 passed (Playwright)
+- **Coverage:** ~49% backend
 
 ## Session Continuity
 
-Last session: 2026-05-20T13:55:00.000Z
-Stopped at: Phase 5 complete
-Resume file: None — ready for v1.0 release or new roadmap
+Last session: 2026-05-21T06:30:00.000Z
+Stopped at: 06-PLAN complete
+Resume file: .planning/phases/06-kanban-canvas/06-PLAN.md

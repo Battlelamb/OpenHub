@@ -747,3 +747,70 @@ class TaskService:
         except Exception as e:
             logger.error("drain_tasks_failed", error=str(e))
             return 0
+
+    # ── Admin status transition ──────────────────────────────────────────
+
+    # Valid transitions the admin Kanban board can trigger.
+    # Keys = source status, values = set of allowed target statuses.
+    _ADMIN_TRANSITIONS: dict[str, set[str]] = {
+        "queued":    {"claimed", "running", "cancelled"},
+        "claimed":   {"queued", "running", "cancelled"},
+        "running":   {"queued", "completed", "failed", "cancelled"},
+        "completed": {"queued"},
+        "failed":    {"queued"},
+        "cancelled": {"queued"},
+    }
+
+    def admin_transition_status(
+        self,
+        task_id: str,
+        new_status: str,
+        admin_id: str,
+    ) -> Optional[Task]:
+        """Transition a task to *new_status* from the admin Kanban board.
+
+        Validates that the transition is allowed, updates the DB row and
+        returns the refreshed ``Task`` model.  Returns ``None`` when the
+        task doesn't exist, and raises ``ValueError`` when the transition
+        is illegal.
+        """
+        task = self.task_repo.get_by_id(task_id)
+        if not task:
+            logger.warning("admin_transition_not_found", task_id=task_id)
+            return None
+
+        current = task.status if isinstance(task.status, str) else task.status.value
+        allowed = self._ADMIN_TRANSITIONS.get(current, set())
+        if new_status not in allowed:
+            raise ValueError(
+                f"Transition {current!r} → {new_status!r} is not allowed. "
+                f"Valid targets: {sorted(allowed)}"
+            )
+
+        now = datetime.now(timezone.utc).isoformat()
+        updates: Dict[str, Any] = {"status": new_status, "updated_at": now}
+
+        # Set contextual timestamps based on the target status.
+        if new_status == "claimed":
+            updates["claimed_at"] = now
+        elif new_status == "running":
+            updates["started_at"] = now
+        elif new_status == "completed":
+            updates["completed_at"] = now
+        elif new_status == "queued":
+            # Reset assignment when going back to queue.
+            updates["owner_agent_id"] = None
+            updates["claimed_at"] = None
+            updates["started_at"] = None
+            updates["lease_until"] = None
+
+        updated = self.task_repo.update(task_id, updates)
+        if updated:
+            logger.info(
+                "admin_task_transition",
+                task_id=task_id,
+                from_status=current,
+                to_status=new_status,
+                admin_id=admin_id,
+            )
+        return updated
