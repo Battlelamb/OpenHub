@@ -1,9 +1,10 @@
 import { createRoute, Link } from '@tanstack/react-router'
 import { Route as parentRoute } from '../../_authed'
-import { ArrowLeft, GitBranch } from 'lucide-react'
+import { ArrowLeft, BarChart3, CalendarClock, GitBranch, Info, RotateCcw } from 'lucide-react'
 import { useTask } from '@/hooks/queries/useTasks'
 import { TaskStatusBadge } from '@/components/common/StatusBadge'
 import { WorkflowCanvas } from '@/components/canvas/WorkflowCanvas'
+import type { Task } from '@/types/entities'
 
 export const Route = createRoute({
   getParentRoute: () => parentRoute,
@@ -57,6 +58,93 @@ export function TaskWorkflowDetail({ taskId }: { taskId: string }) {
       </div>
 
       <WorkflowCanvas task={task} open mode="embedded" onClose={() => {}} />
+
+      <TaskDetailInfoPanel task={task} />
     </div>
   )
+}
+
+function TaskDetailInfoPanel({ task }: { task: Task }) {
+  const capabilities = task.required_capabilities ?? []
+  const retryBudget = `${task.retry_count ?? 0} / ${task.max_retries ?? 0}`
+  const completedLabel = task.completed_at ? formatDateTime(task.completed_at) : 'Not completed yet'
+  const ownerLabel = task.agent_id ?? 'Unassigned'
+
+  return (
+    <section className="mt-4 grid gap-4 lg:grid-cols-[1.3fr_0.9fr_0.9fr]" aria-label="Task detail information">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Info className="h-4 w-4 text-emerald-400" />
+          <h2 className="text-sm font-semibold text-zinc-100">Task Details</h2>
+        </div>
+        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <InfoRow label="Type" value={task.task_type ?? 'unknown'} />
+          <InfoRow label="Priority" value={`P${task.priority}`} />
+          <InfoRow label="Owner" value={ownerLabel} mono={ownerLabel !== 'Unassigned'} />
+          <InfoRow label="Status" value={task.status} />
+        </dl>
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Requested capabilities</p>
+          {capabilities.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {capabilities.map((capability) => (
+                <span
+                  key={capability}
+                  className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-200"
+                >
+                  {capability}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500">No explicit capability requirement.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-sky-400" />
+          <h2 className="text-sm font-semibold text-zinc-100">Statistics</h2>
+        </div>
+        <dl className="space-y-3 text-sm">
+          <InfoRow label="Retry budget" value={retryBudget} />
+          <InfoRow label="Completed" value={completedLabel} />
+          <InfoRow label="Last error" value={task.error ?? 'None'} />
+        </dl>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-violet-400" />
+          <h2 className="text-sm font-semibold text-zinc-100">System info</h2>
+        </div>
+        <dl className="space-y-3 text-sm">
+          <InfoRow label="Created" value={formatDateTime(task.created_at)} />
+          <InfoRow label="Updated" value={formatDateTime(task.updated_at)} />
+          <InfoRow label="Created by" value={task.created_by ?? 'unknown'} mono />
+        </dl>
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/70 px-3 py-2 text-xs text-zinc-400">
+          <RotateCcw className="h-3.5 w-3.5" />
+          Canvas remains the working surface; this panel is the operational context below it.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function InfoRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</dt>
+      <dd className={mono ? 'mt-1 break-all font-mono text-zinc-200' : 'mt-1 text-zinc-200'}>{value}</dd>
+    </div>
+  )
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
 }

@@ -30,6 +30,13 @@ export interface Task {
   priority: TaskPriority
   agent_id?: string | null         // adapter renames from backend's assigned_agent_id
   required_capabilities?: string[]
+  task_type?: string
+  created_by?: string | null
+  completed_at?: string | null
+  started_at?: string | null
+  assigned_at?: string | null
+  retry_count?: number
+  max_retries?: number
   progress?: number
   result?: Record<string, unknown>
   error?: string                    // adapter renames from backend's last_error

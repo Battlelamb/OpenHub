@@ -18,6 +18,13 @@ interface BackendTaskResponse {
   input_data?: Record<string, unknown>
   output_data?: Record<string, unknown>
   last_error?: string
+  task_type?: string
+  created_by?: string | null
+  completed_at?: string | null
+  started_at?: string | null
+  assigned_at?: string | null
+  retry_count?: number
+  max_retries?: number
   created_at: string
   updated_at: string
 }
@@ -38,6 +45,13 @@ function adaptTask(b: BackendTaskResponse): Task {
     priority: (b.priority as TaskPriority) ?? 3,
     agent_id: b.assigned_agent_id ?? null,
     required_capabilities: b.requested_capabilities ?? [],
+    task_type: b.task_type,
+    created_by: b.created_by ?? null,
+    completed_at: b.completed_at ?? null,
+    started_at: b.started_at ?? null,
+    assigned_at: b.assigned_at ?? null,
+    retry_count: b.retry_count ?? 0,
+    max_retries: b.max_retries ?? 0,
     result: b.output_data,
     error: b.last_error,
     created_at: b.created_at,
