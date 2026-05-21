@@ -24,7 +24,7 @@ export function KanbanColumn({
   isTransitioning = false,
 }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col min-w-[200px] flex-1">
+    <div className="flex flex-col min-w-[200px] flex-1" data-testid={`kanban-column-${id}`}>
       {/* Column header */}
       <div className="flex items-center gap-2 mb-3 px-1">
         <span className={color}>{icon}</span>
@@ -50,6 +50,7 @@ export function KanbanColumn({
                 : 'bg-zinc-900/40 border-2 border-transparent'
               }
             `}
+            data-testid={`kanban-dropzone-${id}`}
           >
             {tasks.map((task, index) => (
               <KanbanCard

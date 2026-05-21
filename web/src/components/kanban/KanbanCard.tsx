@@ -33,7 +33,7 @@ export function KanbanCard({ task, index, onClick, isPending = false }: KanbanCa
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={`
-            group relative rounded-lg border bg-zinc-900 p-3 cursor-pointer
+            group relative rounded-lg border bg-zinc-900 p-3 cursor-pointer select-none
             transition-all duration-150
             ${isPending ? 'pointer-events-none border-emerald-500/40 opacity-70' : ''}
             ${snapshot.isDragging
@@ -42,6 +42,7 @@ export function KanbanCard({ task, index, onClick, isPending = false }: KanbanCa
             }
           `}
           onClick={() => onClick(task)}
+          data-testid={`kanban-card-${task.id}`}
         >
           {isPending && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-zinc-950/60 backdrop-blur-[1px]">
@@ -53,6 +54,7 @@ export function KanbanCard({ task, index, onClick, isPending = false }: KanbanCa
           <div
             {...provided.dragHandleProps}
             className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-40 hover:!opacity-80 cursor-grab active:cursor-grabbing p-1"
+            data-testid={`kanban-drag-handle-${task.id}`}
           >
             <GripVertical className="h-3.5 w-3.5 text-zinc-400" />
           </div>

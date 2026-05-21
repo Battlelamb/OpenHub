@@ -59,6 +59,57 @@ test.describe('Dashboard navigation', () => {
     await expect(page).toHaveURL(/\/tasks/)
   })
 
+  test('drag-drop updates task status through API and refetches the Kanban board', async ({ page, request }) => {
+    const login = await request.post('/v1/auth/admin/login', {
+      form: { username: ADMIN_USER, password: ADMIN_PASS },
+    })
+    expect(login.ok()).toBeTruthy()
+    const { access_token: token } = await login.json()
+    const title = `E2E Kanban ${Date.now()}`
+    const create = await request.post('/v1/tasks/', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        title,
+        description: 'Created by Playwright to verify Kanban drag-drop persistence.',
+        required_capabilities: [`phase06-e2e-unmatched-${Date.now()}`],
+        priority: 50,
+      },
+    })
+    expect(create.ok()).toBeTruthy()
+    const created = await create.json()
+    const taskId = created.id as string
+    expect(created.status).toBe('queued')
+
+    await page.getByRole('link', { name: /tasks/i }).first().click()
+    await expect(page).toHaveURL(/\/tasks/)
+    await expect(page.getByTestId(`kanban-card-${taskId}`)).toContainText(title, { timeout: 15_000 })
+    await expect(page.getByTestId('kanban-column-queued')).toContainText(title)
+
+    const patchResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/v1/tasks/${taskId}/status`) &&
+        response.request().method() === 'PATCH'
+    )
+    const handle = page.getByTestId(`kanban-drag-handle-${taskId}`)
+    await handle.scrollIntoViewIfNeeded()
+    await handle.focus()
+    await page.keyboard.press('Space')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Space')
+
+    const transition = await patchResponse
+    expect(transition.ok()).toBeTruthy()
+
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: /Task status updated/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByTestId('kanban-column-claimed')).toContainText(title, { timeout: 15_000 })
+
+    const detail = await request.get(`/v1/tasks/${taskId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    expect(detail.ok()).toBeTruthy()
+    expect((await detail.json()).status).toBe('claimed')
+  })
+
   test('can navigate to workflows page', async ({ page }) => {
     await page.getByRole('link', { name: /workflows/i }).first().click()
     await expect(page).toHaveURL(/\/workflows/)
