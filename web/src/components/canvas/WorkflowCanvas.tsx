@@ -19,7 +19,8 @@ import type { Task } from '@/types/entities'
 interface WorkflowCanvasProps {
   task: Task
   open: boolean
-  onClose: () => void
+  onClose?: () => void
+  mode?: 'modal' | 'embedded'
 }
 
 // --- Custom Node: Task ---
@@ -102,7 +103,7 @@ const nodeTypes = {
   infoPanel: InfoPanelNode,
 }
 
-export function WorkflowCanvas({ task, open, onClose }: WorkflowCanvasProps) {
+export function WorkflowCanvas({ task, open, onClose, mode = 'modal' }: WorkflowCanvasProps) {
   const { data: freshTask } = useTask(open ? task.id : undefined)
   const activeTask = freshTask ?? task
 
@@ -159,25 +160,44 @@ export function WorkflowCanvas({ task, open, onClose }: WorkflowCanvasProps) {
 
   if (!open) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex">
+  const canvas = (
+    <div
+      className={
+        mode === 'embedded'
+          ? 'relative flex min-h-[560px] flex-1 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950'
+          : 'fixed inset-0 z-50 flex'
+      }
+      data-testid="workflow-canvas"
+      data-mode={mode}
+    >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {mode === 'modal' && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      )}
 
       {/* Canvas panel */}
-      <div className="relative ml-auto w-full max-w-4xl bg-zinc-950 border-l border-zinc-800 flex flex-col">
+      <div
+        className={
+          mode === 'embedded'
+            ? 'relative flex w-full flex-col bg-zinc-950'
+            : 'relative ml-auto flex w-full max-w-4xl flex-col border-l border-zinc-800 bg-zinc-950'
+        }
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-zinc-100">{activeTask.title}</h2>
             <TaskStatusBadge status={activeTask.status} />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {mode === 'modal' && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+              aria-label="Close workflow canvas"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {/* React Flow Canvas */}
@@ -208,4 +228,6 @@ export function WorkflowCanvas({ task, open, onClose }: WorkflowCanvasProps) {
       </div>
     </div>
   )
+
+  return canvas
 }

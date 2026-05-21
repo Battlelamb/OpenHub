@@ -1,12 +1,9 @@
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, Link } from '@tanstack/react-router'
 import { Route as parentRoute } from '../../_authed'
-import { useTranslation } from 'react-i18next'
+import { ArrowLeft, GitBranch } from 'lucide-react'
 import { useTask } from '@/hooks/queries/useTasks'
-import { useTaskTrace } from '@/hooks/queries/useTaskTrace'
 import { TaskStatusBadge } from '@/components/common/StatusBadge'
-import { TraceTimeline } from '@/components/common/TraceTimeline'
-import { ApiError } from '@/lib/api-client'
-import { Link } from '@tanstack/react-router'
+import { WorkflowCanvas } from '@/components/canvas/WorkflowCanvas'
 
 export const Route = createRoute({
   getParentRoute: () => parentRoute,
@@ -15,12 +12,19 @@ export const Route = createRoute({
 })
 
 function TaskDetailPage() {
-  const { t } = useTranslation('tasks')
   const { taskId } = Route.useParams()
+  return <TaskWorkflowDetail taskId={taskId} />
+}
+
+export function TaskWorkflowDetail({ taskId }: { taskId: string }) {
   const { data: task, isLoading } = useTask(taskId)
 
   if (isLoading) {
-    return <div className="p-8 text-zinc-400">{t('common:loading')}...</div>
+    return (
+      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center text-sm text-zinc-500">
+        Loading workflow...
+      </div>
+    )
   }
 
   if (!task) {
@@ -28,81 +32,31 @@ function TaskDetailPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <Link to="/tasks" className="text-sm text-zinc-400 hover:text-zinc-300">&larr; Back to Tasks</Link>
-      </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 mb-6">
-        <div className="flex items-center gap-4 mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-50">{task.title}</h1>
-          <TaskStatusBadge status={task.status} />
+    <div className="flex h-[calc(100vh-3.5rem)] min-h-[720px] flex-col p-4">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <Link
+            to="/tasks"
+            className="mb-2 inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Kanban
+          </Link>
+          <div className="flex min-w-0 items-center gap-3">
+            <GitBranch className="h-5 w-5 shrink-0 text-emerald-500" />
+            <h1 className="truncate text-2xl font-semibold text-zinc-50">{task.title}</h1>
+            <TaskStatusBadge status={task.status} />
+          </div>
+          {task.description ? (
+            <p className="mt-2 max-w-3xl text-sm text-zinc-400">{task.description}</p>
+          ) : null}
         </div>
-        {task.description && (
-          <p className="text-sm text-zinc-300 mb-6">{task.description}</p>
-        )}
-        <dl className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t('columns.status')}</dt>
-            <dd className="text-sm text-zinc-300 mt-1">{task.status}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t('columns.priority')}</dt>
-            <dd className="text-sm text-zinc-300 mt-1">{task.priority}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t('columns.agent')}</dt>
-            <dd className="text-sm text-zinc-300 mt-1">{task.agent_id || 'Unassigned'}</dd>
-          </div>
-          {task.progress !== undefined && (
-            <div>
-              <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t('progress')}</dt>
-              <dd className="text-sm text-zinc-300 mt-1">{task.progress}%</dd>
-            </div>
-          )}
-          <div>
-            <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Created</dt>
-            <dd className="text-sm text-zinc-300 mt-1">{new Date(task.created_at).toLocaleString()}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t('columns.updated')}</dt>
-            <dd className="text-sm text-zinc-300 mt-1">{new Date(task.updated_at).toLocaleString()}</dd>
-          </div>
-        </dl>
+        <div className="hidden shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-500 md:block">
+          Task ID <span className="font-mono text-zinc-300">{task.id}</span>
+        </div>
       </div>
-      <div>
-        <h2 className="text-lg font-medium text-zinc-50 mb-4">Trace</h2>
-        <TraceSection taskId={taskId} />
-      </div>
+
+      <WorkflowCanvas task={task} open mode="embedded" onClose={() => {}} />
     </div>
   )
-}
-
-function TraceSection({ taskId }: { taskId: string }) {
-  const { t } = useTranslation('tasks')
-  const { data, isLoading, error } = useTaskTrace(taskId)
-
-  if (isLoading) {
-    return (
-      <div aria-label={t('trace.loading')} className="space-y-2">
-        <div className="h-6 w-2/3 rounded bg-zinc-800 animate-pulse" />
-        <div className="h-6 w-1/2 rounded bg-zinc-800 animate-pulse" />
-        <div className="h-6 w-3/4 rounded bg-zinc-800 animate-pulse" />
-      </div>
-    )
-  }
-
-  if (error) {
-    const title = error instanceof ApiError ? error.problem.title : t('trace.errorTitle')
-    const detail = error instanceof ApiError ? error.problem.detail : String(error)
-    return (
-      <div role="alert" className="rounded-lg border border-red-500/50 bg-red-500/10 p-4">
-        <div className="text-sm font-medium text-red-400">{title}</div>
-        {detail ? <div className="text-xs text-red-400/80 mt-1">{detail}</div> : null}
-      </div>
-    )
-  }
-
-  // When data is undefined (disabled or idle) or empty, TraceTimeline renders
-  // its own empty state using the same i18n copy keys.
-  return <TraceTimeline spans={data ?? []} />
 }
