@@ -5,6 +5,7 @@ import json as _json
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, status, Query
+from pydantic import BaseModel, Field
 
 from ..config import get_settings
 from ..logging import get_logger
@@ -800,3 +801,48 @@ async def task_search_shortcut(req: SearchRequest) -> SearchResponse:
     from .routes_search import unified_search  # local import avoids cycle
     forced = req.model_copy(update={"types": ["task"]})
     return await unified_search(forced)
+
+
+# ── Admin Kanban status transition ────────────────────────────────────
+
+
+class AdminStatusTransition(BaseModel):
+    """Body for admin Kanban drag-drop status change."""
+    status: str = Field(description="Target status", pattern=r"^(queued|claimed|running|completed|failed|cancelled)$")
+
+
+@router.patch(
+    "/{task_id}/status",
+    response_model=TaskResponse,
+    summary="Admin: transition a task to a new status (Kanban drag-drop)",
+)
+async def admin_transition_task_status(
+    task_id: str,
+    body: AdminStatusTransition,
+    current_admin: CurrentAdmin,
+    task_service: TaskService = Depends(get_task_service),
+) -> Task:
+    """Move a task between Kanban columns.
+
+    Only valid transitions are allowed (e.g. queued → claimed, running → completed).
+    Requires admin authentication.
+    """
+    try:
+        updated = task_service.admin_transition_status(
+            task_id=task_id,
+            new_status=body.status,
+            admin_id=current_admin.agent_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        )
+
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task {task_id} not found",
+        )
+
+    return updated
