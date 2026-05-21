@@ -155,6 +155,15 @@ OpenHub devaminda GSD'nin iyi yani olan spec-driven, context-clean, phase-based 
 - Ship: changelog/release notes/PR veya tag hazirligi tek kapanis adimi olur
 - Uyari: GSD'nin frictionless automation ruhu alinacak; OpenHub production agent'lari icin scoped key, review gate ve kanit zorunlulugu korunacak
 
+### P1.13: Optional Quality Gate Sidecar
+Benchmark: Plankton'un guzel yani; Claude Code agent'i yazarken format/lint/security/type feedback aliyor. OpenHub bunu core'a gommek yerine verification evidence ureten opsiyonel sidecar olarak kullanacak.
+- `quality_gate` evidence tipi/subtype'i: formatter, lint, type, security, complexity, final status
+- Verification worker kontrati: proje-local kalite komutlarini task worktree icinde calistir, ciktilari sanitize et, evidence bundle'a yaz
+- Claude Code + Plankton bir worker profile secenegi olur; tek zorunlu runtime olmaz
+- Mevcut `.claude/settings.json` asla korlemesine ezilmez; GSD/local hook'lar ile bilincli merge + rollback gerekir
+- Policy presetleri: advisory, blocking, security-blocking-only, human-review-only
+- Riskli auth/db/deploy/secrets islerinde kalite kapisi sadece evidence sayilir; human review gate'i ikame etmez
+
 ---
 
 ## P2 - Rekabet

@@ -20,6 +20,7 @@ Closest practical neighbors:
 - taskboard-mcp (`hazardland/taskboard-mcp`)
 - Gas Town / Gastown (`gastownhall/gastown`)
 - Get Shit Done / GSD (`gsd-build/get-shit-done`)
+- Plankton (`alexfazio/plankton`)
 
 Broader framework references:
 
@@ -287,6 +288,48 @@ Practical next workflow:
 4. Execute each plan in an isolated context/worktree where practical.
 5. Require evidence, tests, docs updates, and review notes before shipping.
 ```
+
+### 13. Optional write-time quality sidecar
+
+Benchmark: Plankton (`alexfazio/plankton`).
+
+Plankton's useful lesson is not that OpenHub should become a Claude Code hook pack. Its lesson is that AI coding agents benefit from **write-time quality enforcement**: formatting, linting, security checks, type checks, and complexity constraints should feed back while the agent is still editing, not only after a final PR or task claim.
+
+OpenHub-specific interpretation:
+
+- Treat Plankton as an **optional quality sidecar** for Claude Code workers, not as OpenHub core state or the control plane.
+- Preserve OpenHub's verification-first lifecycle: Plankton-style checks produce evidence; they do not directly mark work as accepted.
+- Keep the integration behind a provider/runtime adapter so Codex, OpenCode, Hermes, Cursor, and future workers can use equivalent quality gates without inheriting Claude Code internals.
+- Never blindly replace an existing `.claude/settings.json`; projects may already use GSD or local safety hooks. Merge hook profiles deliberately, with backup and rollback.
+- Record outputs as task evidence: formatter changes, linter results, security scanner findings, subprocess remediation summaries, and final pass/fail status.
+
+Good OpenHub product shape:
+
+```text
+agent completed_claimed
+-> verification_running
+-> quality gate adapter runs Plankton-style checks in the task worktree
+-> evidence bundle receives lint/test/security/type artifacts
+-> policy decides verified / needs_review / failed
+```
+
+Adopt now:
+
+- Add a `quality_gate` evidence type or subtype for write-time/runtime verification output.
+- Add a verification-worker contract that can run project-local quality commands and store sanitized logs.
+- Document Claude Code + Plankton as one possible worker profile, not the only path.
+
+Adapt later:
+
+- Offer an OpenHub-managed hook profile for Claude Code workers that chains existing project hooks with optional quality gates.
+- Add per-project quality policy presets: advisory, blocking, security-blocking-only, or human-review-only.
+- Explore agent feedback loops where failed quality gates create follow-up tasks or return structured remediation prompts to the same worker.
+
+Avoid:
+
+- Do not make OpenHub depend on undocumented Claude Code internals.
+- Do not let a quality sidecar mutate protected lint/config files without explicit policy.
+- Do not accept “Plankton passed” as the whole review for risky auth, database, deployment, or secrets work.
 
 ## Language / microservice architecture guidance
 
