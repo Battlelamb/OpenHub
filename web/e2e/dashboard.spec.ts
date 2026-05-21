@@ -137,7 +137,9 @@ test.describe('Dashboard navigation', () => {
     await expect(page.getByRole('heading', { name: title }).first()).toBeVisible()
     await expect(page.getByTestId('workflow-canvas')).toHaveAttribute('data-mode', 'embedded')
     await expect(page.locator('.react-flow')).toBeVisible()
-    await expect(page.getByText('Task Details')).toBeVisible()
+    await expect(
+      page.getByLabel('Task detail information').getByRole('heading', { name: 'Task Details' })
+    ).toBeVisible()
   })
 
   test('can navigate to workflows page', async ({ page }) => {

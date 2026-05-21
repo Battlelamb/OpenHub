@@ -12,6 +12,29 @@ from ...models.tasks import Task, TaskStatus, TaskPriority, TaskType
 logger = get_logger(__name__)
 
 
+def _labels_as_strings(raw: Any) -> Dict[str, str]:
+    """Return JSON label mappings in the model's Dict[str, str] shape.
+
+    Older demo/seed rows used JSON booleans and numbers. Those rows should not
+    make list/detail endpoints fail validation; coerce values at the repository
+    boundary while keeping the database contents intact.
+    """
+    labels = json.loads(raw or "{}")
+    if not isinstance(labels, dict):
+        return {}
+    return {
+        str(key): ("true" if value is True else "false" if value is False else str(value))
+        for key, value in labels.items()
+        if value is not None
+    }
+
+
+def _task_type_or_default(value: Any) -> str:
+    if value in {task_type.value for task_type in TaskType}:
+        return str(value)
+    return TaskType.FEATURE.value
+
+
 class TaskRepository(BaseRepository[Task]):
     """Task database operations using raw sqlite3"""
 
@@ -24,7 +47,7 @@ class TaskRepository(BaseRepository[Task]):
             id=row["id"],
             title=row["title"],
             description=row.get("description"),
-            task_type=row.get("task_type", "feature"),
+            task_type=_task_type_or_default(row.get("task_type", "feature")),
             priority=row.get("priority", 50),
             status=row.get("status", "queued"),
             required_capabilities=json.loads(row.get("required_capabilities", "[]")),
@@ -38,7 +61,7 @@ class TaskRepository(BaseRepository[Task]):
             last_error=row.get("last_error"),
             deadline_at=row.get("deadline_at"),
             idempotency_key=row.get("idempotency_key"),
-            labels=json.loads(row.get("labels", "{}")),
+            labels=_labels_as_strings(row.get("labels", "{}")),
             payload=json.loads(row.get("payload", "{}")),
             result_summary=row.get("result_summary"),
             output=json.loads(row.get("output", "{}")),

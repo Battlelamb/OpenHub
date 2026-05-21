@@ -12,6 +12,17 @@ from .base import BaseRepository
 logger = get_logger(__name__)
 
 
+def _labels_as_strings(raw: Any) -> Dict[str, str]:
+    labels = json.loads(raw or "{}")
+    if not isinstance(labels, dict):
+        return {}
+    return {
+        str(key): ("true" if value is True else "false" if value is False else str(value))
+        for key, value in labels.items()
+        if value is not None
+    }
+
+
 class AgentRepository(BaseRepository[Agent]):
     """Simple and clean agent database operations"""
     
@@ -23,7 +34,7 @@ class AgentRepository(BaseRepository[Agent]):
         
         # Parse JSON fields
         capabilities = json.loads(row.get("capabilities", "[]"))
-        labels = json.loads(row.get("labels", "{}"))
+        labels = _labels_as_strings(row.get("labels", "{}"))
         metadata = json.loads(row.get("metadata", "{}"))
         
         return Agent(
