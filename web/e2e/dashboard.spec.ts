@@ -110,6 +110,36 @@ test.describe('Dashboard navigation', () => {
     expect((await detail.json()).status).toBe('claimed')
   })
 
+  test('opens a task detail workflow canvas from a Kanban card', async ({ page, request }) => {
+    const login = await request.post('/v1/auth/admin/login', {
+      form: { username: ADMIN_USER, password: ADMIN_PASS },
+    })
+    expect(login.ok()).toBeTruthy()
+    const { access_token: token } = await login.json()
+    const title = `E2E Workflow Canvas ${Date.now()}`
+    const create = await request.post('/v1/tasks/', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        title,
+        description: 'Created by Playwright to verify Kanban card opens workflow canvas.',
+        required_capabilities: [`phase06-workflow-unmatched-${Date.now()}`],
+        priority: 40,
+      },
+    })
+    expect(create.ok()).toBeTruthy()
+    const taskId = ((await create.json()) as { id: string }).id
+
+    await page.getByRole('link', { name: /tasks/i }).first().click()
+    await expect(page.getByTestId(`kanban-card-${taskId}`)).toContainText(title, { timeout: 15_000 })
+    await page.getByTestId(`kanban-card-${taskId}`).click()
+
+    await expect(page).toHaveURL(new RegExp(`/dashboard/tasks/${taskId}`), { timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: title }).first()).toBeVisible()
+    await expect(page.getByTestId('workflow-canvas')).toHaveAttribute('data-mode', 'embedded')
+    await expect(page.locator('.react-flow')).toBeVisible()
+    await expect(page.getByText('Task Details')).toBeVisible()
+  })
+
   test('can navigate to workflows page', async ({ page }) => {
     await page.getByRole('link', { name: /workflows/i }).first().click()
     await expect(page).toHaveURL(/\/workflows/)

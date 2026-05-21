@@ -141,10 +141,38 @@ class HatchetService:
                 "current_step": workflow["current_step"],
                 "total_steps": len(workflow["steps"]),
                 "completed_steps": len(workflow["completed_steps"]),
-                "step_results": workflow["step_results"]
+                "step_results": workflow["step_results"],
+                "steps": [
+                    {
+                        "id": step.step_id,
+                        "name": step.step_name,
+                        "status": self._workflow_step_status(workflow, step.step_id),
+                        "agent_id": step.agent_id,
+                    }
+                    for step in workflow["steps"]
+                ],
             },
             "input_data": workflow["input_data"]
         }
+
+    def _workflow_step_status(self, workflow: Dict[str, Any], step_id: str) -> str:
+        """Return dashboard-friendly status for a workflow step."""
+        if step_id in workflow.get("completed_steps", []):
+            return "completed"
+
+        steps = workflow.get("steps", [])
+        current_index = workflow.get("current_step", 0)
+        current_step_id = None
+        if 0 <= current_index < len(steps):
+            current_step_id = steps[current_index].step_id
+
+        if workflow.get("status") == "failed" and step_id == current_step_id:
+            return "failed"
+        if workflow.get("status") == "running" and step_id == current_step_id:
+            return "running"
+        if workflow.get("status") == "cancelled" and step_id == current_step_id:
+            return "skipped"
+        return "pending"
     
     async def cancel_workflow(self, workflow_run_id: str, reason: Optional[str] = None) -> bool:
         """Cancel a running workflow"""

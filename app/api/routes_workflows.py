@@ -17,10 +17,22 @@ settings = get_settings()
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 
 
+_hatchet_service: Optional[HatchetService] = None
+
+
 def get_hatchet_service() -> HatchetService:
-    """Get Hatchet service instance"""
-    database = get_database()
-    return HatchetService(database)
+    """Get the process-local Hatchet service instance.
+
+    The current Hatchet integration keeps running workflow state in memory.
+    Returning a fresh service per request makes POST /v1/workflows/ appear to
+    succeed, then GET /v1/workflows/{id} and the dashboard list lose the run.
+    Keep one service per API process until this state is moved to durable DB.
+    """
+    global _hatchet_service
+    if _hatchet_service is None:
+        database = get_database()
+        _hatchet_service = HatchetService(database)
+    return _hatchet_service
 
 
 # Pydantic models for API
