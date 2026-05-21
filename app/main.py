@@ -319,6 +319,11 @@ app.include_router(dlq_router)
 # Import and include metrics router (Prometheus)
 app.include_router(metrics_router)
 
+# Public Twilio webhook bridge to Hermes SMS gateway.
+from .api.routes_twilio_webhook_proxy import router as twilio_webhook_proxy_router
+
+app.include_router(twilio_webhook_proxy_router)
+
 # Admin dashboard (static HTML)
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
