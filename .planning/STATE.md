@@ -84,8 +84,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
 - **Live smoke (2026-05-24):**
   - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
-  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK, 1 node / 1 agent
+  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; live registry lists `brunhilde`
   - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents` → 200 OK
+  - Authenticated `/dashboard/health` → Service health / ACN registry truth / Task truth cards visible; console issues 0
 
 ## Session Continuity
 

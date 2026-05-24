@@ -36,6 +36,10 @@ Results:
 - Dashboard build: **passed**
 - Backend pytest suite: **passed** (`9 skipped`, expected Turso-vector skips)
 - Diff whitespace check: **passed**
+- Public live smoke: **passed**
+  - `/v1/health/simple` returned `200` / `ok`
+  - `/v1/acn/status` returned `200`; live registry listed `brunhilde`
+  - Authenticated `/dashboard/health` showed Service health, ACN registry truth, and Task truth cards; raw `"connected"` / `"active"` legacy keys were not visible; console issues `0`
 
 ## Known follow-up
 
