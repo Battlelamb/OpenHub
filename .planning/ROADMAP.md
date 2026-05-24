@@ -2,136 +2,159 @@
 
 ## Overview
 
-OpenHub ships in five phases derived from its requirement categories and their dependencies. Backend correctness must precede tests (a broken auth stub invalidates the test baseline). WebSocket event types must be stable before the frontend implements its consumer. The vector DB service is isolated enough to ship standalone as an opt-in backend feature. The command center UI is the longest phase - 16 requirements across the full dashboard surface. Release readiness caps everything: docs, pip install path, graceful shutdown, and Playwright E2E tests all depend on a complete, stable system.
+OpenHub ships as a self-hosted multi-agent coordination platform: FastAPI backend, React/Vite command center, SQLite/Turso persistence, WebSocket-backed live updates, vector search, and GSD-managed delivery.
 
-## Phases
+The original five-phase roadmap is complete. Phase 06 was added after release readiness to make Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 is now the polish and packaging pass before the next release decision.
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+## Current Truth
 
-Decimal phases appear between their surrounding integers in numeric order.
+- **Repo:** `/home/brunhilde/OpenHub`
+- **Remote:** `https://github.com/Battlelamb/OpenHub.git`
+- **Branch:** `master`
+- **Current HEAD:** `993622b`
+- **Latest tag:** `v0.1.0`
+- **Live hub:** `https://hub.brunhilde.cloud`
+- **Runtime status:** healthy; ACN has 1 node / 1 agent online
+- **GSD status:** installed and configured; Opus/max-effort standard preserved
 
-- [ ] **Phase 1: Backend Hardening** - Fix silent correctness bugs and security holes before any test is written
-- [ ] **Phase 2: WebSocket + Test Suite** - Stable real-time event contract and backend test coverage
-- [ ] **Phase 3: Vector Database** - Semantic search service via Turso/libSQL native vectors, shipped as opt-in beta
-- [x] **Phase 4: Command Center UI** - React + Vite dashboard with live agent/task/workflow control (completed 2026-04-19)
-- [ ] **Phase 5: Release Readiness** - Open source docs, pip install path, graceful shutdown, E2E tests
+## Phase Summary
 
-## Phase Details
+- [x] **Phase 1: Backend Hardening** — auth, capabilities JSON, heartbeat monitor, CORS, migrations, RFC 7807, metrics/logging
+- [x] **Phase 2: WebSocket + Test Suite** — authenticated UI WebSocket, ConnectionManager, backend auth/capability/lifecycle coverage
+- [x] **Phase 3: Vector Database** — opt-in semantic search using Turso/libSQL vectors and embedding hooks
+- [x] **Phase 4: Command Center UI** — React/Vite dashboard for agents, tasks, workflows, DLQ, costs, memory, locks, health, settings
+- [x] **Phase 5: Release Readiness** — docs, pip install path, Docker hardening, graceful shutdown, Playwright E2E, v0.1.0 release
+- [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
+- [ ] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, release decision
 
-### Phase 1: Backend Hardening
-**Goal**: The backend is correct, secure, and observable - auth works for real, capabilities are stored as JSON, heartbeat monitor runs, CORS is locked down, schema lives in versioned migrations, and OpenAPI docs are exposed
-**Depends on**: Nothing (first phase)
-**Requirements**: HARD-01, HARD-02, HARD-03, HARD-04, HARD-05, HARD-06, HARD-07, HARD-08, HARD-09, HARD-10, OSS-02, PROD-01, PROD-02, PROD-04
-**Success Criteria** (what must be TRUE):
-  1. A request without a valid JWT or API key to any protected endpoint returns 401 - the auth stub in app/dependencies.py no longer accepts any 8-character string
-  2. Admin credentials are not hardcoded - the server refuses to start without credentials configured via environment variable or first-run setup
-  3. An agent registered with a list of capabilities can be matched to a task - json.loads() on stored capabilities succeeds
-  4. Offline agents are detected automatically - the heartbeat monitor starts with the application and marks agents offline after missing heartbeats
-  5. The /docs endpoint is accessible and all endpoints show correct auth requirements and structured error response shapes
-**Plans**: 9 plans
+## Phase 1: Backend Hardening — COMPLETE
 
-Plans:
-- [x] 01-00-PLAN.md - Test scaffold: pytest infrastructure, conftest.py, shared fixtures, stub tests
-- [x] 01-01-PLAN.md - Auth stub removal, shared API key dep, capabilities JSON fix, admin credential env vars
-- [x] 01-02-PLAN.md - Heartbeat monitor wiring into lifespan
-- [x] 01-03-PLAN.md - CORS lockdown, datetime.utcnow() partial fix (4 high-impact files)
-- [x] 01-04-PLAN.md - Alembic schema migration consolidation
-- [x] 01-05-PLAN.md - RFC 7807 error format, OpenAPI /docs enabled
-- [x] 01-06-PLAN.md - slowapi rate limiting (app/limiter.py), Prometheus metrics, structlog enhancement
-- [x] 01-07-PLAN.md - Codebase-wide datetime.utcnow() sweep (10 remaining files, 29 occurrences)
-- [ ] 01-08-PLAN.md - Gap closure: P2 auth consolidation, RFC 7807 rate limiter, Prometheus wiring, middleware fixes
+**Goal:** Make backend correctness and security trustworthy before UI/test expansion.
 
-### Phase 2: WebSocket + Test Suite
-**Goal**: Dashboard clients can connect to a stable WebSocket endpoint and receive live events, and the backend has a test suite covering auth, capability matching, and the task/agent lifecycle
-**Depends on**: Phase 1
-**Requirements**: WS-01, WS-02, WS-03, WS-04, WS-05, WS-06, TEST-01, TEST-02, TEST-03, TEST-04, TEST-05
-**Success Criteria** (what must be TRUE):
-  1. A dashboard client authenticates the WebSocket connection via initial message frame - no token appears in the URL query string or server logs
-  2. Agent status changes (online/offline/idle) appear in the connected dashboard client within one second of the state change
-  3. Task lifecycle events (created, claimed, running, completed, failed) appear in the connected dashboard client in real time
-  4. All auth tests pass: JWT creation and validation, API key verification, RBAC enforcement by role
-  5. All capability matching tests pass: exact match, fuzzy match, scoring edge cases
-  6. Integration tests for task lifecycle (create, claim, start, complete, fail, retry) and agent heartbeat/offline detection all pass
-**Plans**: 6 plans
+**Shipped:**
 
-Plans:
-- [x] 02-01-PLAN.md - Test infrastructure fix (real JWT fixtures) and auth unit tests (TEST-01)
-- [x] 02-02-PLAN.md - ConnectionManager class with dual pools, tiered broadcasting, Prometheus metrics (WS-02, WS-03)
-- [x] 02-03-PLAN.md - Capability matcher, task lifecycle, and agent lifecycle tests (TEST-02, TEST-03, TEST-04)
-- [x] 02-04-PLAN.md - /v1/ws/ui endpoint with JWT auth via initial message frame (WS-01)
-- [ ] 02-05-PLAN.md - Service event hooks for broadcasting agent/task/workflow events (WS-04, WS-05, WS-06)
-- [x] 02-06-PLAN.md - WebSocket integration tests and ConnectionManager unit tests (TEST-05)
+- Real protected-route auth behavior
+- Required admin credential configuration
+- Capability JSON storage fixes
+- Heartbeat monitor wiring
+- CORS lockdown
+- Alembic migration consolidation
+- RFC 7807-style error work
+- Rate limiting / metrics / structured logging improvements
+- datetime timezone sweep
+- Gap closure for P2 auth and middleware issues
 
-### Phase 3: Vector Database
-**Goal**: Semantic search over memories, tasks, and artifacts is available via a REST API backed by Turso/libSQL native vector columns, shipped as an opt-in beta feature
-**Depends on**: Phase 1
-**Requirements**: VEC-01, VEC-02, VEC-03, VEC-04, VEC-05, VEC-06
-**Success Criteria** (what must be TRUE):
-  1. A vector similarity search query over stored memories returns semantically relevant results using vector_distance_cos
-  2. Vectors survive a server restart - a record written before restart is findable by similarity search after restart, confirming F32_BLOB persistence
-  3. New memory, task, and artifact writes automatically generate and store embeddings without manual intervention
-  4. The feature is documented as experimental/opt-in - the server starts and operates normally with vector search disabled
-**Plans**: 6 plans
+## Phase 2: WebSocket + Test Suite — COMPLETE
 
-Plans:
-- [x] 03-01-PLAN.md - Alembic vector migration, config/zvec cleanup, vector_availability module, Wave 0 test scaffolds
-- [x] 03-02-PLAN.md - VectorSearchService + Turso vector32 binding smoke test (gating plan)
-- [x] 03-03-PLAN.md - EmbeddingService with lazy-loaded local and OpenAI backends
-- [x] 03-04-PLAN.md - Auto-indexing BackgroundTasks hooks on 4 write paths + 5-min retry worker
-- [x] 03-05-PLAN.md - Unified /v1/search endpoint + per-entity shortcuts + Pydantic models
-- [x] 03-06-PLAN.md - VEC-06 opt-in beta: startup warning, OpenAPI tag, README/CHANGELOG/.env.example
+**Goal:** Stable real-time contract and backend test baseline.
 
-### Phase 4: Command Center UI
-**Goal**: A developer self-hosting OpenHub can log in, see live agent status, manage tasks, inspect workflows, and access the full visibility stack (DLQ, cost tracking, traces, memory, locks) from a browser
-**Depends on**: Phase 2
-**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08, UI-09, UI-10, UI-11, UI-12, UI-13, UI-14, UI-15, UI-16
-**Success Criteria** (what must be TRUE):
-  1. User can log in with a JWT credential and the token is stored in memory - not in localStorage or URL params
-  2. The agent board shows live online/offline/idle status with last-seen timestamps, updating automatically without page refresh when an agent changes state
-  3. User can create a task from the UI, select a target agent, and cancel a running task - all reflected in real time via WebSocket
-  4. The DLQ panel shows failed tasks and user can trigger a manual retry from the UI
-  5. Cost tracking, distributed trace viewer, shared memory viewer, and resource lock panel are all accessible and show real data
-  6. The layout is usable on a mobile browser - tables collapse to cards at small screen widths
-**Plans**: 11 plans
+**Shipped:**
 
-Plans:
-- [x] 04-01-PLAN.md - Wave 0: scaffold web/ (Vite + React 19 + TS + Tailwind v4 + shadcn + Vitest + msw)
-- [x] 04-02-PLAN.md - App shell: sidebar + topbar + theme + i18n (TR+EN) + reconnecting banner
-- [x] 04-03-PLAN.md - Auth layer: Zustand in-memory store + api-client RFC 7807 + LoginForm + _authed guard
-- [x] 04-04-PLAN.md - Data layer: query-key factory + all query hooks + useWebSocketSync hybrid merge/invalidate
-- [x] 04-05-PLAN.md - Operations: agents, tasks (create/cancel/trace), workflows + ResponsiveList + TraceTimeline
-- [x] 04-05b-PLAN.md - Operations gap-closure: ResponsiveList primitive cleanup and consumer wiring
-- [x] 04-06-PLAN.md - Visibility: DLQ/costs/memory/locks/health/settings/traces + JsonViewer
-- [x] 04-07-PLAN.md - Production integration: FastAPI StaticFiles mount at /dashboard + smoke tests + README
-- [x] 04-08-PLAN.md - Gap closure: psutil manifest, router basepath + favicon, SPA fallback catch-all, strict deep-link tests
-- [x] 04-09-PLAN.md - Distributed trace viewer (UI-12): GET /v1/tasks/{id}/trace + TraceTimeline integration
-- [x] 04-10-PLAN.md - Endpoint mismatch closure: 7 hooks aligned to real backend, 2 new list endpoints, dual-auth DLQ, integration test
+- Real JWT fixtures and auth unit tests
+- ConnectionManager with UI/agent pools
+- Capability matcher tests
+- Task lifecycle and agent lifecycle tests
+- `/v1/ws/ui` with initial-frame JWT auth
+- WebSocket integration tests
+- Event-hook work carried into later dashboard/live-sync slices
 
-### Phase 5: Release Readiness
-**Goal**: OpenHub can be discovered, installed, and contributed to by open source developers - README quickstart works in under 5 minutes, pip install path exists, Docker Compose is hardened, graceful shutdown is implemented, and Playwright E2E tests cover critical flows
-**Depends on**: Phase 4
-**Requirements**: OSS-01, OSS-03, OSS-04, OSS-05, OSS-06, PROD-03, TEST-06
-**Success Criteria** (what must be TRUE):
-  1. A developer unfamiliar with the project can follow the README and have OpenHub running locally within 5 minutes via either Docker or pip install
-  2. pip install openhub && openhub start produces a running server - no manual steps beyond setting credentials
-  3. Docker Compose starts with health checks and restart policies - a container that crashes restarts automatically
-  4. Stopping the server drains in-flight tasks and closes WebSocket connections cleanly - no tasks are silently dropped
-  5. Playwright E2E tests pass for login, agent list view, task create, and task cancel flows
-**Plans**: TBD
+## Phase 3: Vector Database — COMPLETE
+
+**Goal:** Opt-in semantic search over memories/tasks/artifacts.
+
+**Shipped:**
+
+- Vector migration and feature availability checks
+- Turso/libSQL vector binding smoke path
+- Embedding service with local/OpenAI backends
+- Auto-indexing hooks and retry worker
+- Unified `/v1/search` endpoint
+- Beta docs and environment examples
+
+## Phase 4: Command Center UI — COMPLETE
+
+**Goal:** Browser dashboard for operators.
+
+**Shipped:**
+
+- Vite/React/TypeScript/Tailwind/shadcn web app
+- Auth layer with in-memory Zustand token store
+- TanStack Query data hooks and WebSocket invalidation
+- Agents/tasks/workflows surfaces
+- DLQ, costs, memory, locks, health, settings, traces
+- Static dashboard mount under FastAPI
+- Deep-link/dashboard routing fixes
+- Endpoint mismatch closure and responsive-list cleanup
+
+## Phase 5: Release Readiness — COMPLETE
+
+**Goal:** Make OpenHub installable, understandable, and releasable.
+
+**Shipped:**
+
+- GSD loop initialization
+- Release-readiness snapshot
+- Stuck work recovery UX
+- Graceful shutdown
+- Docker Compose hardening
+- pip install path
+- README quickstart polish
+- Playwright E2E tests
+- `v0.1.0` tag
+
+## Phase 6: Kanban + Workflow Canvas — COMPLETE
+
+**Goal:** Make Tasks/Kanban/Workflow Canvas backend-wired and verified, not just visual.
+
+**Shipped:**
+
+- Backend unit tests for admin task status transitions
+- Backend integration tests for `PATCH /v1/tasks/{task_id}/status`
+- Valid transition map and assignment reset behavior
+- Kanban board with all task status columns
+- Drag/drop mutation to backend and query refetch
+- Frontend component tests for Kanban behavior
+- Playwright E2E for drag/drop → API → DB/refetch
+- Task detail route with embedded workflow canvas
+- Runtime workflow persistence fix
+- Live smoke verified after push
+
+## Phase 7: Product Polish + Deployment Packaging — PLANNED
+
+**Goal:** Remove remaining product/release friction and align docs, dashboard truth, deployment packaging, and test commands with the live system.
+
+**Success criteria:**
+
+1. Dashboard agent/task/workflow views use the correct source of truth and do not show legacy-empty or misleading data when ACN is healthy.
+2. README/deployment docs match the actual production shape: `hub.brunhilde.cloud`, user systemd services, Cloudflare tunnel, and current bridge service names.
+3. Docker, pip, and local start paths are smoke-tested or explicitly documented with bounded caveats.
+4. Test commands in GSD config match the actual repo tools and do not reference missing linters as required gates unless installed/configured.
+5. Runtime ops cleanup is documented: correct bridge active, stale legacy bridge disabled.
+6. Full verification evidence exists before the next tag/release decision.
+
+**Planned slices:**
+
+- [ ] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
+- [ ] **07-02 — Dashboard truth fixes**: patch misleading UI/API fallbacks found in 07-01, with tests.
+- [ ] **07-03 — Deployment packaging smoke**: verify README quickstart, pip command, Docker Compose, and live Cloudflare assumptions.
+- [ ] **07-04 — Test/CI command alignment**: align `.gsdrc.toml`, package scripts, and documented verification commands with installed tooling.
+- [ ] **07-05 — Runtime ops cleanup docs**: document active services, disabled legacy bridge, recovery checks, and secret-safe diagnostics.
+- [ ] **07-06 — Full verification + tag decision**: backend tests, frontend tests, build, E2E, live smoke, changelog/tag decision.
+
+## Verification Gates
+
+Before claiming a future feature or phase complete:
+
+- Backend tests for changed backend behavior
+- Frontend tests for changed UI behavior
+- E2E or bounded live smoke for cross-layer flows
+- `npm run build` for dashboard changes
+- Secret scan when touching `.gsd`, `.claude`, `.hermes`, env examples, systemd units, or auth docs
+- Commit + push + live verification when the user expects production state
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
-
-Note: Phase 3 depends only on Phase 1 and can be planned in parallel with Phase 2 if desired.
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Backend Hardening | 0/7 | Not started | - |
-| 2. WebSocket + Test Suite | 0/6 | Not started | - |
-| 3. Vector Database | 0/6 | Not started | - |
-| 4. Command Center UI | 11/11 | Complete    | 2026-04-26 |
-| 5. Release Readiness | 0/TBD | Not started | - |
+- **Completed phases:** 6 / 7
+- **Completed plans:** 45 / 51
+- **Current phase:** 07 Product Polish + Deployment Packaging
+- **Next slice:** 07-01 Dashboard truth audit

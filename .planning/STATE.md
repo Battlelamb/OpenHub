@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: Phase 06 Kanban + Canvas — complete, verified locally, pending post-push live smoke
-stopped_at: "06-06"
-last_updated: "2026-05-21T10:48:31Z"
+milestone_name: OpenHub v1.0
+status: Phase 07 Product Polish + Deployment Packaging — planned; Phase 06 live smoke verified
+stopped_at: "07-00"
+last_updated: "2026-05-24T20:06:07Z"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 45
+  total_plans: 51
   completed_plans: 45
 ---
 
@@ -16,15 +16,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-07)
+See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
-**Core value:** Any developer can self-host OpenHub, connect their AI agents, and coordinate multi-agent workflows from a single command center - reliably and without conflicts.
-**Current focus:** Phase 06 — Kanban Board + Workflow Canvas complete; next focus is product polish / deployment packaging.
+**Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
+
+**Current focus:** Phase 07 — product polish, deployment packaging, release evidence, and dashboard truth alignment.
 
 ## Current Position
 
-Phase: 06 (COMPLETE)
-Plan: 06-PLAN — Kanban + Canvas implementation
+- **Current phase:** 07 — Product Polish + Deployment Packaging
+- **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
+- **Next slice:** 07-01 — Dashboard truth audit
+- **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN reports 1 node / 1 agent online
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -48,18 +52,41 @@ Plan: 06-PLAN — Kanban + Canvas implementation
 | 06-03 | Kanban + Workflow Canvas scaffold with backend transition hook | ✅ | 518cc66 |
 | 06-04 | Frontend component tests: KanbanBoard | ✅ | ed90ce1 |
 | 06-05 | E2E verification: drag-drop → API → DB/refetch | ✅ | ec58e47 |
-| 06-06 | Full verification + STATE.md update | ✅ | pending commit |
+| 06-06 | Full verification + STATE.md update | ✅ | 0b0895d |
 
-## Test Status
+### Post-Phase 06 hardening
+
+- `9ee4c64` — Kanban cards navigate to task details
+- `8bc9ad4` — Workflow canvas shown on task details
+- `299de29` — Workflow runtime persists across requests
+- `8801fc1` — Task workflow detail context panel
+- `993622b` — Legacy dashboard seed rows tolerated
+
+## Phase 07 Progress (PLANNED)
+
+| Slice | Description | Status |
+|-------|-------------|--------|
+| 07-01 | Dashboard truth audit | ⏳ Next |
+| 07-02 | Dashboard truth fixes | ⏳ Planned |
+| 07-03 | Deployment packaging smoke | ⏳ Planned |
+| 07-04 | Test/CI command alignment | ⏳ Planned |
+| 07-05 | Runtime ops cleanup docs | ⏳ Planned |
+| 07-06 | Full verification + tag decision | ⏳ Planned |
+
+## Verification Status
 
 - **Backend focused Phase 06:** 35 passed (`test_admin_transition_status.py`, `test_patch_task_status_endpoint.py`)
 - **Frontend:** 40 passed / 14 files (Vitest)
 - **Build:** `npm run build` passed
 - **E2E:** 9 passed (Playwright), including Kanban drag-drop API persistence
-- **Live health:** verify after push/restart using `https://hub.brunhilde.cloud/v1/health`
+- **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
+- **Live smoke (2026-05-24):**
+  - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
+  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK, 1 node / 1 agent
+  - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents` → 200 OK
 
 ## Session Continuity
 
-Last session: 2026-05-21T10:48:31Z
-Stopped at: Phase 06 complete; push/deploy smoke verification next.
-Resume file: .planning/phases/06-kanban-canvas/06-PLAN.md
+- **Last state update:** 2026-05-24T20:06:07Z
+- **Stopped at:** Phase 07 opened; next executable slice is 07-01 dashboard truth audit.
+- **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
