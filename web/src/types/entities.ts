@@ -114,9 +114,14 @@ export interface ResourceLock {
 }
 
 export interface HealthResponse {
-  status: 'ok' | 'degraded' | 'down'
+  status: string
   version?: string
   uptime_seconds?: number
+  database?: {
+    status?: string
+    [key: string]: unknown
+  }
+  [key: string]: unknown
 }
 
 export type TraceCategory = 'llm' | 'tool' | 'db' | 'http' | 'internal' | 'error'

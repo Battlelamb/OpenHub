@@ -6,12 +6,16 @@ export const qk = {
   tasks: {
     all: ['tasks'] as const,
     list: (filters: { status?: string } = {}) => ['tasks', 'list', filters] as const,
+    summary: ['tasks', 'summary'] as const,
     detail: (id: string) => ['tasks', id] as const,
     trace: (id: string) => ['tasks', id, 'trace'] as const,
   },
   workflows: {
     all: ['workflows'] as const,
     detail: (id: string) => ['workflows', id] as const,
+  },
+  acn: {
+    status: ['acn', 'status'] as const,
   },
   health: ['health'] as const,
   dlq: ['dlq'] as const,

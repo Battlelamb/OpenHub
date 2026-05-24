@@ -11,7 +11,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - **Repo:** `/home/brunhilde/OpenHub`
 - **Remote:** `https://github.com/Battlelamb/OpenHub.git`
 - **Branch:** `master`
-- **Current HEAD:** `993622b`
+- **Git truth:** use `git status --short --branch` and `git log --oneline -5`; last recorded baseline before 07-02 code fixes was `965154b`
 - **Latest tag:** `v0.1.0`
 - **Live hub:** `https://hub.brunhilde.cloud`
 - **Runtime status:** healthy; ACN has 1 node / 1 agent online
@@ -135,7 +135,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 **Planned slices:**
 
 - [x] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
-- [ ] **07-02 — Dashboard truth fixes**: patch misleading UI/API fallbacks found in 07-01, with tests.
+- [x] **07-02 — Dashboard truth fixes**: health dashboard now separates service health, ACN registry truth, and task search truth, with Vitest coverage.
 - [ ] **07-03 — Deployment packaging smoke**: verify README quickstart, pip command, Docker Compose, and live Cloudflare assumptions.
 - [ ] **07-04 — Test/CI command alignment**: align `.gsdrc.toml`, package scripts, and documented verification commands with installed tooling.
 - [ ] **07-05 — Runtime ops cleanup docs**: document active services, disabled legacy bridge, recovery checks, and secret-safe diagnostics.
@@ -155,6 +155,6 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 6 / 7
-- **Completed plans:** 46 / 51
+- **Completed plans:** 47 / 51
 - **Current phase:** 07 Product Polish + Deployment Packaging
-- **Next slice:** 07-02 Dashboard truth fixes
+- **Next slice:** 07-03 Deployment packaging smoke

@@ -36,6 +36,11 @@ interface BackendTaskSearchResponse {
   limit: number
 }
 
+export interface TaskSummary {
+  total: number
+  statusCounts: Partial<Record<TaskStatus, number>>
+}
+
 function adaptTask(b: BackendTaskResponse): Task {
   return {
     id: b.id,
@@ -70,6 +75,25 @@ export function useTasks(filters: TaskFilters = {}) {
       if (filters.status) qs.set('status', filters.status)
       const res = await api<BackendTaskSearchResponse>(`/v1/tasks/search?${qs.toString()}`)
       return (res.tasks ?? []).map(adaptTask)
+    },
+  })
+}
+
+export function useTaskSummary() {
+  return useQuery({
+    queryKey: qk.tasks.summary,
+    queryFn: async (): Promise<TaskSummary> => {
+      const res = await api<BackendTaskSearchResponse>('/v1/tasks/search?page=1&limit=100')
+      const tasks = (res.tasks ?? []).map(adaptTask)
+      const statusCounts = tasks.reduce<Partial<Record<TaskStatus, number>>>((acc, task) => {
+        acc[task.status] = (acc[task.status] ?? 0) + 1
+        return acc
+      }, {})
+
+      return {
+        total: res.total ?? tasks.length,
+        statusCounts,
+      }
     },
   })
 }
