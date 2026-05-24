@@ -134,7 +134,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 
 **Planned slices:**
 
-- [ ] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
+- [x] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
 - [ ] **07-02 — Dashboard truth fixes**: patch misleading UI/API fallbacks found in 07-01, with tests.
 - [ ] **07-03 — Deployment packaging smoke**: verify README quickstart, pip command, Docker Compose, and live Cloudflare assumptions.
 - [ ] **07-04 — Test/CI command alignment**: align `.gsdrc.toml`, package scripts, and documented verification commands with installed tooling.
@@ -155,6 +155,6 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 6 / 7
-- **Completed plans:** 45 / 51
+- **Completed plans:** 46 / 51
 - **Current phase:** 07 Product Polish + Deployment Packaging
-- **Next slice:** 07-01 Dashboard truth audit
+- **Next slice:** 07-02 Dashboard truth fixes
