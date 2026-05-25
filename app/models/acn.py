@@ -69,7 +69,7 @@ class RemoteAgentRegister(BaseModel):
 
     # Identity
     description: Optional[str] = Field(default=None, max_length=500)
-    model: Optional[str] = Field(default=None, max_length=100, description="AI model (gpt-5.3-codex, claude-opus-4-6)")
+    model: Optional[str] = Field(default=None, max_length=100, description="AI model (gpt-5.5, claude-opus-4-6)")
     platform: Optional[str] = Field(default=None, max_length=100, description="Platform (openclaw, claude-code, qwen-code)")
     version: Optional[str] = Field(default=None, max_length=50, description="Agent version")
 

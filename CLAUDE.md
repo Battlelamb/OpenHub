@@ -4,11 +4,11 @@ This file provides guidance to Claude Code when working with the OpenHub project
 
 ## GSD + Claude Code Operating Contract
 
-- Use the local GSD installation in `.claude/` for planning, execution, verification, and phase discipline.
-- Use Claude Opus 4.7 for all GSD phases and variations unless the human operator explicitly overrides it.
-  - Preferred Claude Code invocation: `claude -p "<task>" --model opus --effort max --max-turns <n>`.
-  - GSD config resolves Anthropic Opus to `claude-opus-4-7`.
-- Credential source is local only: `ANTHROPIC_API_KEY` or Claude Code OAuth. Never write real credentials to files or chat.
+- Use the local GSD installations in `.codex/`, `.hermes/`, and `.claude/` for planning, execution, verification, and phase discipline.
+- Use GPT 5.5 via OpenAI Codex for all GSD phases and variations unless the human operator explicitly overrides it.
+  - Preferred Codex/GSD model: `gpt-5.5` with max effort / xhigh reasoning.
+  - GSD config maps `opus`, `sonnet`, and `haiku` profile slots to `gpt-5.5` for this repo.
+- Credential source is local only: Hermes/OpenAI Codex OAuth or user-level Codex auth. Never write real credentials to files or chat.
 - Work in small GSD slices: refresh state -> discuss/plan -> execute in fresh context/worktree -> verify -> document evidence -> commit.
 - OpenHub is security-first: preserve known-good tokens, avoid leaking `ak_...`/`oh_...`/provider keys, and keep admin actions auditable.
 - Verification-first rule: do not claim a change is complete until backend/frontend tests or an explicit bounded smoke check have passed.

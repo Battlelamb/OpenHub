@@ -23,7 +23,7 @@ Phase 05 made OpenHub releasable. Phase 06 made Tasks/Kanban/Workflow Canvas rea
 - Backend-wired + tested + pushed + live-smoked is the completion bar.
 - Preserve secrets; never print `ak_...`, `oh_...`, provider keys, or Cloudflare tunnel tokens.
 - Prefer ACN status/health as source of truth for OpenHub agent visibility.
-- Keep Claude Code/GSD default at Opus/max effort when using Claude.
+- Keep GSD default at GPT 5.5 via OpenAI Codex with max effort / xhigh reasoning unless the human explicitly overrides it.
 
 ## Known issue class to hunt
 

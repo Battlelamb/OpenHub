@@ -21,14 +21,14 @@ AGENT_CONFIGS = {
     "brunhilde": {
         "capabilities": ["code_edit", "code_review", "research", "email", "telegram", "discord"],
         "mcp_servers": ["filesystem", "github", "discord", "openhub"],
-        "description": "Brunhilde von Nacht - OpenClaw AI Agent (gpt-5.3-codex)",
+        "description": "Brunhilde von Nacht - OpenHub AI Agent (GPT 5.5 / OpenAI Codex)",
         "node_name": "brunhilde-vps",
         "node_url": "http://localhost:18789",
     },
     "claude-code": {
         "capabilities": ["code_edit", "code_review", "testing", "analysis", "refactoring", "documentation"],
         "mcp_servers": ["filesystem", "bash"],
-        "description": "Claude Code (Opus 4.6) - WSL local agent",
+        "description": "Codex-compatible local coding agent (GPT 5.5) - WSL local agent",
         "node_name": "brunhilde-vps",
         "node_url": "http://localhost:7788",
     },

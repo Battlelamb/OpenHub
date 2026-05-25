@@ -73,10 +73,10 @@ Phase 1: Backend Hardening - Fix silent correctness bugs and security holes befo
 - Use /gsd:complete-milestone for milestone completion
 
 ## Authentication
-Run gsd auth login to authenticate with GSD-2 CLI (uses same login as claude.ai)
+Use the local Hermes/OpenAI Codex OAuth credential (`hermes auth list openai-codex`) or user-level Codex auth. Never commit credential values.
 
 ## Model Routing (Optional)
-- Research: Cheaper models for code search, documentation
-- Planning: Premium models for architecture decisions
-- Implementation: Premium models for code generation
-- Verification: Any model for test execution, lint checks
+- Research: GPT 5.5 via OpenAI Codex
+- Planning: GPT 5.5 via OpenAI Codex
+- Implementation: GPT 5.5 via OpenAI Codex
+- Verification: GPT 5.5 via OpenAI Codex

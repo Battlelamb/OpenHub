@@ -45,13 +45,13 @@
   },
   "mode": "yolo",
   "granularity": "standard",
-  "runtime": "claude",
+  "runtime": "codex",
   "resolve_model_ids": true,
   "model_profile_overrides": {
-    "claude": {
-      "opus": "claude-opus-4-7",
-      "sonnet": "claude-opus-4-7",
-      "haiku": "claude-opus-4-7"
+    "codex": {
+      "opus": "gpt-5.5",
+      "sonnet": "gpt-5.5",
+      "haiku": "gpt-5.5"
     }
   },
   "intel": {

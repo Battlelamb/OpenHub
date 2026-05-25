@@ -7,10 +7,10 @@ version = "1.0.0"
 description = "Multi-agent coordination platform for local development environments"
 
 [auth]
-# Use Claude Code / Anthropic credentials from the local environment.
-# Required runtime credential: ANTHROPIC_API_KEY or Claude Code OAuth login.
+# Use Hermes OpenAI Codex OAuth credentials from the local user profile.
+# Required runtime credential: configured openai-codex auth; do not store tokens in this repo.
 # Do not commit real credential values.
-provider = "anthropic"
+provider = "openai-codex"
 
 [workflow]
 # Git workflow settings
@@ -34,14 +34,14 @@ verify = [
 # token_ceiling = 1000000
 
 [model]
-# All GSD phases and variations should run on Claude Opus 4.7 unless explicitly overridden by the human operator.
-# Claude Code accepts the alias `opus`; GSD's catalog resolves Anthropic opus to `claude-opus-4-7`.
-default = "claude-opus-4-7"
-research = "claude-opus-4-7"
-planning = "claude-opus-4-7"
-implementation = "claude-opus-4-7"
-verification = "claude-opus-4-7"
+# All GSD phases and variations should run on GPT 5.5 via OpenAI Codex unless explicitly overridden by the human operator.
+default = "gpt-5.5"
+research = "gpt-5.5"
+planning = "gpt-5.5"
+implementation = "gpt-5.5"
+verification = "gpt-5.5"
 effort = "max"
+reasoning_effort = "xhigh"
 
 [paths]
 # GSD-2 directory structure

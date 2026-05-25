@@ -225,6 +225,7 @@ class CostEntry(PydanticBaseModel):
 _MODEL_COSTS = {
     "claude-opus-4-6": {"input": 15.0, "output": 75.0},
     "gpt-5.3-codex": {"input": 10.0, "output": 40.0},
+    "gpt-5.5": {"input": 10.0, "output": 40.0},
     "qwen3.5-plus": {"input": 0.0, "output": 0.0},  # free tier
 }
 

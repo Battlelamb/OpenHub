@@ -1,19 +1,22 @@
 {
   "version": "2.0",
-  "provider": "anthropic",
-  "model": "claude-opus-4-7",
-  "apiKey": "ANTHROPIC_API_KEY",
+  "provider": "openai-codex",
+  "model": "gpt-5.5",
+  "apiKey": "HERMES_AUTH_OPENAI_CODEX",
   "models": {
-    "default": "claude-opus-4-7",
-    "research": "claude-opus-4-7",
-    "planning": "claude-opus-4-7",
-    "implementation": "claude-opus-4-7",
-    "verification": "claude-opus-4-7"
+    "default": "gpt-5.5",
+    "research": "gpt-5.5",
+    "planning": "gpt-5.5",
+    "implementation": "gpt-5.5",
+    "verification": "gpt-5.5"
   },
   "options": {
     "effort": "max",
     "temperature": 0.2,
     "maxTokens": 8192,
-    "timeout": 120000
-  }
+    "timeout": 120000,
+    "reasoning_effort": "xhigh"
+  },
+  "baseUrl": "https://chatgpt.com/backend-api/codex",
+  "auth": "oauth"
 }

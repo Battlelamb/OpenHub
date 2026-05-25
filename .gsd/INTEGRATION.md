@@ -4,10 +4,10 @@
 
 ### 1. Authenticate (Required)
 ```bash
-cd /home/omer/projects/OpenHub
-gsd auth login
+cd /home/brunhilde/OpenHub
+hermes auth list openai-codex
 ```
-This opens your browser for OAuth (same login as claude.ai).
+OpenHub GSD defaults use the local Hermes/OpenAI Codex OAuth credential. Do not store real credential values in repository files.
 
 ### 2. Start Working
 ```bash
@@ -124,10 +124,13 @@ isort --check app/        # Import order check
 Configure in `.gsdrc.toml`:
 ```toml
 [model]
-research = "claude-3-haiku"
-planning = "claude-3-5-sonnet"
-implementation = "claude-3-5-sonnet"
-verification = "any"
+default = "gpt-5.5"
+research = "gpt-5.5"
+planning = "gpt-5.5"
+implementation = "gpt-5.5"
+verification = "gpt-5.5"
+effort = "max"
+reasoning_effort = "xhigh"
 ```
 
 ## Budget Controls (Optional)
