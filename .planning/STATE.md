@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging — 07-02 dashboard truth fixes complete
-stopped_at: "07-02"
-last_updated: "2026-05-24T20:41:17Z"
+status: Phase 07 Product Polish + Deployment Packaging — 07-04 test/CI command alignment complete early
+stopped_at: "07-04"
+last_updated: "2026-05-25T04:07:56Z"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 51
-  completed_plans: 47
+  completed_plans: 48
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 - **Current phase:** 07 — Product Polish + Deployment Packaging
 - **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
-- **Next slice:** 07-03 — Deployment packaging smoke
+- **Next slice:** 07-03 — Deployment packaging smoke (07-04 was completed early for lint/GSD tooling)
 - **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
 - **Live status:** `https://hub.brunhilde.cloud` healthy; ACN reports 1 node / 1 agent online
 
@@ -69,17 +69,19 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 07-01 | Dashboard truth audit | ✅ |
 | 07-02 | Dashboard truth fixes | ✅ |
 | 07-03 | Deployment packaging smoke | ⏳ Next |
-| 07-04 | Test/CI command alignment | ⏳ Planned |
+| 07-04 | Test/CI command alignment | ✅ Done early |
 | 07-05 | Runtime ops cleanup docs | ⏳ Planned |
 | 07-06 | Full verification + tag decision | ⏳ Planned |
 
 ## Verification Status
 
-- **Backend:** full suite passed for 07-02 (`python -m pytest tests/ -x -q --tb=short`; 9 expected Turso-vector skips)
+- **Backend:** full suite passed for 07-04 (`pytest -q --tb=short --disable-warnings`; expected Turso-vector skips)
 - **Backend focused Phase 06:** 35 passed (`test_admin_transition_status.py`, `test_patch_task_status_endpoint.py`)
-- **Frontend:** 42 passed / 16 files (Vitest); 07-02 health truth regression included
-- **Build:** `npm run build` passed for 07-02 dashboard bundle
-- **Lint:** `npm run lint` currently blocked by missing local `eslint` executable; track in 07-04 command alignment
+- **Frontend:** 42 passed / 16 files on Vitest `v4.1.7`; 07-02 health truth regression included
+- **Build:** `npm run build` passed for 07-04 dashboard bundle
+- **Lint:** `npm run lint -- --max-warnings=0` now passes with local ESLint flat config
+- **Audit:** `npm audit --audit-level=moderate` reports 0 vulnerabilities
+- **Backend strict lint baseline:** tools are installed, but `black --check app/` has broad pre-existing formatting drift; kept as `backend_lint_baseline` rather than a required GSD gate
 - **E2E:** 9 passed (Playwright), including Kanban drag-drop API persistence
 - **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
 - **Live smoke (2026-05-24):**
@@ -90,6 +92,6 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-24T20:41:17Z
-- **Stopped at:** 07-02 dashboard truth fixes complete; next executable slice is 07-03 deployment packaging smoke.
+- **Last state update:** 2026-05-25T04:07:56Z
+- **Stopped at:** 07-04 test/CI command alignment complete early; next executable slice remains 07-03 deployment packaging smoke.
 - **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`

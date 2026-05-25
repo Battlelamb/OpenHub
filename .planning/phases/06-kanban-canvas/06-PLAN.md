@@ -195,7 +195,7 @@ from fastapi.testclient import TestClient
 def admin_token(client: TestClient) -> str:
     """Get admin JWT token."""
     resp = client.post("/v1/auth/admin/login", data={
-        "username": "omer", "password": "OpenHub2026!"
+        "username": "<admin-user-from-env>", "password": "<admin-password-from-env>"
     })
     assert resp.status_code == 200
     return resp.json()["access_token"]

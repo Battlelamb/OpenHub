@@ -65,7 +65,7 @@ journey:
   - Second run -> "TypeError: Cannot convert object to primitive value" from beforeLoad. location.search is an OBJECT in TanStack Router; concatenating with location.pathname coerced object to primitive and threw. Fix in commit da6a2ca - use location.pathname only.
   - Third run -> POST /v1/auth/login -> 404. Backend has /v1/auth/admin/login (OAuth2PasswordRequestForm, form-encoded), NOT the JSON /v1/auth/login the frontend was hitting. Also backend response shape is {agent_id, role, permissions} not nested {user: {...}}. Fix in commit 5c8d0af.
 verification_pass:
-  - Login flow end-to-end on https://hub.brunhilde.cloud/dashboard/login with omer / OpenHub2026!
+  - Login flow end-to-end on https://hub.brunhilde.cloud/dashboard/login with configured admin credentials from the private environment
   - JWT memory-only confirmed: localStorage empty, only sessionStorage has tsr-scroll-restoration-v1_3 (ephemeral, not auth)
   - Sidebar all 11 nav items render correctly
   - Topbar (brand, hub-status indicator, theme toggle, user menu) all present

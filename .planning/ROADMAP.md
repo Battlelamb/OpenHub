@@ -11,7 +11,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - **Repo:** `/home/brunhilde/OpenHub`
 - **Remote:** `https://github.com/Battlelamb/OpenHub.git`
 - **Branch:** `master`
-- **Git truth:** use `git status --short --branch` and `git log --oneline -5`; last recorded baseline before 07-02 code fixes was `965154b`
+- **Git truth:** use `git status --short --branch` and `git log --oneline -5`; 07-04 command-alignment work follows `af065be`
 - **Latest tag:** `v0.1.0`
 - **Live hub:** `https://hub.brunhilde.cloud`
 - **Runtime status:** healthy; ACN has 1 node / 1 agent online
@@ -25,7 +25,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - [x] **Phase 4: Command Center UI** — React/Vite dashboard for agents, tasks, workflows, DLQ, costs, memory, locks, health, settings
 - [x] **Phase 5: Release Readiness** — docs, pip install path, Docker hardening, graceful shutdown, Playwright E2E, v0.1.0 release
 - [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
-- [ ] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, release decision
+- [ ] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, release decision (07-04 completed early)
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -137,7 +137,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - [x] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
 - [x] **07-02 — Dashboard truth fixes**: health dashboard now separates service health, ACN registry truth, and task search truth, with Vitest coverage.
 - [ ] **07-03 — Deployment packaging smoke**: verify README quickstart, pip command, Docker Compose, and live Cloudflare assumptions.
-- [ ] **07-04 — Test/CI command alignment**: align `.gsdrc.toml`, package scripts, and documented verification commands with installed tooling.
+- [x] **07-04 — Test/CI command alignment**: installed dashboard ESLint tooling, added flat config, upgraded Vitest to clear audit, and aligned GSD verify commands.
 - [ ] **07-05 — Runtime ops cleanup docs**: document active services, disabled legacy bridge, recovery checks, and secret-safe diagnostics.
 - [ ] **07-06 — Full verification + tag decision**: backend tests, frontend tests, build, E2E, live smoke, changelog/tag decision.
 
@@ -155,6 +155,6 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 6 / 7
-- **Completed plans:** 47 / 51
+- **Completed plans:** 48 / 51
 - **Current phase:** 07 Product Polish + Deployment Packaging
-- **Next slice:** 07-03 Deployment packaging smoke
+- **Next slice:** 07-03 Deployment packaging smoke (07-04 completed early)

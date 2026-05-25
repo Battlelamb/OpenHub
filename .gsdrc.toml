@@ -21,11 +21,12 @@ commit_style = "conventional"
 
 # Verification commands (run after each task)
 verify = [
-  "pytest",
-  "mypy app/",
-  "flake8 app/",
-  "black --check app/",
-  "isort --check app/"
+  ". .venv/bin/activate && pytest -q --tb=short --disable-warnings",
+  "cd web && npm audit --audit-level=moderate",
+  "cd web && npm run lint -- --max-warnings=0",
+  "cd web && npm run typecheck",
+  "cd web && npm run test -- --run",
+  "cd web && npm run build"
 ]
 
 # Budget limits (optional)
@@ -53,5 +54,10 @@ tests_dir = "tests"
 # Project-specific commands
 start = "uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload"
 build = "docker-compose build"
-test = "pytest"
-lint = "black --check app/ && isort --check app/ && flake8 app/ && mypy app/"
+test = ". .venv/bin/activate && pytest -q --tb=short --disable-warnings"
+lint = "cd web && npm run lint -- --max-warnings=0"
+frontend_typecheck = "cd web && npm run typecheck"
+frontend_test = "cd web && npm run test -- --run"
+frontend_build = "cd web && npm run build"
+frontend_audit = "cd web && npm audit --audit-level=moderate"
+backend_lint_baseline = ". .venv/bin/activate && black --check app/ && isort --check app/ && flake8 app/ && mypy app/"

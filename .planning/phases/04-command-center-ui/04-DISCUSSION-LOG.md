@@ -133,4 +133,4 @@ These will be decided by gsd-phase-researcher and gsd-planner.
 
 ## Mid-discussion correction
 
-User asked about admin login key during discussion (out of phase scope but immediate need). Discovered admin.html uses `X-Admin-Key` header against `/v1/acn/admin/applications`, NOT JWT user/password. Memory had recorded the same key but mislabeled it. Corrected: `AGENTHUB_ACN_ADMIN_KEY=ak_21c4f9...` is the value to enter. JWT user/password (`omer` / `OpenHub2026!`) are env vars for the future Phase 4 UI's login form, NOT for admin.html. This distinction will matter when Phase 4 ships and both flows coexist.
+User asked about admin login key during discussion (out of phase scope but immediate need). Discovered admin.html uses `X-Admin-Key` header against `/v1/acn/admin/applications`, NOT JWT user/password. Corrected: `AGENTHUB_ACN_ADMIN_KEY` is the private value to enter locally, while JWT user/password env vars are for the Phase 4 UI login form, NOT for admin.html. This distinction will matter when Phase 4 ships and both flows coexist.
