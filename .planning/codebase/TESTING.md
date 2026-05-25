@@ -1,325 +1,177 @@
+---
+last_mapped_commit: 13fcce7400bd66c4e9b5412c9ed677cd215f019a
+---
 # Testing Patterns
 
-**Analysis Date:** 2026-04-07
+**Analysis Date:** 2026-05-25
 
-## Current State
-
-**There are no test files in this codebase.** The `tests/` directory referenced in `pyproject.toml` does not exist. All testing infrastructure is declared but unused.
-
-## Test Framework (Declared, Not Yet Used)
+## Test Framework
 
 **Runner:**
-- `pytest` 7.4.3
-- Config in `pyproject.toml`: `[tool.pytest.ini_options]`
-- `testpaths = ["tests"]` - directory does not currently exist
-
-**Async support:**
-- `pytest-asyncio` 0.21.1
-- `asyncio_mode = "auto"` configured - all async test functions run automatically without `@pytest.mark.asyncio`
-
-**Coverage:**
-- `pytest-cov` 4.1.0
-- Default addopts: `--cov=app --cov-report=html --cov-report=term`
-- No minimum coverage threshold enforced
+- Backend: pytest 7.4.3 with pytest-asyncio and pytest-cov, configured in `pyproject.toml`.
+- Frontend: Vitest 4.1.7 with jsdom and Testing Library, configured in `web/vitest.config.ts`.
+- E2E: Playwright 1.60, configured in `web/playwright.config.ts`.
 
 **Assertion Library:**
-- Standard `pytest` assertions (no separate library)
+- Backend: standard pytest `assert` statements and FastAPI `TestClient` responses.
+- Frontend: Vitest `expect` plus `@testing-library/jest-dom/vitest` from `web/src/test/setup.ts`.
 
-**Run Commands (when tests exist):**
+**Run Commands:**
 ```bash
-# Run all tests (from project root)
-pytest
-
-# Run with verbose output
-pytest -v
-
-# Run specific file
-pytest tests/unit/test_agents.py -v --tb=short
-
-# Run specific test by name
-pytest -k "test_register_agent" -v
-
-# Coverage report
-pytest --cov=app --cov-report=html
+. .venv/bin/activate && pytest                         # Backend test suite with coverage options from pyproject.toml
+. .venv/bin/activate && pytest tests/unit/test_auth.py  # Focused backend test file
+cd web && npm run test                                  # Frontend Vitest suite
+cd web && npm run typecheck                             # TypeScript typecheck
+cd web && npm run build                                 # Typecheck + Vite production build
+cd web && npx playwright test --reporter=list           # Dashboard E2E against localhost:7788
 ```
 
-## Recommended Test Structure
+## Test File Organization
 
-Based on `pyproject.toml` `testpaths = ["tests"]` and the project's layered architecture, tests should be organized as:
+**Location:**
+- Backend unit tests: `tests/unit/test_*.py` (30 files at mapping time).
+- Backend integration tests: `tests/integration/test_*.py` (10 files at mapping time).
+- Frontend component/hook/store tests: colocated under `web/src/**` as `*.test.ts` or `*.test.tsx` (16 files at mapping time).
+- E2E tests: `web/e2e/dashboard.spec.ts`.
 
-```
+**Naming:**
+- Backend test files use `test_<domain>.py`, e.g. `tests/unit/test_admin_dashboard_auth.py`.
+- Frontend tests use `<Subject>.test.tsx` or `<hook>.test.ts`, e.g. `web/src/components/kanban/KanbanBoard.test.tsx`.
+
+**Structure:**
+```text
 tests/
-├── conftest.py              # Shared fixtures (DB, app client, auth)
-├── unit/
-│   ├── test_agent_service.py
-│   ├── test_task_service.py
-│   ├── test_capability_matcher.py
-│   ├── test_heartbeat_service.py
-│   └── test_models.py
-├── integration/
-│   ├── test_routes_agents.py
-│   ├── test_routes_tasks.py
-│   ├── test_routes_auth.py
-│   └── test_routes_p1.py
-└── e2e/
-    └── test_multi_agent_workflow.py
+├── conftest.py
+├── unit/test_*.py
+└── integration/test_*.py
+web/src/**/**.test.ts(x)
+web/e2e/*.spec.ts
 ```
 
-## What Needs to Be Tested
+## Test Structure
 
-### High Priority (Core Business Logic)
-
-**`app/services/agent_service.py`:**
-- `register_agent` - duplicate name rejection, valid registration, ID generation
-- `get_agents_by_capability` - capability filtering, empty results
-- `update_heartbeat` - success/failure paths
-
-**`app/services/task_service.py`:**
-- `create_task` - auto-assignment attempt, DB persistence, state transitions
-- Task state machine: QUEUED -> CLAIMED -> RUNNING -> COMPLETED/FAILED
-
-**`app/database/repositories/base.py`:**
-- `create`, `get_by_id`, `update`, `delete` - standard CRUD operations
-- `find_by`, `find_one_by` - filter correctness
-- `bulk_create` - count returned, all rows inserted
-
-**`app/models/agents.py` + `app/models/tasks.py`:**
-- `AgentCreate.validate_agent_name` - rejects special chars, accepts valid chars
-- `AgentCreate.validate_capabilities` - rejects empty names, invalid chars
-- `TaskCreate` field constraints - min/max lengths, enum values
-
-### Medium Priority (Routes / Integration)
-
-**Route integration tests** use FastAPI's `TestClient` (via `httpx`):
+**Suite Organization:**
 ```python
-from fastapi.testclient import TestClient
-from app.main import app
-
-client = TestClient(app)
+def test_admin_login_token_can_read_me_without_agent_row(test_client: TestClient) -> None:
+    tokens = _synthetic_admin_tokens()
+    response = test_client.get(
+        "/v1/auth/me",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["role"] == "admin"
 ```
 
-Key routes to cover:
-- `POST /v1/agents/register` - 200 success, 409 duplicate
-- `POST /v1/tasks/` - 200 creation, 500 error path
-- `POST /v1/auth/login` - 200 token return, 401 bad credentials
-- `GET /v1/health` - 200 with status fields
-
-### Lower Priority
-
-**`app/services/capability_matcher.py`** - scoring algorithm correctness
-
-**`app/middleware.py`** - error envelope format, status code mapping
-
-## Recommended conftest.py Pattern
-
-```python
-# tests/conftest.py
-import pytest
-import tempfile
-import os
-from fastapi.testclient import TestClient
-from app.main import app
-from app.database.connection import Database, get_database
-
-
-@pytest.fixture
-def test_db():
-    """In-memory SQLite database for tests"""
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
-    
-    db = Database(db_path)
-    # Run DDL from app/main.py lifespan startup here
-    yield db
-    
-    db.close()
-    os.unlink(db_path)
-
-
-@pytest.fixture
-def test_client(test_db):
-    """FastAPI test client with overridden database"""
-    app.dependency_overrides[get_database] = lambda: test_db
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def agent_api_key(test_db):
-    """Create a test API key with agent role"""
-    from app.auth.api_keys import APIKeyManager
-    mgr = APIKeyManager(test_db)
-    result = mgr.create_api_key(name="test-agent", key_type="agent", scopes=["*"])
-    return result["key_value"]
-```
-
-## Recommended Unit Test Pattern
-
-```python
-# tests/unit/test_agent_service.py
-import pytest
-from unittest.mock import MagicMock, patch
-from app.services.agent_service import AgentService
-from app.models.agents import AgentCreate
-
-
-@pytest.fixture
-def mock_db():
-    return MagicMock()
-
-
-@pytest.fixture
-def agent_service(mock_db):
-    return AgentService(mock_db)
-
-
-def test_register_agent_success(agent_service):
-    agent_data = AgentCreate(
-        agent_name="test-agent",
-        capabilities=["code_edit"],
-        description="A test agent"
-    )
-    agent = agent_service.register_agent(agent_data)
-    
-    assert agent.agent_name == "test-agent"
-    assert "code_edit" in agent.capabilities
-    assert agent.id is not None
-
-
-def test_register_agent_duplicate_raises(agent_service):
-    # Arrange - pre-populate repo to return existing agent
-    agent_service.agent_repo.find_by_name = MagicMock(return_value=MagicMock())
-    
-    agent_data = AgentCreate(
-        agent_name="existing-agent",
-        capabilities=["code_edit"]
-    )
-    
-    with pytest.raises(ValueError, match="already exists"):
-        agent_service.register_agent(agent_data)
-```
-
-## Recommended Integration Test Pattern
-
-```python
-# tests/integration/test_routes_agents.py
-import pytest
-from fastapi.testclient import TestClient
-
-
-def test_register_agent(test_client, agent_api_key):
-    response = test_client.post(
-        "/v1/agents/register",
-        json={
-            "agent_name": "test-agent-001",
-            "capabilities": ["code_edit", "testing"],
-            "description": "Test agent"
-        },
-        headers={"X-API-Key": agent_api_key}
-    )
-    
-    assert response.status_code == 200
-    data = response.json()
-    assert data["agent_name"] == "test-agent-001"
-    assert "id" in data
-
-
-def test_register_agent_duplicate(test_client, agent_api_key):
-    payload = {
-        "agent_name": "duplicate-agent",
-        "capabilities": ["code_edit"]
-    }
-    test_client.post("/v1/agents/register", json=payload, headers={"X-API-Key": agent_api_key})
-    
-    response = test_client.post(
-        "/v1/agents/register",
-        json=payload,
-        headers={"X-API-Key": agent_api_key}
-    )
-    
-    assert response.status_code == 409
-    assert response.json()["error_code"] == "CONFLICT"
-```
+**Patterns:**
+- Backend tests import `TestClient` and app fixtures from `tests/conftest.py`.
+- `tests/conftest.py` sets required `AGENTHUB_` env vars before importing `app.main`; follow this pattern to avoid Pydantic settings failures.
+- Use temporary DB path fixture defaults rather than `:memory:` because lifespan startup creates parent directories.
+- Mark live Turso tests with `@pytest.mark.turso`; `pytest_collection_modifyitems` skips them when Turso env vars are absent.
+- Frontend tests use MSW lifecycle from `web/src/test/setup.ts` and handlers in `web/src/mocks/handlers.ts`.
 
 ## Mocking
 
-**Framework:** `unittest.mock` (standard library) + `pytest` fixtures
+**Framework:**
+- Backend: pytest monkeypatch/fakes and deterministic in-process fixtures.
+- Frontend: MSW for network mocking, Vitest spies/mocks for local units.
 
-**What to mock:**
-- `AgentRepository`, `TaskRepository` in unit tests of services
-- `get_database()` dependency in integration tests via `app.dependency_overrides`
-- External services (Redis, Hatchet) using `unittest.mock.patch`
+**Patterns:**
+```typescript
+import { server } from '@/mocks/server'
+import { http, HttpResponse } from 'msw'
 
-**What NOT to mock:**
-- Pydantic model validation (test it directly)
-- `BaseRepository` logic in repository unit tests (use real in-memory SQLite)
-- Error handler behavior (test via TestClient, not mocked)
-
-**Dependency override pattern (FastAPI):**
-```python
-app.dependency_overrides[get_database] = lambda: test_db
-# After test:
-app.dependency_overrides.clear()
+server.use(
+  http.get('/v1/tasks/search', () => HttpResponse.json({ tasks: [], total: 0 })),
+)
 ```
 
-## Async Testing
+**What to Mock:**
+- Embedding backend calls in unit tests; `tests/conftest.py` includes `_MockEmbeddingBackend`.
+- Browser/API responses in frontend component tests through MSW.
+- Redis/Turso/network-only dependencies unless the test is explicitly marked as live integration.
 
-Since `asyncio_mode = "auto"` is set in `pyproject.toml`, async test functions run without decoration:
+**What NOT to Mock:**
+- Task state transitions when testing `TaskService` invariants.
+- Auth dependency behavior for dashboard-login regressions; use signed JWT helpers from `app/auth/jwt_auth.py`.
+- Public API serialization contracts that the dashboard consumes.
+
+## Fixtures and Factories
+
+**Test Data:**
 ```python
-async def test_heartbeat_monitoring():
-    # No @pytest.mark.asyncio needed
-    service = HeartbeatService(mock_db)
-    await service.start_monitoring()
-    await service.stop_monitoring()
+@pytest.fixture(scope="session")
+def admin_headers():
+    token = create_access_token(
+        subject="test-admin",
+        claims={"role": "admin", "agent_name": "test-admin"},
+    )
+    return {"Authorization": f"Bearer {token}"}
 ```
 
-## Model Validation Testing
-
-Pydantic models with validators should be tested directly:
-```python
-def test_agent_name_rejects_special_chars():
-    with pytest.raises(ValidationError):
-        AgentCreate(agent_name="bad name!", capabilities=["code_edit"])
-
-
-def test_capability_name_rejects_spaces():
-    with pytest.raises(ValidationError):
-        AgentCreate(agent_name="valid-agent", capabilities=["bad cap"])
-```
+**Location:**
+- Shared backend fixtures: `tests/conftest.py`.
+- Frontend test setup: `web/src/test/setup.ts`.
+- Frontend mock API payloads: `web/src/mocks/handlers.ts`.
 
 ## Coverage
 
-**Requirements:** None enforced (no `--cov-fail-under` set)
+**Requirements:**
+- `pyproject.toml` sets pytest addopts: `-ra -q --cov=app --cov-report=html --cov-report=term`.
+- No strict coverage fail-under is configured in the observed `pyproject.toml`.
 
-**Report output:**
-- HTML: `htmlcov/` directory (gitignored)
-- Terminal: inline after test run
-
-**Priority areas for first coverage pass:**
-1. `app/models/` - Pydantic validators (pure Python, easy to test)
-2. `app/services/agent_service.py` - core registration logic
-3. `app/services/task_service.py` - state machine transitions
-4. `app/database/repositories/base.py` - generic CRUD methods
-5. `app/middleware.py` - error handler envelope format
+**View Coverage:**
+```bash
+. .venv/bin/activate && pytest --cov=app --cov-report=term --cov-report=html
+open htmlcov/index.html  # local desktop only, if available
+```
 
 ## Test Types
 
 **Unit Tests:**
-- Scope: single class or function, all dependencies mocked
-- Location: `tests/unit/`
-- Speed: fast, no I/O
+- Auth/session behavior: `tests/unit/test_auth.py`, `tests/unit/test_admin_dashboard_auth.py`, `tests/unit/test_dashboard_auth_alignment.py`.
+- ACN invariants: `tests/unit/test_acn_node_heartbeat.py`, `tests/unit/test_acn_task_identity.py`, `tests/unit/test_acn_capabilities.py`, `tests/unit/test_acn_redaction.py`.
+- Vector/search internals: `tests/unit/test_embedding_service.py`, `tests/unit/test_vector_search_service.py`, `tests/unit/test_vector_feature_flag.py`.
+- Dashboard hooks/components: `web/src/hooks/useWebSocketSync.test.ts`, `web/src/components/common/ResponsiveList.test.tsx`, `web/src/components/kanban/KanbanBoard.test.tsx`.
 
 **Integration Tests:**
-- Scope: full HTTP request through FastAPI to real SQLite (in-memory or temp file)
-- Location: `tests/integration/`
-- Speed: medium, real DB operations
+- Lifecycle APIs: `tests/integration/test_task_lifecycle.py`, `tests/integration/test_agent_lifecycle.py`, `tests/integration/test_websocket.py`.
+- Search/vector APIs: `tests/integration/test_search_api.py`, `tests/integration/test_vector_search.py`, `tests/integration/test_vector_storage.py`.
+- Dashboard static paths: `tests/integration/test_dashboard_paths_live.py`.
 
 **E2E Tests:**
-- Scope: multi-agent workflow scenarios against running server
-- Not yet planned/implemented
-- Would use `httpx.AsyncClient` against `uvicorn` test server
+- Playwright dashboard smoke in `web/e2e/dashboard.spec.ts`, single Chromium project, base URL `http://localhost:7788`.
+- API must already be running before executing Playwright tests.
+
+## Common Patterns
+
+**Async Testing:**
+```python
+@pytest.mark.asyncio
+async def test_async_behavior(...):
+    result = await service_method()
+    assert result is not None
+```
+
+**Error Testing:**
+```python
+response = test_client.get('/v1/protected', headers={})
+assert response.status_code in {401, 403}
+assert response.text
+```
+
+**Frontend Behavior Testing:**
+```typescript
+render(<Component />)
+expect(await screen.findByText(/expected/i)).toBeInTheDocument()
+```
+
+## Verification Guidance
+
+- For backend-only slices, run the smallest targeted pytest first, then a broader relevant suite.
+- For dashboard slices, run `npm run typecheck`, targeted Vitest tests, then `npm run build`.
+- For Kanban/workflow UX, verify backend transition tests and frontend drag/drop/API-refetch behavior; visual scaffold alone is not complete.
+- For public/live claims, verify the built bundle or live route after deploy; do not infer live status from local build alone.
 
 ---
 
-*Testing analysis: 2026-04-07*
+*Testing analysis: 2026-05-25*

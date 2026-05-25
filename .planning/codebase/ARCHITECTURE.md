@@ -1,165 +1,203 @@
+---
+last_mapped_commit: 13fcce7400bd66c4e9b5412c9ed677cd215f019a
+---
+<!-- refreshed: 2026-05-25 -->
 # Architecture
 
-**Analysis Date:** 2026-04-07
+**Analysis Date:** 2026-05-25
+
+## System Overview
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          OpenHub Coordination Layer                         │
+│                          `app/main.py`, `web/src/`                          │
+├───────────────────────┬──────────────────────┬──────────────────────────────┤
+│ REST/WS API            │ React Dashboard       │ Bridge / Agent Clients       │
+│ `app/api/routes_*.py`  │ `web/src/routes/`     │ `app/bridge/agent_bridge.py` │
+└───────────┬───────────┴──────────┬───────────┴──────────────┬───────────────┘
+            │                       │                          │
+            ▼                       ▼                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Services: tasks, agents, ACN, workflows, search, events, heartbeat          │
+│ `app/services/`, `app/auth/`, `app/models/`                                 │
+└───────────────────────────────────────────┬─────────────────────────────────┘
+                                            ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Persistence / Runtime State                                                 │
+│ `app/database/connection.py`, `app/database/repositories/`, `data/state/`    │
+│ SQLite default, optional Turso/libSQL, optional Redis cache                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Component Responsibilities
+
+| Component | Responsibility | File |
+|-----------|----------------|------|
+| FastAPI app factory/lifespan | Start migrations, background workers, heartbeat monitor, WebSocket manager, dashboard static mount | `app/main.py` |
+| Settings | Load `AGENTHUB_` configuration and required admin/JWT fields | `app/config.py` |
+| Auth | JWTs, API keys, current-user dependencies, RBAC | `app/auth/jwt_auth.py`, `app/auth/api_keys.py`, `app/auth/dependencies.py`, `app/auth/rbac/` |
+| Agents | Local agent registration, heartbeat, discovery, capability matching | `app/api/routes_agents.py`, `app/services/agent_service.py`, `app/services/discovery_service.py` |
+| ACN | Invite-based remote node/agent registry and remote task routing | `app/api/routes_acn.py`, `app/database/repositories/acn_nodes.py`, `app/database/repositories/remote_agent_mappings.py` |
+| Tasks | Queue lifecycle, claims, leases, recovery, transitions, traces | `app/api/routes_tasks.py`, `app/services/task_service.py`, `app/database/repositories/tasks.py` |
+| Workflows | Workflow run APIs and coordination planning | `app/api/routes_workflows.py`, `app/api/routes_workflow.py`, `app/services/workflow_coordinator.py`, `app/services/hatchet_service.py` |
+| Search/vector memory | Embedding hooks, retry worker, semantic search API | `app/api/routes_search.py`, `app/services/embedding_hooks.py`, `app/services/embedding_retry_worker.py`, `app/services/vector_search_service.py` |
+| Dashboard | Authenticated SPA for agents, tasks, workflows, health, memory, costs, locks, DLQ | `web/src/routes/`, `web/src/components/`, `web/src/hooks/queries/` |
 
 ## Pattern Overview
 
-**Overall:** Layered service-oriented architecture with FastAPI as the HTTP boundary
+**Overall:** Layered FastAPI service architecture with a React SPA dashboard and raw-SQL repository persistence.
 
 **Key Characteristics:**
-- Strict layer separation: routes -> services -> repositories -> database
-- Repository pattern provides a typed ORM-like abstraction over raw SQLite/Turso SQL
-- Services hold all business logic; routes only parse HTTP input and delegate
-- Dependency injection via FastAPI `Depends()` - service instances are created per request, not shared singletons
-- No async ORM - all database access is synchronous with thread-local connections
+- API routers are grouped by domain in `app/api/routes_*.py` and mounted centrally from `app/main.py`.
+- Business logic belongs in `app/services/`; repositories under `app/database/repositories/` wrap SQL details.
+- Pydantic models under `app/models/` define API and service contracts.
+- Dashboard uses route modules under `web/src/routes/`, shared query hooks under `web/src/hooks/queries/`, and typed entities in `web/src/types/entities.ts`.
+- Real-time UI sync reuses `/v1/ws/ui`, `ConnectionManager`, and `web/src/hooks/useWebSocketSync.ts`.
 
 ## Layers
 
-**API Layer (HTTP boundary):**
-- Purpose: Parse and validate HTTP input, call services, format responses
-- Location: `app/api/`
-- Contains: FastAPI `APIRouter` instances, Pydantic request/response models inline or imported from `app/models/`
-- Depends on: `app/services/`, `app/auth/`, `app/database/connection.py`
-- Used by: HTTP clients, `app/bridge/agent_bridge.py`, WebSocket clients
+**Transport Layer:**
+- Purpose: Expose REST, WebSocket, static dashboard, and metrics endpoints.
+- Location: `app/main.py`, `app/api/routes_*.py`.
+- Contains: FastAPI routers, dependencies, response models, WebSocket handlers.
+- Depends on: auth dependencies, services, database connection.
+- Used by: dashboard, bridge agents, external API clients.
 
-**Service Layer (business logic):**
-- Purpose: All domain logic, orchestration between repositories, cross-entity operations
-- Location: `app/services/`
-- Contains: `TaskService`, `AgentService`, `HeartbeatService`, `CapabilityMatcher`, `DiscoveryService`, `RemoteAgentService`, `HatchetService`, `WorkflowCoordinator`
-- Depends on: `app/database/repositories/`, `app/models/`
-- Used by: `app/api/` route modules
+**Service Layer:**
+- Purpose: Own business operations that should not be duplicated in route handlers.
+- Location: `app/services/`.
+- Contains: `TaskService`, `HeartbeatService`, `ConnectionManager`, `WorkflowCoordinator`, `VectorSearchService`, embedding hooks/workers.
+- Depends on: repositories, models, settings.
+- Used by: API routers and lifespan startup/shutdown.
 
-**Repository Layer (data access):**
-- Purpose: Typed CRUD over individual database tables; isolates SQL from business logic
-- Location: `app/database/repositories/`
-- Contains: `BaseRepository` (generic ABC), `AgentRepository`, `TaskRepository`, `ACNNodeRepository`, `RemoteAgentMappingRepository`
-- Depends on: `app/database/connection.py` (`Database` class)
-- Used by: `app/services/`
+**Persistence Layer:**
+- Purpose: Provide SQLite/Turso access and table-specific repository operations.
+- Location: `app/database/connection.py`, `app/database/repositories/`, `alembic/`.
+- Contains: raw SQL execution, row conversion, Turso retry on stale connection, repository CRUD.
+- Depends on: settings and sqlite/libSQL clients.
+- Used by: services, routers, tests.
 
-**Database Layer:**
-- Purpose: Connection management, query execution, SQLite/Turso abstraction
-- Location: `app/database/connection.py`
-- Contains: `Database` class with thread-local connections, `get_database()` singleton factory
-- Depends on: `sqlite3` (stdlib), `libsql_experimental` (optional Turso)
-- Used by: `app/database/repositories/`, routes that bypass repositories for direct SQL (P1/P2 routes)
-
-**Auth Layer (cross-cutting):**
-- Purpose: JWT verification, API key validation, RBAC enforcement
-- Location: `app/auth/`
-- Contains: `jwt_auth.py`, `api_keys.py`, `dependencies.py`, `redis_cache.py`, `rbac/enforcer.py`, `rbac/policies.py`
-- Depends on: `app/database/connection.py`, Redis (optional)
-- Used by: All `app/api/` route modules via FastAPI `Depends()`
-
-**Bridge Layer (client SDK):**
-- Purpose: Lightweight HTTP client for remote agents to connect to the hub
-- Location: `app/bridge/agent_bridge.py`
-- Contains: `AgentBridge` class - handles registration, heartbeat loop, task polling
-- Depends on: `httpx` (async HTTP)
-- Used by: External agents running `scripts/run_bridge.py`
+**Dashboard Layer:**
+- Purpose: User-facing command center.
+- Location: `web/src/`.
+- Contains: TanStack Router routes, TanStack Query hooks, Zustand stores, components, i18n namespaces, MSW tests.
+- Depends on: `/v1/*` APIs and `/v1/ws/ui`.
+- Used by: operators at `/dashboard` after `web/dist` is built.
 
 ## Data Flow
 
-**Agent Task Assignment Flow:**
+### Primary Task Request Path
+1. Client creates/searches/updates tasks through `/v1/tasks/*` in `app/api/routes_tasks.py`.
+2. Route authenticates via JWT/API-key dependencies in `app/auth/`.
+3. `TaskService` in `app/services/task_service.py` validates state transitions, capability matching, leases, progress, and recovery.
+4. `TaskRepository` in `app/database/repositories/tasks.py` persists task rows through `Database.execute()` in `app/database/connection.py`.
+5. UI state is refreshed through REST query hooks in `web/src/hooks/queries/useTasks.ts` and real-time events in `web/src/hooks/useWebSocketSync.ts`.
 
-1. Agent POSTs `POST /v1/tasks` with `TaskCreate` payload
-2. `routes_tasks.py` calls `TaskService.create_task()`
-3. `TaskService` creates task record via `TaskRepository.create()` (status=QUEUED)
-4. `TaskService._attempt_auto_assignment()` calls `CapabilityMatcher.find_best_agent()`
-5. `CapabilityMatcher` queries `AgentRepository` for online/idle agents, scores by capability overlap
-6. If match found, `TaskService` updates task to CLAIMED and sets `owner_agent_id`
-7. If agent is WebSocket-connected, `routes_websocket.push_event()` fires `task_assigned` event
-8. Agent polls `GET /v1/tasks/my-tasks` or receives via WebSocket, then POSTs `PATCH /v1/tasks/{id}/start`
-9. Agent completes with `POST /v1/tasks/{id}/complete`
+### ACN Invite / Remote Agent Flow
+1. Admin creates invites through `/v1/acn/admin/invite` or dashboard wrapper `/v1/acn/dashboard/invite` in `app/api/routes_acn.py`.
+2. Remote agent joins through `/v1/acn/join` and receives/uses a per-agent key.
+3. Node/agent heartbeat and mapping are stored through ACN repositories in `app/database/repositories/`.
+4. Dashboard agent state should use ACN status/health endpoints rather than legacy local-agent-only counts.
 
-**ACN Remote Agent Onboarding Flow:**
+### Dashboard Login Flow
+1. `web/src/components/forms/LoginForm.tsx` posts admin credentials through `web/src/lib/api-client.ts`.
+2. `/v1/auth/admin/login` in `app/api/routes_auth.py` returns JWTs.
+3. `web/src/stores/auth-store.ts` stores tokens; `api()` attaches `Authorization: Bearer ...` to subsequent requests.
+4. Synthetic admin JWT subjects are accepted by backend auth dependencies, covered by `tests/unit/test_admin_dashboard_auth.py`.
 
-1. Admin calls `POST /v1/acn/admin/invite` with `X-Admin-Key` header - gets a single-use invite code
-2. Remote agent calls `POST /v1/acn/join` with invite code and registration payload
-3. `routes_acn.py` calls `RemoteAgentService.register_node()` and then creates an API key via `APIKeyManager`
-4. Agent receives permanent `oh_...` API key in response
-5. All subsequent calls use `X-API-Key: oh_...` header
-
-**Workflow Engine Flow (DAG):**
-
-1. Client POSTs `POST /v1/workflows/create` with ordered steps array
-2. `routes_workflow.py` persists workflow record in `workflows` table (status=created)
-3. First step is immediately created as a Task via `TaskService.create_task()`
-4. When step N task completes (`POST /v1/tasks/{id}/complete`), workflow engine checks current step
-5. If more steps remain, creates step N+1 task using previous step's output as input payload
-6. Workflow reaches `completed` when last step task completes
+### Vector Search Flow
+1. Write paths schedule embeddings through `app/services/embedding_hooks.py` where implemented.
+2. `app/services/embedding_retry_worker.py` processes pending rows when vector/Turso is enabled.
+3. `POST /v1/search` in `app/api/routes_search.py` embeds the query, fans out over entity types, merges hits, and returns `SearchResponse`.
+4. Local SQLite or missing embedding configuration returns graceful 503 through `require_vector` and embedding availability checks.
 
 **State Management:**
-- All state is persisted to SQLite/Turso - no in-memory state stores for core entities
-- WebSocket connections held in-memory dict `_connections: Dict[str, WebSocket]` in `routes_websocket.py` (process-local)
-- Rate limit sliding windows held in-memory `_rate_limits: Dict[str, List[float]]` in `routes_p2.py` (process-local)
-- ACN invite codes held in-memory `_invite_store: Dict` in `routes_acn.py` (process-local, single-use by design)
-- Redis used optionally for JWT token blacklisting; system degrades gracefully without it
+- Backend persistent state is SQLite/Turso, with optional Redis token cache.
+- Dashboard state is TanStack Query cache + Zustand auth/UI stores.
+- WebSocket events update or invalidate TanStack Query keys in `web/src/hooks/useWebSocketSync.ts`.
 
 ## Key Abstractions
 
-**BaseRepository (`app/database/repositories/base.py`):**
-- Purpose: Generic typed CRUD base for all database entities
-- Pattern: Abstract class `BaseRepository[T]` with `_row_to_model()` and `_model_to_dict()` as abstract methods; concrete classes implement these converters
-- Methods provided: `create`, `get_by_id`, `update`, `delete`, `list_all`, `find_by`, `find_one_by`, `count`, `exists`, `bulk_create`, `bulk_update`, `execute_custom_query`
+**Task:**
+- Purpose: Unit of agent work with status, lease, owner, progress, retry/error data, and trace/evidence fields.
+- Examples: `app/models/tasks.py`, `app/services/task_service.py`, `app/api/routes_tasks.py`.
+- Pattern: service-mediated state machine; avoid direct row mutation outside TaskService/repository routes.
 
-**Database (`app/database/connection.py`):**
-- Purpose: Unified SQL interface that works with both local SQLite and Turso (libsql cloud)
-- Pattern: Thread-local connections via `threading.local()`; named param syntax (`:param`) auto-converted to positional `?` for Turso compatibility
-- Key methods: `execute`, `fetch_one`, `fetch_all`, `transaction()` (context manager), `execute_many`
+**Agent / ACN Node:**
+- Purpose: Local or remote worker identity with capabilities, heartbeat, node mapping, and API-key metadata.
+- Examples: `app/models/agents.py`, `app/models/acn.py`, `app/api/routes_agents.py`, `app/api/routes_acn.py`.
+- Pattern: distinguish node liveness from per-agent liveness; do not let node heartbeat falsely mark every mapped agent online.
 
-**Pydantic Model Mixins (`app/models/base.py`):**
-- Purpose: Composable model pieces - `IDMixin` (UUID id), `TimestampMixin` (created_at, updated_at), `MetadataMixin` (labels, metadata)
-- Pattern: Multiple inheritance - e.g., `Agent(IDMixin, TimestampMixin, MetadataMixin)`
-- Config: `extra='forbid'`, `use_enum_values=True`, `validate_assignment=True`
+**ConnectionManager:**
+- Purpose: Manage UI WebSocket clients and broadcast task/agent/workflow events.
+- Examples: `app/services/connection_manager.py`, `app/api/routes_ws_ui.py`, `web/src/hooks/useWebSocketSync.ts`.
+- Pattern: reuse existing `/v1/ws/ui` path; do not create parallel dashboard sockets.
 
-**CapabilityMatcher (`app/services/capability_matcher.py`):**
-- Purpose: Scores available agents against task capability requirements
-- Pattern: Returns `CapabilityMatch` dataclass with `match_score`, `matched_capabilities`, `missing_capabilities`, `confidence_score`
-- Used by: `TaskService` during auto-assignment at task creation time
-
-**AgentBridge (`app/bridge/agent_bridge.py`):**
-- Purpose: Client-side bridge that connects a remote agent process to the hub via HTTP
-- Pattern: Async loop with configurable `heartbeat_interval` and `task_poll_interval`; registers handler via `set_task_handler(fn)` callback
+**Database:**
+- Purpose: Hide SQLite vs Turso details behind one synchronous wrapper.
+- Examples: `app/database/connection.py`, repositories under `app/database/repositories/`.
+- Pattern: use named SQL parameters in app code; `Database._adapt_params()` handles libSQL positional conversion.
 
 ## Entry Points
 
-**ASGI Application:**
-- Location: `app/main.py` - `app` variable (FastAPI instance)
-- Triggers: `uvicorn app.main:app --host 0.0.0.0 --port 7788`
-- Responsibilities: Router assembly, CORS setup, error handler setup, database table bootstrap in `lifespan()` context manager
+**API server:**
+- Location: `app/main.py`.
+- Triggers: `openhub`, `python -m uvicorn app.main:app`, Docker CMD.
+- Responsibilities: lifespan startup/shutdown, router registration, dashboard mount, root endpoint.
 
-**Development Server:**
-- Location: `app/main.py` - `run_server()` function
-- Triggers: `python -m app.main` or `uvicorn app.main:app --reload`
+**Dashboard SPA:**
+- Location: `web/src/main.tsx`, `web/src/routes/`.
+- Triggers: Vite dev server, static assets under `web/dist` mounted at `/dashboard`.
+- Responsibilities: authenticated UI for tasks, agents, workflows, health, locks, traces, DLQ, memory, settings.
 
-**Bridge Runner:**
-- Location: `scripts/run_bridge.py`
-- Triggers: Direct script execution by remote agent process
+**Agent bridge:**
+- Location: `app/bridge/agent_bridge.py`, `scripts/run_bridge.py`.
+- Triggers: CLI/supervisor process with hub URL and per-agent API key.
+- Responsibilities: heartbeat, polling, task claim/start/complete/fail, result submission.
 
-**Docker:**
-- Location: `Dockerfile`, `docker-compose.yml` at project root
+## Architectural Constraints
+
+- **Threading:** `Database` uses thread-local connections in `app/database/connection.py`; asynchronous routes call synchronous DB methods, so avoid long blocking loops inside request handlers.
+- **Global state:** `settings` in `app/config.py` and `_database` in `app/database/connection.py` are module-level singletons; tests set env before importing `app.main`.
+- **Dashboard mount:** `/dashboard` only exists when `web/dist/index.html` exists; API image checks alone do not prove dashboard packaging.
+- **Vector feature gate:** `/v1/search` is beta/opt-in and requires Turso/vector availability; local SQLite should fail gracefully with 503.
+- **Auth split:** admin JWTs, agent JWTs, and API keys have separate dependency paths; do not leak `AGENTHUB_ACN_ADMIN_KEY` to browser clients.
+
+## Anti-Patterns
+
+### Using `/v1/health` as dashboard truth
+**What happens:** Health route still exposes some legacy placeholder counts.
+**Why it's wrong:** It can report service health while ACN/task truth lives in separate endpoints.
+**Do this instead:** Use `/v1/acn/status`, `/v1/acn/health`, `/v1/tasks/search`, and targeted dashboard hooks in `web/src/hooks/queries/`.
+
+### Duplicating WebSocket stacks
+**What happens:** New dashboard features add their own socket path.
+**Why it's wrong:** It bypasses `ConnectionManager` and existing reconnection/cache invalidation logic.
+**Do this instead:** Broadcast through `app.state.connection_manager.broadcast_to_ui` and consume in `web/src/hooks/useWebSocketSync.ts`.
+
+### Reading secrets for docs or diagnostics
+**What happens:** `.env` or key files get read while mapping/debugging.
+**Why it's wrong:** Codebase maps are committed and would leak credentials.
+**Do this instead:** Read `.env.example` for variable names only; never read real `.env` contents.
 
 ## Error Handling
 
-**Strategy:** HTTP exceptions at the route layer; exceptions propagate from services and are caught in routes or middleware
+**Strategy:** RFC 7807 problem responses for API errors, with structured logging and request IDs.
 
 **Patterns:**
-- Routes raise `HTTPException` with appropriate status codes directly
-- Services raise `ValueError` for business rule violations (e.g., duplicate names)
-- `app/middleware.py` contains `RequestTimingMiddleware` (logs every request/response) and global exception handlers set via `setup_error_handlers(app)`
-- Database errors propagate up from repositories with structured log entries before re-raising
-- Auth failures raise `HTTPException(401)` from dependency functions; these short-circuit before routes execute
+- Rate limit errors are converted to problem details by `rfc7807_rate_limit_handler()` in `app/main.py`.
+- API client wraps failed responses in `ApiError` from `web/src/lib/api-client.ts`.
+- Services log failures with context and either raise or return state-machine booleans, e.g. `TaskService.claim_task()` in `app/services/task_service.py`.
 
 ## Cross-Cutting Concerns
 
-**Logging:** `structlog` via `app/logging.py` - `get_logger(__name__)` returns a bound logger. Log calls use keyword-style structured fields: `logger.info("event_name", key=value)`. JSON output in production, colored console in debug mode.
-
-**Validation:** Pydantic v2 at the route layer (request bodies) and model layer. Field validators on `AgentCreate` enforce capability name charset and agent name format.
-
-**Authentication:** Two paths - (1) JWT Bearer tokens for interactive/admin sessions via `app/auth/dependencies.py` `CurrentAgent`/`CurrentAdmin` typed dependencies; (2) `X-API-Key` header validated inline in most route modules via `APIKeyManager.validate_api_key()`. ACN admin endpoints use a separate `X-Admin-Key` header.
-
-**Settings:** `pydantic_settings.BaseSettings` subclass in `app/config.py` with `AGENTHUB_` prefix. Single global instance returned by `get_settings()`.
+**Logging:** `structlog` configured by `app/logging.py`; use structured event names and fields.
+**Validation:** Pydantic models in `app/models/` and request models local to route files.
+**Authentication:** JWT/API-key dependencies in `app/auth/`; RBAC policy files in `app/auth/rbac/policies/`.
+**Real-time sync:** `ConnectionManager` + `/v1/ws/ui` + `useWebSocketSync()`.
+**Persistence:** raw SQL repositories over `Database`, SQLite default, Turso optional.
 
 ---
 
-*Architecture analysis: 2026-04-07*
+*Architecture analysis: 2026-05-25*

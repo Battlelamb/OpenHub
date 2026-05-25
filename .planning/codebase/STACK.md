@@ -1,124 +1,105 @@
+---
+last_mapped_commit: 13fcce7400bd66c4e9b5412c9ed677cd215f019a
+---
 # Technology Stack
 
-**Analysis Date:** 2026-04-07
+**Analysis Date:** 2026-05-25
 
 ## Languages
 
 **Primary:**
-- Python 3.11+ - All application code (runtime is 3.12.3 in local WSL env)
+- Python 3.11+ - backend API, services, models, database, bridge, scripts; package metadata in `pyproject.toml` requires `>=3.11`.
+- TypeScript 5.7+ - dashboard application under `web/src/`, configured by `web/tsconfig.json`, `web/tsconfig.app.json`, and `web/tsconfig.node.json`.
+
+**Secondary:**
+- SQL / SQLite DDL - persistence schema and migrations under `app/database/migrations.py`, `alembic/`, and raw SQL repositories under `app/database/repositories/`.
+- Bash - developer smoke and startup scripts such as `scripts/dev_start.sh`.
+- CSS - dashboard styling via Tailwind CSS v4 and custom global CSS in `web/src/index.css`.
 
 ## Runtime
 
 **Environment:**
-- CPython 3.12.3 (local WSL2), pinned to ^3.11 in `pyproject.toml`
+- Backend: ASGI application served by Uvicorn from `app/main.py`.
+- Local runtime observed during mapping: `python3 --version` reports Python 3.13.5; repository supports Python 3.11+ via `pyproject.toml`.
+- Frontend: Vite dev/build runtime on Node.js; local mapping host reports Node v22.22.0 and npm 10.9.4.
 
 **Package Manager:**
-- pip via `requirements.txt` (production installs)
-- Poetry via `pyproject.toml` (dev tooling and dependency declarations)
-- Lockfile: Not detected (no `poetry.lock` or `requirements.lock` committed)
+- Python: pip / PEP 621 metadata via `pyproject.toml`; pinned production dependency set in `requirements.txt`.
+- Frontend: npm with `web/package-lock.json` committed.
+- Lockfile: frontend lockfile present; no Python lockfile detected.
 
 ## Frameworks
 
 **Core:**
-- FastAPI 0.104.1 - Web framework, all REST and WebSocket endpoints
-- Uvicorn 0.24.0 (with `[standard]` extras) - ASGI server, hot reload in dev
-- Starlette - Underlying ASGI toolkit (bundled with FastAPI), used directly for `BaseHTTPMiddleware`
-
-**Data Validation:**
-- Pydantic v2 2.4.2 - All request/response models in `app/models/`
-- pydantic-settings 2.0.3 - `app/config.py` `Settings` class with `AGENTHUB_` env prefix
-
-**Database ORM:**
-- SQLAlchemy 2.0.23 - Declared as dependency; actual DB operations use raw SQL via custom `Database` class in `app/database/connection.py`
-- Alembic 1.12.1 - Migration framework declared; runtime DDL is executed inline in `app/main.py` lifespan
-
-**Authentication:**
-- PyJWT 2.8.0 (with `[crypto]`) - JWT access and refresh token creation/verification (`app/auth/jwt_auth.py`)
-- passlib 1.7.4 (with `[bcrypt]`) - Password hashing for admin users (`bcrypt` scheme)
-- Casbin 1.25.0 - RBAC policy enforcement via file-based `rbac_model.conf` + `rbac_policy.csv` (`app/auth/rbac/enforcer.py`)
-- slowapi 0.1.9 - Rate limiting (declared in `requirements.txt`; not yet wired into middleware)
-
-**HTTP Client:**
-- httpx 0.25.2 (async) - Outgoing HTTP: webhook delivery (`app/services/event_delivery_service.py`), agent bridge polling (`app/bridge/agent_bridge.py`)
-
-**WebSocket:**
-- websockets 12.0 - WebSocket support; endpoint at `GET /v1/ws` (`app/api/routes_websocket.py`)
-
-**Structured Logging:**
-- structlog 23.2.0 - JSON logging in production, console renderer in debug; configured in `app/logging.py`
-
-**Monitoring:**
-- prometheus-client 0.19.0 - Declared dependency; not yet actively instrumented in route handlers
-
-**Vector Database:**
-- zvec 0.1.0 - Local vector storage at `./data/zvec` path; configured via `Settings.zvec_path` and `Settings.embedding_model`
-
-**Caching:**
-- redis 5.0.1 - Async Redis client (`redis.asyncio`) for token caching and blacklisting (`app/auth/redis_cache.py`)
+- FastAPI 0.104.1 - primary REST and WebSocket API in `app/main.py` and `app/api/routes_*.py`.
+- Uvicorn 0.24.0 - ASGI server, Docker command, and `openhub = app.main:run_server` console entry point.
+- React 19 - dashboard UI under `web/src/`.
+- Vite 6 - dashboard build/dev server configured by `web/vite.config.ts`.
+- TanStack Router 1.87 - route tree generated in `web/src/routeTree.gen.ts`; route modules live in `web/src/routes/`.
+- TanStack Query 5.59 - dashboard server-state cache, query keys in `web/src/lib/query-keys.ts`, query hooks in `web/src/hooks/queries/`.
 
 **Testing:**
-- pytest 7.4.3
-- pytest-asyncio 0.21.1
-- pytest-cov 4.1.0
+- pytest 7.4.3, pytest-asyncio 0.21.1, pytest-cov 4.1.0 - backend tests configured in `pyproject.toml` and `tests/conftest.py`.
+- Vitest 4.1.7 + jsdom - frontend unit/component tests configured by `web/vitest.config.ts` and `web/src/test/setup.ts`.
+- Playwright 1.60 - dashboard E2E under `web/e2e/dashboard.spec.ts`, configured by `web/playwright.config.ts`.
 
 **Build/Dev:**
-- black 23.11.0 - Code formatting, line length 88, target Python 3.11
-- isort 5.12.0 - Import sorting (`profile = "black"`)
-- flake8 6.1.0 - Linting
-- mypy 1.7.1 - Static type checking (`disallow_untyped_defs = true`)
+- hatchling - Python build backend in `pyproject.toml`.
+- Alembic 1.12.1 - migrations run during application lifespan from `app/main.py` using `alembic.ini`.
+- Tailwind CSS v4 via `@tailwindcss/vite` - dashboard styling through `web/vite.config.ts`.
+- ESLint 10 + typescript-eslint 8.59 - frontend lint command in `web/package.json` and config in `web/eslint.config.js`.
 
 ## Key Dependencies
 
 **Critical:**
-- `fastapi==0.104.1` - Entire API surface lives here; version pinned hard
-- `pydantic==2.4.2` - v2 API (not v1 compatible); all models use v2 patterns
-- `pyjwt[crypto]==2.8.0` - Auth token signing; `jwt_secret_key` must be set in production
-- `casbin==1.25.0` - RBAC policies live in `app/auth/rbac/policies/` as `.conf`/`.csv` files
+- `fastapi` - all API routers; adding endpoints should follow existing route modules in `app/api/`.
+- `pydantic` / `pydantic-settings` - request/response models and settings class in `app/config.py`.
+- `pyjwt[crypto]` + `bcrypt` - JWT sessions and password hashing in `app/auth/jwt_auth.py` and `app/api/routes_auth.py`.
+- `casbin` - RBAC model/policies in `app/auth/rbac/policies/`.
+- `redis` - optional token/cache backend in `app/auth/redis_cache.py`; system degrades without Redis.
+- `sqlalchemy-libsql` and libSQL support - Turso remote mode for vector/search runtime in `app/database/connection.py`.
 
 **Infrastructure:**
-- `sqlalchemy==2.0.23` - Declared but DB layer uses a custom raw-SQL `Database` wrapper, not SQLAlchemy ORM sessions
-- `alembic==1.12.1` - Declared; migrations not actively used - tables created via DDL in `app/main.py` lifespan startup
-- `redis==5.0.1` - Optional: Redis is gracefully degraded if unavailable
-- `zvec==0.1.0` - Local vector store; path created at startup (`./data/zvec`)
-- `python-multipart==0.0.6` - Required for FastAPI file upload support (`routes_artifacts.py`)
-- `python-dotenv==1.0.0` - `.env` file loading for local dev
-- `click==8.1.7` - CLI entrypoints in `scripts/`
-- `httpx==0.25.2` - Used in `AgentBridge` client and webhook delivery
+- SQLite / Turso - local default DB path is `./data/state/agenthub.db`; Turso enabled by `AGENTHUB_TURSO_DATABASE_URL` and `AGENTHUB_TURSO_AUTH_TOKEN`.
+- Redis - optional cache URL configured by `AGENTHUB_REDIS_URL`.
+- Docker Compose - `docker-compose.yml` builds `agenthub` and provides a Redis service.
+- Cloud/public serving is outside repository code; the app itself exposes `/dashboard` only when `web/dist/index.html` exists beside the backend.
+
+**Dashboard UI:**
+- `@hello-pangea/dnd` - Kanban drag/drop in `web/src/components/kanban/KanbanBoard.tsx`.
+- `@xyflow/react` - Workflow Canvas in `web/src/components/canvas/WorkflowCanvas.tsx`.
+- Radix UI primitives - dialog/select/tooltip/form building blocks in `web/src/components/ui/`.
+- Zustand - auth/UI stores in `web/src/stores/auth-store.ts` and `web/src/stores/ui-store.ts`.
+- MSW - frontend test request mocking in `web/src/mocks/server.ts` and `web/src/mocks/handlers.ts`.
 
 ## Configuration
 
 **Environment:**
-- All config in `app/config.py` via `pydantic-settings` `Settings` class
-- Environment variable prefix: `AGENTHUB_`
-- Key variables required for production:
-  - `AGENTHUB_SECRET_KEY` - General secret key
-  - `AGENTHUB_JWT_SECRET_KEY` - JWT signing secret
-  - `AGENTHUB_DB_PATH` - SQLite file path (default: `./data/state/agenthub.db`)
-  - `AGENTHUB_REDIS_URL` - Redis connection string (default: `redis://localhost:6379`)
-  - `AGENTHUB_ACN_ADMIN_KEY` - Admin key for ACN invite management
-  - `AGENTHUB_TURSO_DATABASE_URL` + `AGENTHUB_TURSO_AUTH_TOKEN` - Turso cloud DB (optional)
-  - `AGENTHUB_HATCHET_API_KEY` + `AGENTHUB_HATCHET_SERVER_URL` - Hatchet workflow (optional)
+- Configuration uses Pydantic Settings with `AGENTHUB_` prefix in `app/config.py`.
+- Required production/admin settings: `AGENTHUB_ADMIN_USER`, `AGENTHUB_ADMIN_PASSWORD`, `AGENTHUB_SECRET_KEY`, `AGENTHUB_JWT_SECRET_KEY`.
+- Runtime paths: `AGENTHUB_DB_PATH`, `AGENTHUB_ARTIFACT_DIR`.
+- Optional integrations: `AGENTHUB_REDIS_URL`, `AGENTHUB_TURSO_DATABASE_URL`, `AGENTHUB_TURSO_AUTH_TOKEN`, `AGENTHUB_OPENAI_API_KEY`, `AGENTHUB_HATCHET_SERVER_URL`, `AGENTHUB_HATCHET_API_KEY`.
+- `.env.example` documents variables; `.env` must not be read or committed.
 
 **Build:**
-- `pyproject.toml` - Poetry build config, black/isort/mypy/pytest settings
-- `Dockerfile` - `python:3.11-slim` base, installs `requirements.txt`, exposes 7788
-- `docker-compose.yml` - Two services: `agenthub` (port 7788) + `redis:7-alpine` (port 6379)
+- Backend package/build: `pyproject.toml`, `requirements.txt`, `hatchling`, `openhub = app.main:run_server`.
+- API container: `Dockerfile`, `docker-compose.yml`.
+- Dashboard: `web/package.json`, `web/vite.config.ts`, `web/tsconfig*.json`, `web/eslint.config.js`, `web/vitest.config.ts`, `web/playwright.config.ts`.
 
 ## Platform Requirements
 
 **Development:**
-- Python 3.11+
-- Redis (optional, graceful degradation)
-- Docker + Docker Compose (for containerized dev)
-- Run command: `uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload`
+- Python 3.11+ with pip; a virtualenv is normally used under `.venv/`.
+- Node.js 22+ and npm 10+ for dashboard build/test in `web/`.
+- Optional Redis for production-like auth cache; tests can run without Redis.
+- Turso credentials only for vector-search live tests marked `turso`.
 
 **Production:**
-- Deployed as systemd service on VPS at `hub.brunhilde.cloud`
-- Docker image via `docker-compose.yml`
-- Health check endpoint: `GET /v1/health`
-- Optional cloud DB via Turso (libSQL) - falls back to local SQLite if not configured
-- Port: 7788
+- API listens on port 7788 by default.
+- Docker image is Python 3.11 slim, non-root `openhub` user, and no reload flag.
+- `web/dist` must be built and present for `/dashboard` static SPA serving.
+- Persistent volumes should preserve `data/state` and `data/artifacts`.
 
 ---
 
-*Stack analysis: 2026-04-07*
+*Stack analysis: 2026-05-25*
