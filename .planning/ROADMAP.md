@@ -136,7 +136,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 
 - [x] **07-01 — Dashboard truth audit**: compare live dashboard/API data paths against ACN, tasks, workflows, and seed-data behavior.
 - [x] **07-02 — Dashboard truth fixes**: health dashboard now separates service health, ACN registry truth, and task search truth, with Vitest coverage.
-- [ ] **07-03 — Deployment packaging smoke**: verify README quickstart, pip command, Docker Compose, and live Cloudflare assumptions.
+- [x] **07-03 — Deployment packaging smoke**: verified README quickstart, pip package build/entrypoint, Docker Compose config, and bounded dashboard/Docker caveats.
 - [x] **07-04 — Test/CI command alignment**: installed dashboard ESLint tooling, added flat config, upgraded Vitest to clear audit, and aligned GSD verify commands.
 - [ ] **07-05 — Runtime ops cleanup docs**: document active services, disabled legacy bridge, recovery checks, and secret-safe diagnostics.
 - [ ] **07-06 — Full verification + tag decision**: backend tests, frontend tests, build, E2E, live smoke, changelog/tag decision.
@@ -155,6 +155,6 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 6 / 7
-- **Completed plans:** 48 / 51
+- **Completed plans:** 49 / 51
 - **Current phase:** 07 Product Polish + Deployment Packaging
-- **Next slice:** 07-03 Deployment packaging smoke (07-04 completed early)
+- **Next slice:** 07-05 Runtime ops cleanup docs (07-04 completed early)

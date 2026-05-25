@@ -41,7 +41,7 @@ cd OpenHub
 cp .env.example .env
 # Edit .env with your credentials
 
-docker-compose up --build
+docker compose up --build
 
 # Verify
 curl http://localhost:7788/v1/health
@@ -65,7 +65,7 @@ openhub  # or: uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
 **Endpoints:**
 - Health: `http://localhost:7788/v1/health`
 - Swagger UI: `http://localhost:7788/docs`
-- Dashboard: `http://localhost:7788/dashboard`
+- Dashboard: `http://localhost:7788/dashboard` when built web assets exist at `web/dist`
 
 ## Key Features
 

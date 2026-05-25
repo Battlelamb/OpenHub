@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging — Codex added as local GSD runtime; next executable slice remains 07-03 deployment packaging smoke
-stopped_at: "07-GSD-CODEX-INTEGRATION"
-last_updated: "2026-05-25T07:00:37Z"
+status: Phase 07 Product Polish + Deployment Packaging — 07-03 deployment packaging smoke complete; next executable slice is 07-05 runtime ops cleanup docs
+stopped_at: "07-03-DEPLOYMENT-SMOKE"
+last_updated: "2026-05-25T07:15:39Z"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 51
-  completed_plans: 48
+  completed_plans: 49
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 - **Current phase:** 07 — Product Polish + Deployment Packaging
 - **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
-- **Next slice:** 07-03 — Deployment packaging smoke (07-04 was completed early for lint/GSD tooling)
+- **Next slice:** 07-05 — Runtime ops cleanup docs (07-04 was completed early for lint/GSD tooling)
 - **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN reports 1 node / 1 agent online
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 4 nodes / 4 agents
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -68,9 +68,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 |-------|-------------|--------|
 | 07-01 | Dashboard truth audit | ✅ |
 | 07-02 | Dashboard truth fixes | ✅ |
-| 07-03 | Deployment packaging smoke | ⏳ Next |
+| 07-03 | Deployment packaging smoke | ✅ |
 | 07-04 | Test/CI command alignment | ✅ Done early |
-| 07-05 | Runtime ops cleanup docs | ⏳ Planned |
+| 07-05 | Runtime ops cleanup docs | ⏳ Next |
 | 07-06 | Full verification + tag decision | ⏳ Planned |
 
 ## Verification Status
@@ -86,16 +86,18 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
 - **GSD Redux next integration (2026-05-25):** local Claude Code + Hermes Agent surfaces refreshed from `open-gsd/get-shit-done-redux` `next` commit `dc4b90a`; full profile installed with 67 commands/skills and 33 agents per runtime; `validate health` healthy; `validate consistency` passed; changed-file secret scan clean
 - **Codex GSD runtime integration (2026-05-25):** local Codex surface added from the same `next` commit; full profile installed with 67 skills, 33 agent markdown files, and 33 agent TOML configs; Codex CLI `0.132.0`; Codex-surface `validate health` healthy; `validate consistency` passed
-- **Live smoke (2026-05-24):**
+- **Deployment packaging smoke (2026-05-25):** `python -m build` succeeded via `.venv` after installing local build frontend/backend; wheel import and `openhub=app.main:run_server` console script verified; `docker compose --env-file .env.example config` rendered successfully with healthchecks, restart policies, volumes, and `AGENTHUB_REDIS_URL`; README, `.env.example`, and Compose drift patched
+- **Live smoke (2026-05-24; public health refreshed 2026-05-25):**
   - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
-  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; live registry lists `brunhilde`
+  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; status payload reports 4 nodes / 4 agents
   - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents` → 200 OK
   - Authenticated `/dashboard/health` → Service health / ACN registry truth / Task truth cards visible; console issues 0
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-25T07:00:37Z
-- **Stopped at:** Codex added as a repository-local GSD runtime beside Claude Code and Hermes Agent; next executable slice remains 07-03 deployment packaging smoke.
+- **Last state update:** 2026-05-25T07:15:39Z
+- **Stopped at:** 07-03 deployment packaging smoke complete; next executable slice is 07-05 runtime ops cleanup docs.
 - **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
 - **Integration evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-REDUX-NEXT-INTEGRATION.md`
 - **Codex evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-CODEX-INTEGRATION.md`
+- **Deployment smoke evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-03-DEPLOYMENT-SMOKE.md`
