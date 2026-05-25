@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging — 07-04 test/CI command alignment complete early
-stopped_at: "07-04"
-last_updated: "2026-05-25T04:07:56Z"
+status: Phase 07 Product Polish + Deployment Packaging — GSD Redux next integration applied; next executable slice remains 07-03 deployment packaging smoke
+stopped_at: "07-GSD-REDUX-NEXT-INTEGRATION"
+last_updated: "2026-05-25T06:48:49Z"
 progress:
   total_phases: 7
   completed_phases: 6
@@ -84,6 +84,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Backend strict lint baseline:** tools are installed, but `black --check app/` has broad pre-existing formatting drift; kept as `backend_lint_baseline` rather than a required GSD gate
 - **E2E:** 9 passed (Playwright), including Kanban drag-drop API persistence
 - **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
+- **GSD Redux next integration (2026-05-25):** local Claude Code + Hermes Agent surfaces refreshed from `open-gsd/get-shit-done-redux` `next` commit `dc4b90a`; full profile installed with 67 commands/skills and 33 agents per runtime; `validate health` healthy; `validate consistency` passed; changed-file secret scan clean
 - **Live smoke (2026-05-24):**
   - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
   - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; live registry lists `brunhilde`
@@ -92,6 +93,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-25T04:07:56Z
-- **Stopped at:** 07-04 test/CI command alignment complete early; next executable slice remains 07-03 deployment packaging smoke.
+- **Last state update:** 2026-05-25T06:48:49Z
+- **Stopped at:** GSD Redux `next` integration complete for local Claude Code and Hermes Agent surfaces; next executable slice remains 07-03 deployment packaging smoke.
 - **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
+- **Integration evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-REDUX-NEXT-INTEGRATION.md`
