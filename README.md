@@ -67,6 +67,8 @@ openhub  # or: uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
 - Swagger UI: `http://localhost:7788/docs`
 - Dashboard: `http://localhost:7788/dashboard` when built web assets exist at `web/dist`
 
+**Operations:** For production service names, Cloudflare Tunnel routing, bridge checks, and secret-safe recovery commands, see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
 ## Key Features
 
 - **Agent registration** with capability declaration and smart matching

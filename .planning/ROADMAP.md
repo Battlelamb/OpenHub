@@ -14,8 +14,8 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - **Git truth:** use `git status --short --branch` and `git log --oneline -5`; 07-04 command-alignment work follows `af065be`
 - **Latest tag:** `v0.1.0`
 - **Live hub:** `https://hub.brunhilde.cloud`
-- **Runtime status:** healthy; ACN has 1 node / 1 agent online
-- **GSD status:** installed and configured; Opus/max-effort standard preserved
+- **Runtime status:** healthy; ACN status reports 5 agents
+- **GSD status:** installed and configured; hybrid policy uses Claude Opus 4.7 for planning/research and GPT 5.5 via Codex for implementation/execution slices
 
 ## Phase Summary
 
@@ -138,7 +138,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - [x] **07-02 — Dashboard truth fixes**: health dashboard now separates service health, ACN registry truth, and task search truth, with Vitest coverage.
 - [x] **07-03 — Deployment packaging smoke**: verified README quickstart, pip package build/entrypoint, Docker Compose config, and bounded dashboard/Docker caveats.
 - [x] **07-04 — Test/CI command alignment**: installed dashboard ESLint tooling, added flat config, upgraded Vitest to clear audit, and aligned GSD verify commands.
-- [ ] **07-05 — Runtime ops cleanup docs**: document active services, disabled legacy bridge, recovery checks, and secret-safe diagnostics.
+- [x] **07-05 — Runtime ops cleanup docs**: documented active services, disabled legacy bridge, Cloudflare Tunnel route, secret-safe diagnostics, env permissions, recovery checks, and heartbeat timestamp follow-up.
 - [ ] **07-06 — Full verification + tag decision**: backend tests, frontend tests, build, E2E, live smoke, changelog/tag decision.
 
 ## Verification Gates
@@ -155,6 +155,6 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 6 / 7
-- **Completed plans:** 49 / 51
+- **Completed plans:** 50 / 51
 - **Current phase:** 07 Product Polish + Deployment Packaging
-- **Next slice:** 07-05 Runtime ops cleanup docs (07-04 completed early)
+- **Next slice:** 07-06 Full verification + tag decision

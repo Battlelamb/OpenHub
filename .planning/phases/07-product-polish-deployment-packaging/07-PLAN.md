@@ -145,6 +145,8 @@ git commit -m "chore: align verification commands (Phase 07-04)"
 
 ## Task 07-05: Runtime ops cleanup docs
 
+**Status:** ✅ Complete — see `07-05-RUNTIME-OPS.md` and `docs/OPERATIONS.md`.
+
 **Objective:** Document the real runtime service layout and recovery checks without exposing secrets.
 
 **Files:**

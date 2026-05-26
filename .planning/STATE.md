@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging — 07-03 deployment packaging smoke complete; next executable slice is 07-05 runtime ops cleanup docs
-stopped_at: "07-03-DEPLOYMENT-SMOKE"
-last_updated: "2026-05-25T07:15:39Z"
+status: Phase 07 Product Polish + Deployment Packaging — 07-05 runtime ops cleanup docs complete; next executable slice is 07-06 full verification + tag decision
+stopped_at: "07-05-RUNTIME-OPS"
+last_updated: "2026-05-26T06:46:33Z"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 51
-  completed_plans: 49
+  completed_plans: 50
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 - **Current phase:** 07 — Product Polish + Deployment Packaging
 - **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
-- **Next slice:** 07-05 — Runtime ops cleanup docs (07-04 was completed early for lint/GSD tooling)
+- **Next slice:** 07-06 — Full verification + tag decision
 - **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 4 nodes / 4 agents
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 5 agents
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -70,8 +70,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 07-02 | Dashboard truth fixes | ✅ |
 | 07-03 | Deployment packaging smoke | ✅ |
 | 07-04 | Test/CI command alignment | ✅ Done early |
-| 07-05 | Runtime ops cleanup docs | ⏳ Next |
-| 07-06 | Full verification + tag decision | ⏳ Planned |
+| 07-05 | Runtime ops cleanup docs | ✅ |
+| 07-06 | Full verification + tag decision | ⏳ Next |
 
 ## Verification Status
 
@@ -88,17 +88,19 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Codex GSD runtime integration (2026-05-25):** local Codex surface added from the same `next` commit; full profile installed with 67 skills, 33 agent markdown files, and 33 agent TOML configs; Codex CLI `0.132.0`; Codex-surface `validate health` healthy; `validate consistency` passed
 - **GSD model default alignment (2026-05-25):** `.planning/config.json`, `.gsd/provider-config.json`, and `.gsdrc.toml` now default to OpenAI Codex / GPT 5.5 with max effort / xhigh reasoning; Codex + Hermes GSD health/consistency passed; focused backend tests passed; changed-file secret scan clean
 - **Deployment packaging smoke (2026-05-25):** `python -m build` succeeded via `.venv` after installing local build frontend/backend; wheel import and `openhub=app.main:run_server` console script verified; `docker compose --env-file .env.example config` rendered successfully with healthchecks, restart policies, volumes, and `AGENTHUB_REDIS_URL`; README, `.env.example`, and Compose drift patched
-- **Live smoke (2026-05-24; public health refreshed 2026-05-25):**
+- **Live smoke (2026-05-24; public health refreshed 2026-05-26):**
   - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
-  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; status payload reports 4 nodes / 4 agents
-  - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents` → 200 OK
+  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; status payload reports 5 agents
+  - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents`, `/dashboard/health` → 200 OK
   - Authenticated `/dashboard/health` → Service health / ACN registry truth / Task truth cards visible; console issues 0
+- **Runtime ops cleanup docs (2026-05-26):** `docs/OPERATIONS.md` now records active user services, disabled legacy bridge, Cloudflare Tunnel route, secret-safe diagnostics, env permissions, recovery checks, and release-verification follow-up for heartbeat timestamp log noise.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-25T16:22:54Z
-- **Stopped at:** 07-03 deployment packaging smoke complete; next executable slice is 07-05 runtime ops cleanup docs.
+- **Last state update:** 2026-05-26T06:46:33Z
+- **Stopped at:** 07-05 runtime ops cleanup docs complete; next executable slice is 07-06 full verification + tag decision.
 - **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
 - **Integration evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-REDUX-NEXT-INTEGRATION.md`
 - **Codex evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-CODEX-INTEGRATION.md`
 - **Deployment smoke evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-03-DEPLOYMENT-SMOKE.md`
+- **Runtime ops evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-05-RUNTIME-OPS.md`
