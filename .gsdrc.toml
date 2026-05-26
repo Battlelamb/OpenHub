@@ -26,7 +26,8 @@ verify = [
   "cd web && npm run lint -- --max-warnings=0",
   "cd web && npm run typecheck",
   "cd web && npm run test -- --run",
-  "cd web && npm run build"
+  "cd web && npm run build",
+  "docker compose --env-file .env.example config >/tmp/openhub-compose-config.yml"
 ]
 
 # Budget limits (optional)
@@ -34,7 +35,8 @@ verify = [
 # token_ceiling = 1000000
 
 [model]
-# All GSD phases and variations should run on GPT 5.5 via OpenAI Codex unless explicitly overridden by the human operator.
+# Codex execution-surface defaults. Hybrid planning/research is handled through
+# Claude Code user-level auth with Claude Opus 4.7; do not store Claude secrets here.
 default = "gpt-5.5"
 research = "gpt-5.5"
 planning = "gpt-5.5"
