@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging — 07-05 runtime ops cleanup docs complete; next executable slice is 07-06 full verification + tag decision
-stopped_at: "07-05-RUNTIME-OPS"
-last_updated: "2026-05-26T06:46:33Z"
+status: Phase 07 Product Polish + Deployment Packaging complete — 07-06 verification gate passed; tag deferred pending explicit version decision
+stopped_at: "07-06-VERIFICATION"
+last_updated: "2026-05-27T17:10:48Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 51
-  completed_plans: 50
+  completed_plans: 51
 ---
 
 # Project State
@@ -20,15 +20,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 07 — product polish, deployment packaging, release evidence, and dashboard truth alignment.
+**Current focus:** Phase 07 complete; release/version tag remains an explicit follow-up decision after 07-06 evidence.
 
 ## Current Position
 
-- **Current phase:** 07 — Product Polish + Deployment Packaging
+- **Status:** complete
+- **Current phase:** 07 — Product Polish + Deployment Packaging (complete)
 - **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
-- **Next slice:** 07-06 — Full verification + tag decision
+- **Next slice:** explicit release version/tag decision (`v0.1.1` vs `v0.2.0`) if desired
 - **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 5 agents
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online after post-deploy restart smoke
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -71,36 +72,38 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 07-03 | Deployment packaging smoke | ✅ |
 | 07-04 | Test/CI command alignment | ✅ Done early |
 | 07-05 | Runtime ops cleanup docs | ✅ |
-| 07-06 | Full verification + tag decision | ⏳ Next |
+| 07-06 | Full verification + tag decision | ✅ |
 
 ## Verification Status
 
-- **Backend:** full suite passed for 07-04 (`pytest -q --tb=short --disable-warnings`; expected Turso-vector skips)
+- **Backend:** 07-06 full suite passed (`python -m pytest tests/ -x -q --tb=short`) with 249 passed / 9 skipped; added naive/aware heartbeat regression coverage.
 - **Backend focused Phase 06:** 35 passed (`test_admin_transition_status.py`, `test_patch_task_status_endpoint.py`)
 - **Frontend:** 42 passed / 16 files on Vitest `v4.1.7`; 07-02 health truth regression included
-- **Build:** `npm run build` passed for 07-04 dashboard bundle
-- **Lint:** `npm run lint -- --max-warnings=0` now passes with local ESLint flat config
+- **Build:** `npm run build` passed for 07-06 dashboard bundle
+- **Lint:** `npm run lint -- --max-warnings=0` passes with local ESLint flat config
 - **Audit:** `npm audit --audit-level=moderate` reports 0 vulnerabilities
 - **Backend strict lint baseline:** tools are installed, but `black --check app/` has broad pre-existing formatting drift; kept as `backend_lint_baseline` rather than a required GSD gate
-- **E2E:** 9 passed (Playwright), including Kanban drag-drop API persistence
-- **Planning/GSD validation:** `gsd-sdk v1.42.3`; JSON/TOML config parse OK; secret scan clean
+- **E2E:** 10 passed (Playwright), including Kanban drag-drop API persistence via real drag handle/dropzone
+- **Planning/GSD validation:** repo-local `gsd-tools.cjs validate health` healthy; `validate consistency` passed with 5 known non-blocking warnings
 - **GSD Redux next integration (2026-05-25):** local Claude Code + Hermes Agent surfaces refreshed from `open-gsd/get-shit-done-redux` `next` commit `dc4b90a`; full profile installed with 67 commands/skills and 33 agents per runtime; `validate health` healthy; `validate consistency` passed; changed-file secret scan clean
 - **Codex GSD runtime integration (2026-05-25):** local Codex surface added from the same `next` commit; full profile installed with 67 skills, 33 agent markdown files, and 33 agent TOML configs; Codex CLI `0.132.0`; Codex-surface `validate health` healthy; `validate consistency` passed
 - **GSD model default alignment (2026-05-25):** `.planning/config.json`, `.gsd/provider-config.json`, and `.gsdrc.toml` now default to OpenAI Codex / GPT 5.5 with max effort / xhigh reasoning; Codex + Hermes GSD health/consistency passed; focused backend tests passed; changed-file secret scan clean
 - **Deployment packaging smoke (2026-05-25):** `python -m build` succeeded via `.venv` after installing local build frontend/backend; wheel import and `openhub=app.main:run_server` console script verified; `docker compose --env-file .env.example config` rendered successfully with healthchecks, restart policies, volumes, and `AGENTHUB_REDIS_URL`; README, `.env.example`, and Compose drift patched
-- **Live smoke (2026-05-24; public health refreshed 2026-05-26):**
+- **Live smoke (2026-05-27 after API restart):**
   - `https://hub.brunhilde.cloud/v1/health/simple` → 200 OK
-  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; status payload reports 5 agents
+  - `https://hub.brunhilde.cloud/v1/acn/status` → 200 OK; status payload reports 8 agents / 1 online
   - `/dashboard`, `/dashboard/tasks`, `/dashboard/agents`, `/dashboard/health` → 200 OK
-  - Authenticated `/dashboard/health` → Service health / ACN registry truth / Task truth cards visible; console issues 0
+  - API and Brunhilde bridge user services → active; heartbeat log scan since restart found no naive/aware comparison errors
 - **Runtime ops cleanup docs (2026-05-26):** `docs/OPERATIONS.md` now records active user services, disabled legacy bridge, Cloudflare Tunnel route, secret-safe diagnostics, env permissions, recovery checks, and release-verification follow-up for heartbeat timestamp log noise.
+- **07-06 release gate (2026-05-27):** full backend/frontend/E2E/GSD/live verification passed; heartbeat timestamp advisory fixed and deployed via `openhub-api.service` restart; tag creation deferred pending explicit version decision.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-26T06:46:33Z
-- **Stopped at:** 07-05 runtime ops cleanup docs complete; next executable slice is 07-06 full verification + tag decision.
-- **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
+- **Last state update:** 2026-05-27T17:10:48Z
+- **Stopped at:** 07-06 verification gate complete; no release tag created yet.
+- **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`
 - **Integration evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-REDUX-NEXT-INTEGRATION.md`
 - **Codex evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-CODEX-INTEGRATION.md`
 - **Deployment smoke evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-03-DEPLOYMENT-SMOKE.md`
 - **Runtime ops evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-05-RUNTIME-OPS.md`
+- **Verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`

@@ -91,11 +91,22 @@ test.describe('Dashboard navigation', () => {
         response.request().method() === 'PATCH'
     )
     const handle = page.getByTestId(`kanban-drag-handle-${taskId}`)
+    const claimedDropzone = page.getByTestId('kanban-dropzone-claimed')
     await handle.scrollIntoViewIfNeeded()
-    await handle.focus()
-    await page.keyboard.press('Space')
-    await page.keyboard.press('ArrowRight')
-    await page.keyboard.press('Space')
+
+    const handleBox = await handle.boundingBox()
+    const dropzoneBox = await claimedDropzone.boundingBox()
+    expect(handleBox).not.toBeNull()
+    expect(dropzoneBox).not.toBeNull()
+
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(
+      dropzoneBox!.x + dropzoneBox!.width / 2,
+      dropzoneBox!.y + Math.min(80, dropzoneBox!.height / 2),
+      { steps: 30 }
+    )
+    await page.mouse.up()
 
     const transition = await patchResponse
     expect(transition.ok()).toBeTruthy()

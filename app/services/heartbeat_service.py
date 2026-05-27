@@ -2,15 +2,23 @@
 Agent heartbeat and status monitoring service - clean and simple
 """
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Optional
 from asyncio import Task
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional
 
-from ..logging import get_logger
 from ..config import get_settings
 from ..database.connection import Database
 from ..database.repositories.agents import AgentRepository
+from ..logging import get_logger
 from ..models.agents import Agent, AgentStatus
+
+
+def _ensure_utc_aware(value: datetime) -> datetime:
+    """Normalize legacy naive timestamps to UTC-aware datetimes."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -100,7 +108,7 @@ class HeartbeatService:
             expired_agents = []
             
             for agent in agents:
-                if agent.last_heartbeat and agent.last_heartbeat < timeout_threshold:
+                if agent.last_heartbeat and _ensure_utc_aware(agent.last_heartbeat) < timeout_threshold:
                     expired_agents.append(agent)
             
             if expired_agents:

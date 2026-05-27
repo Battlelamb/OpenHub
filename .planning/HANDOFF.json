@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-26T06:52:03.134Z",
+  "timestamp": "2026-05-27T17:10:48Z",
   "context": "phase",
   "phase": "07",
   "phase_name": "Product Polish + Deployment Packaging",
@@ -8,50 +8,21 @@
   "plan": 7,
   "task": 6,
   "total_tasks": 6,
-  "status": "paused",
-  "current_state": "Phase 07 is paused after completing 07-05 Runtime ops cleanup docs. Repository is clean and pushed at c84108819af05462add2bd02bebe5ae6054b858b before creating this handoff. Next executable slice is 07-06 Full verification + tag decision.",
+  "status": "complete",
+  "current_state": "Phase 07 is complete. 07-06 full verification passed; heartbeat timestamp advisory was fixed with regression coverage, OpenHub API was restarted, and live health/ACN/dashboard smoke passed after restart. No release tag was created; tag/version choice is deferred to an explicit follow-up.",
   "completed_tasks": [
-    {
-      "id": "07-01",
-      "name": "Dashboard truth audit",
-      "status": "done"
-    },
-    {
-      "id": "07-02",
-      "name": "Dashboard truth fixes",
-      "status": "done"
-    },
-    {
-      "id": "07-03",
-      "name": "Deployment packaging smoke",
-      "status": "done"
-    },
-    {
-      "id": "07-04",
-      "name": "Test/CI command alignment",
-      "status": "done"
-    },
-    {
-      "id": "07-05",
-      "name": "Runtime ops cleanup docs",
-      "status": "done",
-      "commit": "c841088"
-    }
+    {"id": "07-01", "name": "Dashboard truth audit", "status": "done"},
+    {"id": "07-02", "name": "Dashboard truth fixes", "status": "done"},
+    {"id": "07-03", "name": "Deployment packaging smoke", "status": "done"},
+    {"id": "07-04", "name": "Test/CI command alignment", "status": "done"},
+    {"id": "07-05", "name": "Runtime ops cleanup docs", "status": "done", "commit": "c841088"},
+    {"id": "07-06", "name": "Full verification + tag decision", "status": "done", "evidence": ".planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md"}
   ],
-  "remaining_tasks": [
-    {
-      "id": "07-06",
-      "name": "Full verification + tag decision",
-      "status": "not_started",
-      "required_outputs": [
-        ".planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md",
-        "possible CHANGELOG.md update if tagging",
-        ".planning/STATE.md update"
-      ]
-    }
-  ],
+  "remaining_tasks": [],
   "blockers": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    "If a release tag is desired, choose whether this should be v0.1.1 or v0.2.0 and run an explicit version/tag workflow."
+  ],
   "decisions": [
     {
       "decision": "Treat GSD Redux compatibility validation through repo-local gsd-tools.cjs rather than gsd-sdk validate.",
@@ -59,8 +30,8 @@
       "phase": "07"
     },
     {
-      "decision": "07-05 is docs-only and complete; release/tag decision must wait for 07-06 full verification.",
-      "rationale": "Runtime docs are committed and pushed, but full backend/frontend/E2E verification has not been run for the tag gate in this pause session.",
+      "decision": "Do not create a tag during 07-06 closeout.",
+      "rationale": "07-06 found and fixed a runtime heartbeat timestamp issue and E2E reliability issue. The correct closeout is commit/push/deploy verification first; package/live version remains 0.1.0 until an explicit version/tag choice.",
       "phase": "07"
     }
   ],
@@ -69,35 +40,44 @@
     {
       "name": "openhub-api.service",
       "state": "active",
-      "notes": "Local health returned HTTP 200 during pause-work snapshot."
+      "notes": "Restarted during 07-06 to deploy heartbeat timestamp fix; local and public health returned HTTP 200."
     },
     {
       "name": "openhub-bridge-brunhilde.service",
       "state": "active",
-      "notes": "Bridge service active; ACN status reported 5 agents during pause-work snapshot."
+      "notes": "Bridge service active after API restart; public ACN status returned HTTP 200."
     }
   ],
   "blocking_constraints": [],
   "advisory_constraints": [
     {
-      "name": "Heartbeat timestamp log noise",
-      "severity": "advisory",
-      "description": "API logs showed heartbeat_check_failed with offset-naive/offset-aware datetime comparison during 07-05. Health and ACN endpoints stayed HTTP 200. Verify whether it persists before tagging."
-    },
-    {
       "name": "GSD raw progress artifact drift",
       "severity": "advisory",
-      "description": "Compatibility progress table can undercount super-plan phases without SUMMARY.md files. Use STATE.md and ROADMAP.md curated Phase 07 slice truth, while noting artifact-count telemetry separately."
+      "description": "Compatibility progress table can undercount super-plan phases without SUMMARY.md files. Use STATE.md and ROADMAP.md curated Phase 07 truth."
+    },
+    {
+      "name": "Release tag deferred",
+      "severity": "advisory",
+      "description": "07-06 is release-ready evidence, but no version bump/tag was created. Choose v0.1.1 or v0.2.0 explicitly before tagging."
     }
   ],
   "validation_snapshot": {
-    "git_head_before_handoff": "c84108819af05462add2bd02bebe5ae6054b858b",
+    "evidence_dir": "/tmp/openhub-07-06-20260527T170331Z-gsd-fixes",
+    "backend_pytest": "249 passed / 9 skipped",
+    "frontend_vitest": "42 passed / 16 files",
+    "playwright": "10 passed",
+    "frontend_audit": "0 vulnerabilities",
     "gsd_health": "healthy",
     "gsd_consistency": "passed with 5 non-blocking warnings",
     "local_health_http": 200,
-    "local_acn_http": 200,
-    "acn_agents": 5
+    "public_health_http": 200,
+    "public_acn_http": 200,
+    "acn_nodes": 8,
+    "acn_total_agents": 8,
+    "acn_online_agents": 1,
+    "dashboard_routes_http": 200,
+    "heartbeat_errors_since_restart": 0
   },
-  "next_action": "Start 07-06: run the full verification gate from .planning/phases/07-product-polish-deployment-packaging/07-PLAN.md, record evidence in 07-06-VERIFICATION.md, decide whether CHANGELOG/tag work is justified, then commit/push and verify HEAD/origin/remote equality.",
-  "context_notes": "Pause happened cleanly after completing and pushing 07-05. No user decision is currently blocking. Do not claim release readiness until 07-06 backend, frontend, build, Playwright, live smoke, and tag/changelog decision are recorded."
+  "next_action": "Optionally run an explicit release version/tag workflow after choosing v0.1.1 or v0.2.0.",
+  "context_notes": "The live service was restarted from the repo working tree to pick up the heartbeat timestamp fix during 07-06 closeout; public health/ACN/dashboard smoke passed after restart."
 }

@@ -179,6 +179,8 @@ git commit -m "docs: document runtime operations cleanup (Phase 07-05)"
 
 ## Task 07-06: Full verification and tag decision
 
+**Status:** ✅ Complete — see `07-06-VERIFICATION.md`; release tag deferred pending explicit version choice.
+
 **Objective:** Produce final evidence for whether to tag the next release.
 
 **Files:**
