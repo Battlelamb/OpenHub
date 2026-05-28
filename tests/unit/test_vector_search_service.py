@@ -21,12 +21,7 @@ def test_agent_list_unindexed_uses_registry_metadata_when_description_is_empty()
             agent_name TEXT,
             description TEXT,
             capabilities TEXT,
-            skills TEXT,
-            mcp_servers TEXT,
-            languages TEXT,
-            channels TEXT,
-            model TEXT,
-            platform TEXT,
+            metadata TEXT,
             embedding_status TEXT,
             created_at TEXT,
             updated_at TEXT
@@ -36,21 +31,25 @@ def test_agent_list_unindexed_uses_registry_metadata_when_description_is_empty()
     db.conn.execute(
         """
         INSERT INTO agents (
-            id, agent_name, description, capabilities, skills, mcp_servers,
-            languages, channels, model, platform, embedding_status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            id, agent_name, description, capabilities, metadata, embedding_status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """,
         (
             "agent-1",
             "Sparse Registry Agent",
             "",
             '["rare-capability-vector-smoke"]',
-            '["semantic-routing"]',
-            '["registry-profile"]',
-            '["tr"]',
-            '["telegram"]',
-            "qwen-smoke",
-            "hermes",
+            (
+                '{'
+                '"node_name":"brunhilde-vps",'
+                '"model":"qwen-smoke",'
+                '"platform":"hermes",'
+                '"skills":["semantic-routing"],'
+                '"mcp_servers":["registry-profile"],'
+                '"languages":["tr"],'
+                '"channels":["telegram"]'
+                '}'
+            ),
             None,
         ),
     )
@@ -63,6 +62,7 @@ def test_agent_list_unindexed_uses_registry_metadata_when_description_is_empty()
             "id": "agent-1",
             "content": (
                 "Agent: Sparse Registry Agent\n"
+                "Node: brunhilde-vps\n"
                 "Model: qwen-smoke\n"
                 "Platform: hermes\n"
                 "Capabilities: [\"rare-capability-vector-smoke\"]\n"

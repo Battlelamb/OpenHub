@@ -46,28 +46,41 @@ ENTITY_CONFIG: Dict[str, Tuple[str, str, str]] = {
 
 _ALLOWED_FILTER_KEYS = {"owner_agent_id", "created_after", "created_before"}
 
-_AGENT_TEXT_COLUMNS = [
-    ("Agent", "agent_name"),
-    ("Description", "description"),
-    ("Model", "model"),
-    ("Platform", "platform"),
-    ("Capabilities", "capabilities"),
-    ("Skills", "skills"),
-    ("MCP profiles", "mcp_servers"),
-    ("Languages", "languages"),
-    ("Channels", "channels"),
-]
-
-
 def _agent_registry_text_expr(alias: str = "") -> str:
-    """Build secret-safe SQL text from public agent registry metadata."""
+    """Build secret-safe SQL text from public agent registry metadata.
+
+    Rich ACN fields are stored in the stable ``agents.metadata`` JSON column,
+    not as top-level columns in the production Turso schema. Keep this SQL in
+    sync with ``routes_acn._agent_embedding_text`` so retry/reindex uses the
+    same public, non-secret registry text as the write path.
+    """
     prefix = f"{alias}." if alias else ""
+
+    def raw(column: str) -> str:
+        return f"{prefix}{column}"
+
+    def meta(path: str) -> str:
+        return f"json_extract({prefix}metadata, '$.{path}')"
+
+    fields = [
+        ("Agent", raw("agent_name")),
+        ("Description", raw("description")),
+        ("Node", meta("node_name")),
+        ("Model", meta("model")),
+        ("Platform", meta("platform")),
+        ("Capabilities", raw("capabilities")),
+        ("Skills", meta("skills")),
+        ("MCP profiles", f"COALESCE({meta('mcp_servers')}, {meta('mcp_profiles')})"),
+        ("Languages", meta("languages")),
+        ("Channels", meta("channels")),
+    ]
+
     chunks = []
-    for label, column in _AGENT_TEXT_COLUMNS:
-        col = f"{prefix}{column}"
+    for label, expr in fields:
+        value = f"CAST({expr} AS TEXT)"
         chunks.append(
-            f"CASE WHEN COALESCE({col}, '') != '' "
-            f"THEN '{label}: ' || {col} || char(10) ELSE '' END"
+            f"CASE WHEN COALESCE({value}, '') NOT IN ('', '[]', 'null') "
+            f"THEN '{label}: ' || {value} || char(10) ELSE '' END"
         )
     return f"TRIM({(' || '.join(chunks))}, char(10))"
 
