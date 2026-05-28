@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 07 Product Polish + Deployment Packaging complete — 07-06 verification gate passed; tag deferred pending explicit version decision
-stopped_at: "07-06-VERIFICATION"
-last_updated: "2026-05-27T17:10:48Z"
+status: Phase 08 CI + Release Automation in progress — 08-01 GitHub Actions CI workflow locally verified
+stopped_at: "08-02-CI-RUN-FOLLOWUP"
+last_updated: "2026-05-28T10:19:18Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
-  total_plans: 51
-  completed_plans: 51
+  total_plans: 56
+  completed_plans: 52
 ---
 
 # Project State
@@ -20,16 +20,17 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 07 complete; release/version tag remains an explicit follow-up decision after 07-06 evidence.
+**Current focus:** Phase 08 opened to add CI + release automation; first slice is `.github/workflows/ci.yml`.
 
 ## Current Position
 
-- **Status:** complete
-- **Current phase:** 07 — Product Polish + Deployment Packaging (complete)
-- **Current plan:** `.planning/phases/07-product-polish-deployment-packaging/07-PLAN.md`
-- **Next slice:** explicit release version/tag decision (`v0.1.1` vs `v0.2.0`) if desired
-- **Previous phase:** 06 — Kanban Board + Workflow Canvas complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online after post-deploy restart smoke
+- **Status:** in progress
+- **Current phase:** 08 — CI + Release Automation
+- **Current plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
+- **Current slice:** `08-02 — CI result follow-up` after pushing the workflow
+- **Next slice:** `08-03 — Docker dashboard packaging` after CI-only failures are resolved
+- **Previous phase:** 07 — Product Polish + Deployment Packaging complete
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online from latest smoke
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -63,7 +64,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - `8801fc1` — Task workflow detail context panel
 - `993622b` — Legacy dashboard seed rows tolerated
 
-## Phase 07 Progress (IN PROGRESS)
+## Phase 07 Progress (COMPLETE)
 
 | Slice | Description | Status |
 |-------|-------------|--------|
@@ -73,6 +74,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 07-04 | Test/CI command alignment | ✅ Done early |
 | 07-05 | Runtime ops cleanup docs | ✅ |
 | 07-06 | Full verification + tag decision | ✅ |
+
+## Phase 08 Progress (IN PROGRESS)
+
+| Slice | Description | Status |
+|-------|-------------|--------|
+| 08-01 | GitHub Actions CI workflow | ✅ local verified |
+| 08-02 | CI result follow-up | 🔄 after push |
+| 08-03 | Docker dashboard packaging | ⏳ |
+| 08-04 | Release/tag automation guardrail | ⏳ |
+| 08-05 | Dependency drift guard | ⏳ |
 
 ## Verification Status
 
@@ -99,11 +110,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-27T17:10:48Z
-- **Stopped at:** 07-06 verification gate complete; no release tag created yet.
-- **Resume file:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`
-- **Integration evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-REDUX-NEXT-INTEGRATION.md`
-- **Codex evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-GSD-CODEX-INTEGRATION.md`
-- **Deployment smoke evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-03-DEPLOYMENT-SMOKE.md`
-- **Runtime ops evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-05-RUNTIME-OPS.md`
-- **Verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`
+- **Last state update:** 2026-05-28T10:19:18Z
+- **Stopped at:** Phase 08 opened; 08-01 locally verified; 08-02 CI result follow-up begins after push.
+- **Resume file:** `.planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md`
+- **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
+- **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
+- **Previous verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`

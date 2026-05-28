@@ -1,83 +1,91 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T17:10:48Z",
+  "timestamp": "2026-05-28T10:19:18Z",
   "context": "phase",
-  "phase": "07",
-  "phase_name": "Product Polish + Deployment Packaging",
-  "phase_dir": ".planning/phases/07-product-polish-deployment-packaging",
-  "plan": 7,
-  "task": 6,
-  "total_tasks": 6,
-  "status": "complete",
-  "current_state": "Phase 07 is complete. 07-06 full verification passed; heartbeat timestamp advisory was fixed with regression coverage, OpenHub API was restarted, and live health/ACN/dashboard smoke passed after restart. No release tag was created; tag/version choice is deferred to an explicit follow-up.",
+  "phase": "08",
+  "phase_name": "CI + Release Automation",
+  "phase_dir": ".planning/phases/08-ci-release-automation",
+  "plan": 8,
+  "task": 2,
+  "total_tasks": 5,
+  "status": "in_progress",
+  "current_state": "Phase 08 is open. 08-01 added the first GitHub Actions CI workflow for backend tests, frontend audit/lint/typecheck/tests/build, Compose/package smoke, and Playwright dashboard E2E. Local validation passed. After push, 08-02 should inspect the first GitHub Actions run and fix CI-only failures if any.",
   "completed_tasks": [
-    {"id": "07-01", "name": "Dashboard truth audit", "status": "done"},
-    {"id": "07-02", "name": "Dashboard truth fixes", "status": "done"},
-    {"id": "07-03", "name": "Deployment packaging smoke", "status": "done"},
-    {"id": "07-04", "name": "Test/CI command alignment", "status": "done"},
-    {"id": "07-05", "name": "Runtime ops cleanup docs", "status": "done", "commit": "c841088"},
-    {"id": "07-06", "name": "Full verification + tag decision", "status": "done", "evidence": ".planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md"}
+    {"id": "07-06", "name": "Phase 07 full verification + live smoke", "status": "done", "commit": "c3cddff"},
+    {"id": "08-01", "name": "GitHub Actions CI workflow", "status": "local_verified", "evidence": ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md"}
   ],
-  "remaining_tasks": [],
+  "active_task": {
+    "id": "08-02",
+    "name": "CI result follow-up",
+    "status": "pending_push_or_first_run",
+    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+  },
+  "remaining_tasks": [
+    {"id": "08-02", "name": "CI result follow-up", "status": "pending"},
+    {"id": "08-03", "name": "Docker dashboard packaging", "status": "pending"},
+    {"id": "08-04", "name": "Release/tag automation guardrail", "status": "pending"},
+    {"id": "08-05", "name": "Dependency drift guard", "status": "pending"}
+  ],
   "blockers": [],
-  "human_actions_pending": [
-    "If a release tag is desired, choose whether this should be v0.1.1 or v0.2.0 and run an explicit version/tag workflow."
-  ],
+  "human_actions_pending": [],
   "decisions": [
     {
-      "decision": "Treat GSD Redux compatibility validation through repo-local gsd-tools.cjs rather than gsd-sdk validate.",
-      "rationale": "Current gsd-sdk only accepts run, auto, init, and query; direct validate subcommands return usage errors.",
-      "phase": "07"
+      "decision": "Open Phase 08 rather than tagging immediately.",
+      "rationale": "User asked to keep building OpenHub. Codebase concerns still list CI absence and dashboard packaging verification as critical release gaps.",
+      "phase": "08"
     },
     {
-      "decision": "Do not create a tag during 07-06 closeout.",
-      "rationale": "07-06 found and fixed a runtime heartbeat timestamp issue and E2E reliability issue. The correct closeout is commit/push/deploy verification first; package/live version remains 0.1.0 until an explicit version/tag choice.",
-      "phase": "07"
+      "decision": "CI must use dummy credentials and local temp DB state only.",
+      "rationale": "OpenHub is security-first; no local admin/API/provider secrets belong in repository or CI logs.",
+      "phase": "08"
     }
   ],
-  "uncommitted_files": [],
+  "uncommitted_files": [
+    ".github/workflows/ci.yml",
+    ".planning/HANDOFF.json",
+    ".planning/ROADMAP.md",
+    ".planning/STATE.md",
+    ".planning/phases/08-ci-release-automation/.continue-here.md",
+    ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md",
+    ".planning/phases/08-ci-release-automation/08-PLAN.md"
+  ],
   "background_processes": [
     {
       "name": "openhub-api.service",
       "state": "active",
-      "notes": "Restarted during 07-06 to deploy heartbeat timestamp fix; local and public health returned HTTP 200."
+      "notes": "No restart needed for 08-01 planning/CI workflow changes."
     },
     {
       "name": "openhub-bridge-brunhilde.service",
       "state": "active",
-      "notes": "Bridge service active after API restart; public ACN status returned HTTP 200."
+      "notes": "No restart needed for 08-01 planning/CI workflow changes."
     }
   ],
   "blocking_constraints": [],
   "advisory_constraints": [
     {
-      "name": "GSD raw progress artifact drift",
+      "name": "First CI run not yet observed",
       "severity": "advisory",
-      "description": "Compatibility progress table can undercount super-plan phases without SUMMARY.md files. Use STATE.md and ROADMAP.md curated Phase 07 truth."
+      "description": "08-02 should inspect GitHub Actions after the workflow is pushed and fix any CI-only failures."
     },
     {
-      "name": "Release tag deferred",
+      "name": "Release tag still deferred",
       "severity": "advisory",
-      "description": "07-06 is release-ready evidence, but no version bump/tag was created. Choose v0.1.1 or v0.2.0 explicitly before tagging."
+      "description": "No version bump/tag is part of 08-01. Choose v0.1.1/v0.2.0 or a later version only through an explicit release workflow."
     }
   ],
   "validation_snapshot": {
-    "evidence_dir": "/tmp/openhub-07-06-20260527T170331Z-gsd-fixes",
-    "backend_pytest": "249 passed / 9 skipped",
-    "frontend_vitest": "42 passed / 16 files",
-    "playwright": "10 passed",
-    "frontend_audit": "0 vulnerabilities",
+    "phase08_plan_created": true,
+    "ci_workflow_created": true,
+    "workflow_shape_parse": "passed",
+    "handoff_json_parse": "passed",
     "gsd_health": "healthy",
-    "gsd_consistency": "passed with 5 non-blocking warnings",
-    "local_health_http": 200,
-    "public_health_http": 200,
-    "public_acn_http": 200,
-    "acn_nodes": 8,
-    "acn_total_agents": 8,
-    "acn_online_agents": 1,
-    "dashboard_routes_http": 200,
-    "heartbeat_errors_since_restart": 0
+    "gsd_consistency": "passed with 6 known non-blocking warnings",
+    "changed_file_secret_scan": "none",
+    "focused_backend_smoke": "8 passed",
+    "frontend_typecheck": "passed",
+    "remote_equality_status": "pending"
   },
-  "next_action": "Optionally run an explicit release version/tag workflow after choosing v0.1.1 or v0.2.0.",
-  "context_notes": "The live service was restarted from the repo working tree to pick up the heartbeat timestamp fix during 07-06 closeout; public health/ACN/dashboard smoke passed after restart."
+  "next_action": "Commit/push 08-01, verify HEAD/origin/remote equality, then inspect the first GitHub Actions CI run for 08-02.",
+  "context_notes": "Phase 08 is intentionally infrastructure-first: make local GSD truth repeatable in GitHub before adding more product surface."
 }

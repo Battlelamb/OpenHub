@@ -4,14 +4,14 @@
 
 OpenHub ships as a self-hosted multi-agent coordination platform: FastAPI backend, React/Vite command center, SQLite/Turso persistence, WebSocket-backed live updates, vector search, and GSD-managed delivery.
 
-The original five-phase roadmap is complete. Phase 06 was added after release readiness to make Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass; the remaining release action is an explicit version/tag choice.
+The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass. Phase 08 is now open to add CI + release automation so the verified local gates become repeatable GitHub checks.
 
 ## Current Truth
 
 - **Repo:** `/home/brunhilde/OpenHub`
 - **Remote:** `https://github.com/Battlelamb/OpenHub.git`
 - **Branch:** `master`
-- **Git truth:** use `git status --short --branch` and `git log --oneline -5`; 07-06 verification work follows `08d9d88`
+- **Git truth:** use `git status --short --branch` and `git log --oneline -5`; Phase 08 starts after `c3cddff`
 - **Latest tag:** `v0.1.0`
 - **Live hub:** `https://hub.brunhilde.cloud`
 - **Runtime status:** healthy; ACN status reports 8 agents / 1 online after 07-06 restart smoke
@@ -26,6 +26,7 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - [x] **Phase 5: Release Readiness** — docs, pip install path, Docker hardening, graceful shutdown, Playwright E2E, v0.1.0 release
 - [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
 - [x] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, runtime ops docs, full verification, and tag decision evidence
+- [ ] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -141,6 +142,27 @@ The original five-phase roadmap is complete. Phase 06 was added after release re
 - [x] **07-05 — Runtime ops cleanup docs**: documented active services, disabled legacy bridge, Cloudflare Tunnel route, secret-safe diagnostics, env permissions, recovery checks, and heartbeat timestamp follow-up.
 - [x] **07-06 — Full verification + tag decision**: full backend/frontend/E2E/GSD/live gate passed; heartbeat timestamp advisory fixed and deployed; release tag deferred pending explicit version choice.
 
+## Phase 8: CI + Release Automation — IN PROGRESS
+
+**Goal:** Convert verified local OpenHub gates into repeatable GitHub CI and release guardrails without exposing local credentials.
+
+**Success criteria:**
+
+1. GitHub Actions CI runs backend tests, frontend audit/lint/typecheck/tests/build, Compose/package smoke, and Playwright dashboard E2E.
+2. CI uses dummy credentials and temp SQLite state only.
+3. First CI run is inspected and CI-only failures are fixed with evidence.
+4. Docker dashboard packaging is either proven or its bounded caveat is explicitly tracked.
+5. Release/tag automation remains manual and safe until operator selects a version/publish target.
+6. Dependency drift between `requirements.txt`, `pyproject.toml`, and frontend lockfile is guarded.
+
+**Planned slices:**
+
+- [x] **08-01 — GitHub Actions CI workflow**: added `.github/workflows/ci.yml` with backend, frontend, package/Compose, and Playwright jobs; locally verified before push.
+- [ ] **08-02 — CI result follow-up**: inspect GitHub Actions run and fix CI-only gaps.
+- [ ] **08-03 — Docker dashboard packaging**: prove or harden dashboard-in-image packaging.
+- [ ] **08-04 — Release/tag automation guardrail**: add manual release workflow/docs without auto-publishing secrets.
+- [ ] **08-05 — Dependency drift guard**: detect backend/frontend dependency drift in CI.
+
 ## Verification Gates
 
 Before claiming a future feature or phase complete:
@@ -154,7 +176,8 @@ Before claiming a future feature or phase complete:
 
 ## Progress
 
-- **Completed phases:** 7 / 7
-- **Completed plans:** 51 / 51
-- **Current phase:** Phase 07 complete
-- **Next slice:** explicit release version/tag command if desired (`v0.1.1` vs `v0.2.0`)
+- **Completed phases:** 7 / 8
+- **Completed plans:** 52 / 56
+- **Current phase:** Phase 08 — CI + Release Automation
+- **Current slice:** 08-02 — CI result follow-up after push
+- **Next slice:** 08-03 — Docker dashboard packaging

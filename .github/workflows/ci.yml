@@ -1,0 +1,182 @@
+name: OpenHub CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openhub-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AGENTHUB_ADMIN_USER: ci-admin
+  AGENTHUB_ADMIN_PASSWORD: ci-password-secure
+  AGENTHUB_SECRET_KEY: ci-secret-key-32-chars-minimum
+  AGENTHUB_JWT_SECRET_KEY: ci-jwt-secret-key-32-chars-minimum
+  AGENTHUB_CORS_ORIGINS: '["*"]'
+  AGENTHUB_CORS_METHODS: '["*"]'
+  AGENTHUB_CORS_HEADERS: '["*"]'
+
+jobs:
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+
+      - name: Run backend test suite
+        run: python -m pytest tests/ -q --tb=short --disable-warnings
+
+  frontend-tests:
+    name: Frontend lint, tests, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: Lint frontend
+        run: npm run lint -- --max-warnings=0
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Run frontend tests
+        run: npm run test -- --run
+
+      - name: Build dashboard
+        run: npm run build
+
+  compose-and-package-smoke:
+    name: Compose and package smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Render Docker Compose config
+        run: docker compose --env-file .env.example config >/tmp/openhub-compose-config.yml
+
+      - name: Build Python package and validate metadata
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine hatchling
+          python -m build
+          twine check dist/*
+
+      - name: Verify openhub console script from wheel
+        run: |
+          python -m pip install --target /tmp/openhub-wheel-smoke dist/openhub-*.whl
+          PYTHONPATH=/tmp/openhub-wheel-smoke python - <<'PY'
+          import importlib.metadata as metadata
+
+          scripts = [ep for ep in metadata.distribution('openhub').entry_points if ep.name == 'openhub']
+          assert scripts, 'openhub console script missing'
+          assert scripts[0].value == 'app.main:run_server'
+          print('openhub console script OK')
+          PY
+
+  playwright-e2e:
+    name: Playwright dashboard E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      AGENTHUB_DB_PATH: ${{ runner.temp }}/openhub-e2e.db
+      E2E_ADMIN_USER: ci-admin
+      E2E_ADMIN_PASSWORD: ci-password-secure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+
+      - name: Install frontend dependencies and build dashboard
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Start OpenHub API for E2E
+        run: |
+          mkdir -p data/state data/artifacts
+          python -m uvicorn app.main:app --host 0.0.0.0 --port 7788 > /tmp/openhub-e2e.log 2>&1 &
+          echo $! > /tmp/openhub-e2e.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:7788/v1/health/simple >/tmp/openhub-health.json; then
+              cat /tmp/openhub-health.json
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'OpenHub API did not become ready' >&2
+          cat /tmp/openhub-e2e.log >&2 || true
+          exit 1
+
+      - name: Run Playwright E2E
+        working-directory: web
+        run: npx playwright test --reporter=list
+
+      - name: Show server logs on failure
+        if: failure()
+        run: cat /tmp/openhub-e2e.log || true
