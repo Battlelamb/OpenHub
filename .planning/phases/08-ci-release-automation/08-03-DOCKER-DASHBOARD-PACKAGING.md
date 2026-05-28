@@ -46,4 +46,18 @@ Therefore the container runtime proof is delegated to GitHub Actions, where Dock
 
 ## CI verification
 
-Pending first push of this slice.
+Run `26600306093` on commit `2ca0fb0` passed: https://github.com/Battlelamb/OpenHub/actions/runs/26600306093
+
+- Backend tests — success (`1m35s`)
+- Frontend lint, tests, and build — success (`41s`)
+- Compose and package smoke — success (`2m25s`)
+  - `Render Docker Compose config` — success
+  - `Build Docker image with bundled dashboard` — success
+  - `Smoke Docker dashboard packaging` — success
+  - `Build Python package and validate metadata` — success
+  - `Verify openhub console script from wheel` — success
+- Playwright dashboard E2E — success (`2m36s`)
+
+The Docker dashboard packaging proof is complete: CI built the image, ran the container, verified `/v1/health/simple`, verified `/dashboard`, extracted a bundled `/dashboard/assets/<hash>.js|css` asset from the served HTML, and verified the asset response headers.
+
+Advisory: GitHub Actions still emits non-blocking Node.js 20 action deprecation notices for current `actions/*` versions.

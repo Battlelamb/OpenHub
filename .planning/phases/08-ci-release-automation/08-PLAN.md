@@ -135,6 +135,6 @@ Phase 07 made the local/live system clean and release-ready, but `.planning/code
 - No broad refactor of route modules in this phase.
 - No local secret/env file reads beyond safe env var names.
 
-## Current first task
+## Current next task
 
-Start with **08-01 — GitHub Actions CI workflow**.
+Continue with **08-04 — Release/tag automation guardrail**.

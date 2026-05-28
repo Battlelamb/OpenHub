@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T20:25:44Z",
+  "timestamp": "2026-05-28T20:31:00Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
   "phase_dir": ".planning/phases/08-ci-release-automation",
   "plan": 8,
-  "task": 3,
+  "task": 4,
   "total_tasks": 5,
   "status": "in_progress",
-  "current_state": "08-03 Docker dashboard packaging is implemented locally. Dockerfile builds web/dist in a Node stage and copies it into the runtime image; CI now runs a container smoke for /v1/health/simple, /dashboard, and one hashed /dashboard/assets bundle. Local Docker socket is unavailable, so final runtime proof is pending GitHub Actions after push.",
+  "current_state": "08-03 Docker dashboard packaging is complete. Commit 2ca0fb0 builds web/dist in a Node Docker stage, copies it into the runtime image, and CI run 26600306093 proved the container serves /v1/health/simple, /dashboard, and one bundled /dashboard/assets hash asset. Next slice is 08-04 release/tag automation guardrail.",
   "completed_tasks": [
     {
       "id": "07-06",
@@ -31,20 +31,24 @@
       "ci_run": "26597813831",
       "commit": "27f1703",
       "result": "success"
-    }
-  ],
-  "active_task": {
-    "id": "08-03",
-    "name": "Docker dashboard packaging",
-    "status": "pending_ci_verification",
-    "evidence": ".planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md"
-  },
-  "remaining_tasks": [
+    },
     {
       "id": "08-03",
       "name": "Docker dashboard packaging",
-      "status": "pending_ci_verification"
-    },
+      "status": "done",
+      "evidence": ".planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md",
+      "ci_run": "26600306093",
+      "commit": "2ca0fb0",
+      "result": "success"
+    }
+  ],
+  "active_task": {
+    "id": "08-04",
+    "name": "Release/tag automation guardrail",
+    "status": "pending_start",
+    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+  },
+  "remaining_tasks": [
     {
       "id": "08-04",
       "name": "Release/tag automation guardrail",
@@ -70,23 +74,24 @@
       "phase": "08"
     },
     {
-      "decision": "Docker must bundle dashboard assets rather than relying on checkout-local web/dist.",
-      "rationale": "FastAPI only mounts /dashboard when web/dist/index.html exists beside the app; release packaging must prove the image contains and serves those assets.",
+      "decision": "Docker bundles dashboard assets rather than relying on checkout-local web/dist.",
+      "rationale": "FastAPI only mounts /dashboard when web/dist/index.html exists beside the app; release packaging now proves the image contains and serves those assets.",
       "phase": "08",
       "slice": "08-03"
+    },
+    {
+      "decision": "Release/tag automation stays manual and non-publishing unless explicitly selected.",
+      "rationale": "08-04 must prepare safe guardrails without implicitly creating tags or using PyPI/Docker registry secrets.",
+      "phase": "08",
+      "slice": "08-04"
     }
   ],
   "uncommitted_files": [
-    ".github/workflows/ci.yml",
-    ".gitignore",
-    ".dockerignore",
-    "Dockerfile",
-    "README.md",
-    "docs/OPERATIONS.md",
-    "tests/unit/test_docker_dashboard_packaging.py",
-    ".planning/phases/08-ci-release-automation/08-PLAN.md",
     ".planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md",
+    ".planning/STATE.md",
+    ".planning/ROADMAP.md",
     ".planning/phases/08-ci-release-automation/.continue-here.md",
+    ".planning/phases/08-ci-release-automation/08-PLAN.md",
     ".planning/HANDOFF.json"
   ],
   "background_processes": [
@@ -106,12 +111,12 @@
     {
       "name": "Local Docker socket unavailable",
       "severity": "advisory",
-      "description": "docker info is denied for the current user and sudo requires a password. Runtime container proof is delegated to GitHub Actions."
+      "description": "docker info is denied for the current user and sudo requires a password. Runtime container proof was completed in GitHub Actions instead."
     },
     {
       "name": "Node.js 20 action deprecation advisory",
       "severity": "advisory",
-      "description": "GitHub Actions passed in 08-02, but emitted non-blocking Node.js 20 action deprecation notices for actions/* versions."
+      "description": "GitHub Actions passes, but emits non-blocking Node.js 20 action deprecation notices for actions/* versions."
     },
     {
       "name": "Release tag still deferred",
@@ -123,20 +128,27 @@
     "phase08_plan_created": true,
     "ci_workflow_created": true,
     "github_actions_run_26597813831": "success",
-    "latest_github_actions_run_before_0803": "26598053442 success",
+    "github_actions_run_26598053442": "success",
     "dockerfile_dashboard_build_stage": "added",
     "dockerignore_tracked": true,
-    "ci_docker_dashboard_smoke": "added; pending first GitHub Actions run",
+    "ci_docker_dashboard_smoke": "success in run 26600306093",
     "local_dashboard_build": "passed",
     "docker_dashboard_packaging_tests": "2 passed",
     "static_mount_plus_packaging_tests": "8 passed",
     "workflow_yaml_parse": "passed; 4 jobs",
+    "workflow_bash_n": "passed for 18 run steps",
     "actionlint": "passed",
     "diff_check": "passed",
+    "changed_file_secret_scan": "no hits",
     "gsd_health": "healthy",
     "gsd_consistency": "passed with 6 known non-blocking warnings",
-    "local_docker_runtime_smoke": "skipped: socket permission denied"
+    "local_docker_runtime_smoke": "skipped: socket permission denied",
+    "github_actions_run_26600306093": "success",
+    "compose_package_smoke_ci": "success; 2m25s",
+    "playwright_e2e_ci": "success; 2m36s",
+    "frontend_ci": "success; 41s",
+    "backend_ci": "success; 1m35s"
   },
-  "next_action": "Commit and push 08-03, then watch GitHub Actions until the Docker dashboard container smoke proves /dashboard and bundled assets from the image.",
-  "context_notes": "Phase 08 remains infrastructure-first: make local packaging and verification repeatable in GitHub before adding release/tag or dependency-drift automation."
+  "next_action": "Start 08-04 by choosing a manual release/tag guardrail shape: docs-only checklist, workflow_dispatch dry-run workflow, or both; do not create tags or publish artifacts without explicit operator instruction.",
+  "context_notes": "Phase 08 remains infrastructure-first: local packaging and verification are now repeatable in GitHub; release/tag and dependency-drift automation remain."
 }
