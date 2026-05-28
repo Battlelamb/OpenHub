@@ -43,8 +43,9 @@ cp .env.example .env
 
 docker compose up --build
 
-# Verify
-curl http://localhost:7788/v1/health
+# Verify API + bundled dashboard
+curl http://localhost:7788/v1/health/simple
+curl -I http://localhost:7788/dashboard
 ```
 
 ### Development
@@ -65,7 +66,7 @@ openhub  # or: uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
 **Endpoints:**
 - Health: `http://localhost:7788/v1/health`
 - Swagger UI: `http://localhost:7788/docs`
-- Dashboard: `http://localhost:7788/dashboard` when built web assets exist at `web/dist`
+- Dashboard: `http://localhost:7788/dashboard` (bundled in the Docker image; for pip/development runs, build with `cd web && npm run build` so `web/dist` exists)
 
 **Operations:** For production service names, Cloudflare Tunnel routing, bridge checks, and secret-safe recovery commands, see [docs/OPERATIONS.md](docs/OPERATIONS.md).
 

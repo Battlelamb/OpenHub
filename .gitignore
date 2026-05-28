@@ -57,7 +57,7 @@ Thumbs.db
 NUL
 
 # Docker
-.dockerignore
+# .dockerignore is tracked because Docker dashboard packaging depends on it.
 
 # Coverage
 .coverage

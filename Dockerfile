@@ -1,3 +1,15 @@
+FROM node:22-slim AS dashboard-build
+
+WORKDIR /dashboard
+
+# Install dashboard dependencies first for Docker layer caching.
+COPY web/package*.json ./
+RUN npm ci
+
+# Build the React dashboard bundle that FastAPI serves from /dashboard.
+COPY web/ ./
+RUN npm run build
+
 FROM python:3.11-slim
 
 # Set working directory
@@ -20,6 +32,9 @@ COPY app/ ./app/
 COPY scripts/ ./scripts/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
+
+# Copy the compiled React dashboard into the location app.main mounts.
+COPY --from=dashboard-build /dashboard/dist ./web/dist
 
 # Create data directories
 RUN mkdir -p data/state data/artifacts

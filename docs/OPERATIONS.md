@@ -61,6 +61,28 @@ Expected healthy result:
 - Local and public `/v1/acn/status`: HTTP 200 and non-zero agents/nodes when bridges are connected.
 - Dashboard routes: HTTP 200.
 
+## Docker image dashboard smoke
+
+The Docker image is expected to build the React dashboard in a Node stage and copy the resulting `web/dist` bundle into the Python runtime image. A Docker smoke should prove both API health and dashboard asset serving from the container, not from the checkout.
+
+```bash
+docker build -t openhub:local-smoke .
+docker run --rm -d --name openhub-local-smoke \
+  -p 127.0.0.1:7789:7788 \
+  --env-file .env.example \
+  -e AGENTHUB_DB_PATH=/tmp/openhub-smoke.db \
+  -e AGENTHUB_ARTIFACT_DIR=/tmp/openhub-artifacts \
+  openhub:local-smoke
+
+curl -sS -m 8 http://127.0.0.1:7789/v1/health/simple
+curl -sS -m 8 http://127.0.0.1:7789/dashboard | grep 'id="root"'
+# Then fetch one /dashboard/assets/<hash>.js or .css URL from the HTML and verify HTTP 200.
+
+docker stop openhub-local-smoke
+```
+
+CI runs the same class of proof in `.github/workflows/ci.yml` under **Compose and package smoke**.
+
 ## Secret-safe process and port inspection
 
 ```bash

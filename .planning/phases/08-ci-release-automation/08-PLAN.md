@@ -79,20 +79,23 @@ Phase 07 made the local/live system clean and release-ready, but `.planning/code
 
 ### 08-03 — Docker dashboard packaging
 
-**Objective:** Make Docker image/dashboard packaging truth explicit and tested.
+**Objective:** Build the React dashboard into the Docker image and prove `/dashboard` plus hashed assets are served by the running container.
 
 **Files:**
 
 - `Dockerfile`
 - `.dockerignore`
+- `.github/workflows/ci.yml`
+- `README.md`
 - `docs/OPERATIONS.md`
 - packaging smoke docs/evidence
 
 **Verification:**
 
-- Build dashboard assets.
+- Build dashboard assets locally.
+- Add static tests that guard Dockerfile/.dockerignore packaging intent.
 - Build Docker image locally if Docker socket is available.
-- Prove `/dashboard` is served from the image, or document the bounded caveat and CI path.
+- Prove `/dashboard` is served from the image through CI container smoke when local Docker is unavailable.
 
 ### 08-04 — Release/tag automation guardrail
 

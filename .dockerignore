@@ -1,0 +1,57 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+*.egg
+
+# Virtual environments
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+tests/
+htmlcov/
+.pytest_cache
+.coverage
+coverage.xml
+
+# Planning & docs (not needed at runtime)
+.planning/
+docs/
+*.md
+!README.md
+
+# Frontend build artifacts and dependency cache
+web/node_modules
+web/dist
+web/coverage
+web/playwright-report
+web/test-results
+web/tsconfig*.tsbuildinfo
+
+# Data directories (mounted as volumes)
+data/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db

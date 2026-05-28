@@ -86,7 +86,7 @@ jobs:
   compose-and-package-smoke:
     name: Compose and package smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,6 +99,53 @@ jobs:
 
       - name: Render Docker Compose config
         run: docker compose --env-file .env.example config >/tmp/openhub-compose-config.yml
+
+      - name: Build Docker image with bundled dashboard
+        run: docker build -t openhub:ci .
+
+      - name: Smoke Docker dashboard packaging
+        run: |
+          docker run --rm -d --name openhub-ci-smoke \
+            -p 127.0.0.1:7789:7788 \
+            --env-file .env.example \
+            -e AGENTHUB_DB_PATH=/tmp/openhub-ci.db \
+            -e AGENTHUB_ARTIFACT_DIR=/tmp/openhub-artifacts \
+            openhub:ci
+
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs openhub-ci-smoke || true
+            fi
+            docker stop openhub-ci-smoke >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:7789/v1/health/simple >/tmp/openhub-docker-health.txt; then
+              cat /tmp/openhub-docker-health.txt
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:7789/v1/health/simple >/dev/null
+
+          curl -fsS http://127.0.0.1:7789/dashboard >/tmp/openhub-dashboard.html
+          grep -q 'id="root"' /tmp/openhub-dashboard.html
+          asset_path=$(python - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('/tmp/openhub-dashboard.html').read_text()
+          match = re.search(r'(?:src|href)="(/dashboard/assets/[^"]+\.(?:js|css))"', html)
+          if not match:
+              raise SystemExit('dashboard index did not reference a bundled JS/CSS asset')
+          print(match.group(1))
+          PY
+          )
+          curl -fsSI "http://127.0.0.1:7789${asset_path}" >/tmp/openhub-dashboard-asset-headers.txt
+          grep -Eiq 'content-type: .*(javascript|css|text)' /tmp/openhub-dashboard-asset-headers.txt
 
       - name: Build Python package and validate metadata
         run: |
