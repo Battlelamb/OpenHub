@@ -2,8 +2,8 @@
 phase: 08
 slice: 08-05
 name: Dependency drift guard
-status: implemented_local_ci_pending
-updated: 2026-05-28T20:47:30Z
+status: complete
+updated: 2026-05-28T20:56:52Z
 ---
 
 # 08-05 — Dependency Drift Guard
@@ -55,4 +55,6 @@ workflow bash -n passed for 26 run steps
 
 ## Remote verification
 
-Pending first push. Expected CI addition: a fast `dependency-drift` job on push/pull_request/workflow_dispatch.
+GitHub Actions run `26601647394` passed on commit `77f71ed`. The new `dependency-drift` job completed successfully in 8 seconds, and the full CI workflow passed all five jobs.
+
+Run: https://github.com/Battlelamb/OpenHub/actions/runs/26601647394

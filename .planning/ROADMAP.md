@@ -26,7 +26,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **Phase 5: Release Readiness** — docs, pip install path, Docker hardening, graceful shutdown, Playwright E2E, v0.1.0 release
 - [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
 - [x] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, runtime ops docs, full verification, and tag decision evidence
-- [ ] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard; local implementation complete, remote CI verification pending
+- [x] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -142,7 +142,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **07-05 — Runtime ops cleanup docs**: documented active services, disabled legacy bridge, Cloudflare Tunnel route, secret-safe diagnostics, env permissions, recovery checks, and heartbeat timestamp follow-up.
 - [x] **07-06 — Full verification + tag decision**: full backend/frontend/E2E/GSD/live gate passed; heartbeat timestamp advisory fixed and deployed; release tag deferred pending explicit version choice.
 
-## Phase 8: CI + Release Automation — IN PROGRESS
+## Phase 8: CI + Release Automation — COMPLETE
 
 **Goal:** Convert verified local OpenHub gates into repeatable GitHub CI and release guardrails without exposing local credentials.
 
@@ -176,8 +176,8 @@ Before claiming a future feature or phase complete:
 
 ## Progress
 
-- **Completed phases:** 7 / 8
-- **Completed plans:** 56 / 56 locally; remote CI verification pending
-- **Current phase:** Phase 08 — CI + Release Automation
-- **Current slice:** Remote CI verification for 08-04/08-05
-- **Next slice:** Phase 08 closeout after GitHub Actions confirms the pushed changes
+- **Completed phases:** 8 / 8
+- **Completed plans:** 56 / 56
+- **Current phase:** Phase 08 — CI + Release Automation complete
+- **Current slice:** Release/tag deferred pending explicit operator version decision
+- **Next slice:** explicit release version/tag decision or future roadmap planning

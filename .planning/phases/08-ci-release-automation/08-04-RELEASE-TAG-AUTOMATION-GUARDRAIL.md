@@ -2,8 +2,8 @@
 phase: 08
 slice: 08-04
 name: Release/tag automation guardrail
-status: implemented_local_ci_pending
-updated: 2026-05-28T20:47:30Z
+status: complete
+updated: 2026-05-28T20:56:52Z
 ---
 
 # 08-04 — Release/tag Automation Guardrail
@@ -55,4 +55,6 @@ workflow bash -n passed for 26 run steps
 
 ## Remote verification
 
-Pending first push with the new workflow. Because `release.yml` is manual-only, normal CI should validate the static workflow tests and dependency drift guard without running release artifact builds automatically.
+GitHub Actions run `26601647394` on commit `77f71ed` passed. The release workflow is manual-only, so normal push CI validated the static workflow guardrail tests and dependency drift guard without running release artifact builds automatically.
+
+Run: https://github.com/Battlelamb/OpenHub/actions/runs/26601647394

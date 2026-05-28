@@ -1,7 +1,7 @@
 ---
 phase: 08
 name: CI + Release Automation
-status: in_progress
+status: complete
 created: 2026-05-28
 owner: OpenHub GSD
 ---
@@ -135,6 +135,6 @@ Phase 07 made the local/live system clean and release-ready, but `.planning/code
 - No broad refactor of route modules in this phase.
 - No local secret/env file reads beyond safe env var names.
 
-## Current next task
+## Closeout
 
-Continue with **08-04 — Release/tag automation guardrail**.
+Phase 08 is complete as of GitHub Actions run `26601647394` on commit `77f71ed`. Release tagging remains deferred until an operator explicitly selects a version and target.
