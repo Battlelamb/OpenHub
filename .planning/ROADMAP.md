@@ -158,7 +158,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 **Planned slices:**
 
 - [x] **08-01 — GitHub Actions CI workflow**: added `.github/workflows/ci.yml` with backend, frontend, package/Compose, and Playwright jobs; locally verified before push.
-- [ ] **08-02 — CI result follow-up**: inspect GitHub Actions run and fix CI-only gaps.
+- [x] **08-02 — CI result follow-up**: first run failed before jobs due invalid job-level `runner.temp`; fixed path, rerun passed all 4 CI jobs.
 - [ ] **08-03 — Docker dashboard packaging**: prove or harden dashboard-in-image packaging.
 - [ ] **08-04 — Release/tag automation guardrail**: add manual release workflow/docs without auto-publishing secrets.
 - [ ] **08-05 — Dependency drift guard**: detect backend/frontend dependency drift in CI.
@@ -177,7 +177,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 7 / 8
-- **Completed plans:** 52 / 56
+- **Completed plans:** 53 / 56
 - **Current phase:** Phase 08 — CI + Release Automation
-- **Current slice:** 08-02 — CI result follow-up after push
-- **Next slice:** 08-03 — Docker dashboard packaging
+- **Current slice:** 08-03 — Docker dashboard packaging
+- **Next slice:** 08-04 — Release/tag automation guardrail

@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T19:37:00Z",
+  "timestamp": "2026-05-28T19:42:13Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
   "phase_dir": ".planning/phases/08-ci-release-automation",
   "plan": 8,
-  "task": 2,
+  "task": 3,
   "total_tasks": 5,
   "status": "in_progress",
-  "current_state": "08-02 CI syntax fix is applied and locally verified. The first GitHub Actions run for be500d6 failed before jobs were created because runner.temp was used in job-level env; actionlint now passes after changing the E2E DB path to /tmp/openhub-e2e.db. Commit/push and rerun inspection are next.",
+  "current_state": "08-01 and 08-02 are complete. The CI workflow now parses, schedules, and passes all four jobs on GitHub Actions. Next slice is 08-03 Docker dashboard packaging.",
   "completed_tasks": [
     {
       "id": "07-06",
@@ -22,20 +22,24 @@
       "name": "GitHub Actions CI workflow",
       "status": "local_verified",
       "evidence": ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md"
-    }
-  ],
-  "active_task": {
-    "id": "08-02",
-    "name": "CI result follow-up",
-    "status": "syntax_fix_verified_pending_push",
-    "evidence": ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md"
-  },
-  "remaining_tasks": [
+    },
     {
       "id": "08-02",
       "name": "CI result follow-up",
-      "status": "pending"
-    },
+      "status": "done",
+      "evidence": ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md",
+      "ci_run": "26597813831",
+      "commit": "27f1703",
+      "result": "success"
+    }
+  ],
+  "active_task": {
+    "id": "08-03",
+    "name": "Docker dashboard packaging",
+    "status": "pending_start",
+    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+  },
+  "remaining_tasks": [
     {
       "id": "08-03",
       "name": "Docker dashboard packaging",
@@ -67,8 +71,8 @@
     }
   ],
   "uncommitted_files": [
-    ".github/workflows/ci.yml",
     ".planning/HANDOFF.json",
+    ".planning/ROADMAP.md",
     ".planning/STATE.md",
     ".planning/phases/08-ci-release-automation/.continue-here.md",
     ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md"
@@ -88,9 +92,9 @@
   "blocking_constraints": [],
   "advisory_constraints": [
     {
-      "name": "First CI run not yet observed",
+      "name": "Node.js 20 action deprecation advisory",
       "severity": "advisory",
-      "description": "08-02 should inspect GitHub Actions after the workflow is pushed and fix any CI-only failures."
+      "description": "GitHub Actions passed, but emitted non-blocking Node.js 20 action deprecation notices for actions/* versions."
     },
     {
       "name": "Release tag still deferred",
@@ -108,13 +112,19 @@
     "changed_file_secret_scan": "none",
     "focused_backend_smoke": "8 passed",
     "frontend_typecheck": "passed",
-    "remote_equality_status": "pending follow-up push",
+    "remote_equality_status": "passed for 27f1703 before 08-02 evidence closeout docs",
     "first_ci_run": "26597548232 failed before jobs were created",
     "ci_failure_root_cause": "runner context not allowed in job-level env",
     "ci_syntax_fix": "AGENTHUB_DB_PATH changed to /tmp/openhub-e2e.db",
     "actionlint_after_fix": "passed",
-    "diff_check": "passed"
+    "diff_check": "passed",
+    "latest_commit": "27f1703",
+    "github_actions_run_26597813831": "success",
+    "backend_tests_ci": "success",
+    "frontend_ci": "success",
+    "compose_package_smoke_ci": "success",
+    "playwright_e2e_ci": "success"
   },
-  "next_action": "Commit/push the 08-02 fix, verify HEAD/origin/remote equality, then inspect the new GitHub Actions run.",
+  "next_action": "Start 08-03 by inspecting Dockerfile/.dockerignore and proving whether the Docker image serves /dashboard from bundled web/dist assets.",
   "context_notes": "Phase 08 is intentionally infrastructure-first: make local GSD truth repeatable in GitHub before adding more product surface."
 }

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 08 CI + Release Automation in progress — 08-02 CI syntax fix applied after first GitHub Actions run failed before jobs
-stopped_at: "08-02-CI-RUN-FOLLOWUP"
-last_updated: "2026-05-28T19:37:00Z"
+status: Phase 08 CI + Release Automation in progress — 08-02 GitHub Actions rerun passed; 08-03 Docker dashboard packaging next
+stopped_at: "08-03-DOCKER-DASHBOARD-PACKAGING"
+last_updated: "2026-05-28T19:42:13Z"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 56
-  completed_plans: 52
+  completed_plans: 53
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Status:** in progress
 - **Current phase:** 08 — CI + Release Automation
 - **Current plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
-- **Current slice:** `08-02 — CI result follow-up` after pushing the workflow
-- **Next slice:** `08-03 — Docker dashboard packaging` after CI-only failures are resolved
+- **Current slice:** `08-03 — Docker dashboard packaging`
+- **Next slice:** `08-04 — Release/tag automation guardrail` after Docker dashboard packaging truth is proven
 - **Previous phase:** 07 — Product Polish + Deployment Packaging complete
 - **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online from latest smoke
 
@@ -79,9 +79,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 | Slice | Description | Status |
 |-------|-------------|--------|
-| 08-01 | GitHub Actions CI workflow | ✅ local verified |
-| 08-02 | CI result follow-up | 🔄 after push |
-| 08-03 | Docker dashboard packaging | ⏳ |
+| 08-01 | GitHub Actions CI workflow | ✅ |
+| 08-02 | CI result follow-up | ✅ |
+| 08-03 | Docker dashboard packaging | 🔄 |
 | 08-04 | Release/tag automation guardrail | ⏳ |
 | 08-05 | Dependency drift guard | ⏳ |
 
@@ -110,8 +110,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-28T19:37:00Z
-- **Stopped at:** 08-02 CI syntax fix applied after first GitHub Actions run failed before jobs; verify/push, then inspect rerun.
+- **Last state update:** 2026-05-28T19:42:13Z
+- **Stopped at:** 08-02 GitHub Actions rerun passed; 08-03 Docker dashboard packaging is next.
 - **Resume file:** `.planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md`
 - **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
 - **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`

@@ -44,6 +44,22 @@ Completed before pushing the fix:
 - GSD consistency — passed with 6 known non-blocking warnings.
 - Changed-file secret scan — no hits.
 
+## GitHub Actions rerun result
+
+- Commit: `27f1703`
+- Run: `26597813831`
+- URL: `https://github.com/Battlelamb/OpenHub/actions/runs/26597813831`
+- Result: success
+
+Jobs:
+
+- Backend tests — success (`1m39s`)
+- Frontend lint, tests, and build — success (`45s`)
+- Compose and package smoke — success (`32s`)
+- Playwright dashboard E2E — success (`2m29s`)
+
+Advisory only: GitHub emitted Node.js 20 action deprecation notices for current `actions/*@v4/v5` actions. These did not fail CI, but Phase 08 can later add `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` or update actions when upstream support is clear.
+
 ## Status
 
-Fix is locally verified; commit/push and rerun inspection are next.
+08-02 is complete. Next slice: 08-03 Docker dashboard packaging.
