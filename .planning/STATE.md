@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 08 CI + Release Automation in progress — 08-01 GitHub Actions CI workflow locally verified
+status: Phase 08 CI + Release Automation in progress — 08-02 CI syntax fix applied after first GitHub Actions run failed before jobs
 stopped_at: "08-02-CI-RUN-FOLLOWUP"
-last_updated: "2026-05-28T10:19:18Z"
+last_updated: "2026-05-28T19:37:00Z"
 progress:
   total_phases: 8
   completed_phases: 7
@@ -110,9 +110,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-28T10:19:18Z
-- **Stopped at:** Phase 08 opened; 08-01 locally verified; 08-02 CI result follow-up begins after push.
-- **Resume file:** `.planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md`
+- **Last state update:** 2026-05-28T19:37:00Z
+- **Stopped at:** 08-02 CI syntax fix applied after first GitHub Actions run failed before jobs; verify/push, then inspect rerun.
+- **Resume file:** `.planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md`
 - **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
 - **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
 - **Previous verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`

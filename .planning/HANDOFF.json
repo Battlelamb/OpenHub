@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T10:19:18Z",
+  "timestamp": "2026-05-28T19:37:00Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
@@ -9,22 +9,48 @@
   "task": 2,
   "total_tasks": 5,
   "status": "in_progress",
-  "current_state": "Phase 08 is open. 08-01 added the first GitHub Actions CI workflow for backend tests, frontend audit/lint/typecheck/tests/build, Compose/package smoke, and Playwright dashboard E2E. Local validation passed. After push, 08-02 should inspect the first GitHub Actions run and fix CI-only failures if any.",
+  "current_state": "08-02 CI syntax fix is applied and locally verified. The first GitHub Actions run for be500d6 failed before jobs were created because runner.temp was used in job-level env; actionlint now passes after changing the E2E DB path to /tmp/openhub-e2e.db. Commit/push and rerun inspection are next.",
   "completed_tasks": [
-    {"id": "07-06", "name": "Phase 07 full verification + live smoke", "status": "done", "commit": "c3cddff"},
-    {"id": "08-01", "name": "GitHub Actions CI workflow", "status": "local_verified", "evidence": ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md"}
+    {
+      "id": "07-06",
+      "name": "Phase 07 full verification + live smoke",
+      "status": "done",
+      "commit": "c3cddff"
+    },
+    {
+      "id": "08-01",
+      "name": "GitHub Actions CI workflow",
+      "status": "local_verified",
+      "evidence": ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md"
+    }
   ],
   "active_task": {
     "id": "08-02",
     "name": "CI result follow-up",
-    "status": "pending_push_or_first_run",
-    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+    "status": "syntax_fix_verified_pending_push",
+    "evidence": ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md"
   },
   "remaining_tasks": [
-    {"id": "08-02", "name": "CI result follow-up", "status": "pending"},
-    {"id": "08-03", "name": "Docker dashboard packaging", "status": "pending"},
-    {"id": "08-04", "name": "Release/tag automation guardrail", "status": "pending"},
-    {"id": "08-05", "name": "Dependency drift guard", "status": "pending"}
+    {
+      "id": "08-02",
+      "name": "CI result follow-up",
+      "status": "pending"
+    },
+    {
+      "id": "08-03",
+      "name": "Docker dashboard packaging",
+      "status": "pending"
+    },
+    {
+      "id": "08-04",
+      "name": "Release/tag automation guardrail",
+      "status": "pending"
+    },
+    {
+      "id": "08-05",
+      "name": "Dependency drift guard",
+      "status": "pending"
+    }
   ],
   "blockers": [],
   "human_actions_pending": [],
@@ -43,11 +69,9 @@
   "uncommitted_files": [
     ".github/workflows/ci.yml",
     ".planning/HANDOFF.json",
-    ".planning/ROADMAP.md",
     ".planning/STATE.md",
     ".planning/phases/08-ci-release-automation/.continue-here.md",
-    ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md",
-    ".planning/phases/08-ci-release-automation/08-PLAN.md"
+    ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md"
   ],
   "background_processes": [
     {
@@ -84,8 +108,13 @@
     "changed_file_secret_scan": "none",
     "focused_backend_smoke": "8 passed",
     "frontend_typecheck": "passed",
-    "remote_equality_status": "pending"
+    "remote_equality_status": "pending follow-up push",
+    "first_ci_run": "26597548232 failed before jobs were created",
+    "ci_failure_root_cause": "runner context not allowed in job-level env",
+    "ci_syntax_fix": "AGENTHUB_DB_PATH changed to /tmp/openhub-e2e.db",
+    "actionlint_after_fix": "passed",
+    "diff_check": "passed"
   },
-  "next_action": "Commit/push 08-01, verify HEAD/origin/remote equality, then inspect the first GitHub Actions CI run for 08-02.",
+  "next_action": "Commit/push the 08-02 fix, verify HEAD/origin/remote equality, then inspect the new GitHub Actions run.",
   "context_notes": "Phase 08 is intentionally infrastructure-first: make local GSD truth repeatable in GitHub before adding more product surface."
 }

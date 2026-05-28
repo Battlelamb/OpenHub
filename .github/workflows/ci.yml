@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      AGENTHUB_DB_PATH: ${{ runner.temp }}/openhub-e2e.db
+      AGENTHUB_DB_PATH: /tmp/openhub-e2e.db
       E2E_ADMIN_USER: ci-admin
       E2E_ADMIN_PASSWORD: ci-password-secure
     steps:
