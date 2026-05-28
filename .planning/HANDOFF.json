@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T19:42:13Z",
+  "timestamp": "2026-05-28T19:46:56Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
@@ -9,7 +9,7 @@
   "task": 3,
   "total_tasks": 5,
   "status": "in_progress",
-  "current_state": "08-01 and 08-02 are complete. The CI workflow now parses, schedules, and passes all four jobs on GitHub Actions. Next slice is 08-03 Docker dashboard packaging.",
+  "current_state": "08-01 and 08-02 are complete. CI workflow parses, schedules, and passes all four GitHub Actions jobs on the final closeout commit. Repo is ready to begin 08-03 Docker dashboard packaging.",
   "completed_tasks": [
     {
       "id": "07-06",
@@ -70,13 +70,7 @@
       "phase": "08"
     }
   ],
-  "uncommitted_files": [
-    ".planning/HANDOFF.json",
-    ".planning/ROADMAP.md",
-    ".planning/STATE.md",
-    ".planning/phases/08-ci-release-automation/.continue-here.md",
-    ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md"
-  ],
+  "uncommitted_files": [],
   "background_processes": [
     {
       "name": "openhub-api.service",
@@ -118,12 +112,16 @@
     "ci_syntax_fix": "AGENTHUB_DB_PATH changed to /tmp/openhub-e2e.db",
     "actionlint_after_fix": "passed",
     "diff_check": "passed",
-    "latest_commit": "27f1703",
+    "latest_commit": "518d2d3",
     "github_actions_run_26597813831": "success",
     "backend_tests_ci": "success",
     "frontend_ci": "success",
     "compose_package_smoke_ci": "success",
-    "playwright_e2e_ci": "success"
+    "playwright_e2e_ci": "success",
+    "latest_remote_equality_status": "passed for 518d2d3",
+    "latest_github_actions_run": "26598053442 success",
+    "latest_ci_head_sha": "518d2d3e7abf15e5f898a61bbafd8ac6e72ddb3a",
+    "latest_ci_url": "https://github.com/Battlelamb/OpenHub/actions/runs/26598053442"
   },
   "next_action": "Start 08-03 by inspecting Dockerfile/.dockerignore and proving whether the Docker image serves /dashboard from bundled web/dist assets.",
   "context_notes": "Phase 08 is intentionally infrastructure-first: make local GSD truth repeatable in GitHub before adding more product surface."

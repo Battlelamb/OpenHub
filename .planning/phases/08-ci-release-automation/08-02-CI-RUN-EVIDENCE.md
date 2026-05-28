@@ -60,6 +60,17 @@ Jobs:
 
 Advisory only: GitHub emitted Node.js 20 action deprecation notices for current `actions/*@v4/v5` actions. These did not fail CI, but Phase 08 can later add `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` or update actions when upstream support is clear.
 
+## Final closeout run
+
+A later documentation closeout commit also triggered CI:
+
+- Commit: `518d2d3`
+- Run: `26598053442`
+- URL: `https://github.com/Battlelamb/OpenHub/actions/runs/26598053442`
+- Result: success
+
+All four jobs passed again. Node.js 20 action deprecation remained advisory-only.
+
 ## Status
 
 08-02 is complete. Next slice: 08-03 Docker dashboard packaging.
