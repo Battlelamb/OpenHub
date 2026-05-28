@@ -22,6 +22,7 @@ commit_style = "conventional"
 # Verification commands (run after each task)
 verify = [
   ". .venv/bin/activate && pytest -q --tb=short --disable-warnings",
+  "python scripts/check_dependency_drift.py",
   "cd web && npm audit --audit-level=moderate",
   "cd web && npm run lint -- --max-warnings=0",
   "cd web && npm run typecheck",
@@ -62,4 +63,5 @@ frontend_typecheck = "cd web && npm run typecheck"
 frontend_test = "cd web && npm run test -- --run"
 frontend_build = "cd web && npm run build"
 frontend_audit = "cd web && npm audit --audit-level=moderate"
+dependency_drift = "python scripts/check_dependency_drift.py"
 backend_lint_baseline = ". .venv/bin/activate && black --check app/ && isort --check app/ && flake8 app/ && mypy app/"

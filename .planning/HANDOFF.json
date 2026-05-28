@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T20:31:00Z",
+  "timestamp": "2026-05-28T20:47:30Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
   "phase_dir": ".planning/phases/08-ci-release-automation",
   "plan": 8,
-  "task": 4,
+  "task": 5,
   "total_tasks": 5,
-  "status": "in_progress",
-  "current_state": "08-03 Docker dashboard packaging is complete. Commit 2ca0fb0 builds web/dist in a Node Docker stage, copies it into the runtime image, and CI run 26600306093 proved the container serves /v1/health/simple, /dashboard, and one bundled /dashboard/assets hash asset. Next slice is 08-04 release/tag automation guardrail.",
+  "status": "remote_ci_pending",
+  "current_state": "08-04 release/tag automation guardrail and 08-05 dependency drift guard are implemented locally. Full local backend/frontend/GSD/workflow/package verification passed. Next step is commit, push, and GitHub Actions verification.",
   "completed_tasks": [
     {
       "id": "07-06",
@@ -40,28 +40,37 @@
       "ci_run": "26600306093",
       "commit": "2ca0fb0",
       "result": "success"
-    }
-  ],
-  "active_task": {
-    "id": "08-04",
-    "name": "Release/tag automation guardrail",
-    "status": "pending_start",
-    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
-  },
-  "remaining_tasks": [
+    },
     {
       "id": "08-04",
       "name": "Release/tag automation guardrail",
-      "status": "pending"
+      "status": "local_done_remote_ci_pending",
+      "evidence": ".planning/phases/08-ci-release-automation/08-04-RELEASE-TAG-AUTOMATION-GUARDRAIL.md"
     },
     {
       "id": "08-05",
       "name": "Dependency drift guard",
+      "status": "local_done_remote_ci_pending",
+      "evidence": ".planning/phases/08-ci-release-automation/08-05-DEPENDENCY-DRIFT-GUARD.md"
+    }
+  ],
+  "active_task": {
+    "id": "08-remote-ci",
+    "name": "Remote GitHub Actions verification for 08-04/08-05",
+    "status": "pending_push",
+    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+  },
+  "remaining_tasks": [
+    {
+      "id": "08-remote-ci",
+      "name": "Verify pushed CI run and close out Phase 08",
       "status": "pending"
     }
   ],
   "blockers": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    "Choose a version/tag later if an actual release should be cut; no tag will be created without explicit approval."
+  ],
   "decisions": [
     {
       "decision": "Open Phase 08 rather than tagging immediately.",
@@ -84,6 +93,12 @@
       "rationale": "08-04 must prepare safe guardrails without implicitly creating tags or using PyPI/Docker registry secrets.",
       "phase": "08",
       "slice": "08-04"
+    },
+    {
+      "decision": "Release verification workflow is manual/read-only and dependency drift is a required CI/GSD gate.",
+      "rationale": "Phase 08 must make releases repeatable without creating tags or publishing artifacts until the operator explicitly selects a release version and target.",
+      "phase": "08",
+      "slice": "08-04/08-05"
     }
   ],
   "uncommitted_files": [
@@ -136,7 +151,7 @@
     "docker_dashboard_packaging_tests": "2 passed",
     "static_mount_plus_packaging_tests": "8 passed",
     "workflow_yaml_parse": "passed; 4 jobs",
-    "workflow_bash_n": "passed for 18 run steps",
+    "workflow_bash_n": "passed for 26 run steps",
     "actionlint": "passed",
     "diff_check": "passed",
     "changed_file_secret_scan": "no hits",
@@ -147,8 +162,15 @@
     "compose_package_smoke_ci": "success; 2m25s",
     "playwright_e2e_ci": "success; 2m36s",
     "frontend_ci": "success; 41s",
-    "backend_ci": "success; 1m35s"
+    "backend_ci": "success; 1m35s",
+    "release_workflow_manual_read_only": "local static tests passed",
+    "dependency_drift_guard": "passed locally; 25 backend pins, 29 pyproject deps, 28 frontend deps, 24 frontend devDeps",
+    "full_backend_pytest": "249 passed / 9 skipped",
+    "frontend_verify": "audit/lint/typecheck/42 tests/build passed",
+    "actionlint_release_ci": "passed",
+    "python_package_build_twine": "passed",
+    "remote_ci_for_0804_0805": "pending push"
   },
-  "next_action": "Start 08-04 by choosing a manual release/tag guardrail shape: docs-only checklist, workflow_dispatch dry-run workflow, or both; do not create tags or publish artifacts without explicit operator instruction.",
+  "next_action": "Stage, changed-file secret scan, commit/push 08-04/08-05, verify HEAD/origin/remote equality, then inspect the GitHub Actions run for the pushed commit.",
   "context_notes": "Phase 08 remains infrastructure-first: local packaging and verification are now repeatable in GitHub; release/tag and dependency-drift automation remain."
 }

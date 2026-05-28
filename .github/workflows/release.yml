@@ -1,0 +1,137 @@
+name: OpenHub Release Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version already committed in pyproject.toml, formatted like v0.1.1"
+        required: true
+        type: string
+      confirm_no_publish:
+        description: "Confirm this is verify-only: no tag creation, no registry publishing"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openhub-release-verification-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AGENTHUB_ADMIN_USER: release-admin
+  AGENTHUB_ADMIN_PASSWORD: release-password-secure
+  AGENTHUB_SECRET_KEY: release-secret-key-32-chars-minimum
+  AGENTHUB_JWT_SECRET_KEY: release-jwt-secret-key-32-chars-minimum
+  AGENTHUB_CORS_ORIGINS: '["*"]'
+  AGENTHUB_CORS_METHODS: '["*"]'
+  AGENTHUB_CORS_HEADERS: '["*"]'
+
+jobs:
+  release-verification:
+    name: Verify release artifacts without publishing
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Validate manual release guardrails
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          CONFIRM_NO_PUBLISH: ${{ inputs.confirm_no_publish }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRM_NO_PUBLISH" != "true" ]; then
+            echo "::error::confirm_no_publish must be true; this workflow is verify-only."
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z]+)?$ ]]; then
+            echo "::error::version must look like v0.1.1 or v0.2.0"
+            exit 1
+          fi
+
+          package_version=$(python - <<'PY'
+          import tomllib
+          from pathlib import Path
+          data = tomllib.loads(Path('pyproject.toml').read_text())
+          print(data['project']['version'])
+          PY
+          )
+          if [ "v${package_version}" != "$RELEASE_VERSION" ]; then
+            echo "::error::pyproject.toml version v${package_version} must match workflow input ${RELEASE_VERSION}."
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
+            echo "::error::refs/tags/$RELEASE_VERSION already exists. Choose a new committed version before verification."
+            exit 1
+          fi
+
+          echo "Release verification is dry-run only for ${RELEASE_VERSION}."
+
+      - name: Install Python release tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install build twine hatchling
+          python -m pip install -e .
+
+      - name: Check dependency drift
+        run: python scripts/check_dependency_drift.py
+
+      - name: Run release-focused backend checks
+        run: |
+          python -m pytest \
+            tests/unit/test_static_mount.py \
+            tests/unit/test_docker_dashboard_packaging.py \
+            tests/unit/test_dependency_drift_guard.py \
+            tests/unit/test_release_guardrail_workflow.py \
+            -q --tb=short --disable-warnings
+
+      - name: Install and build dashboard
+        working-directory: web
+        run: |
+          npm ci
+          npm audit --audit-level=moderate
+          npm run lint -- --max-warnings=0
+          npm run typecheck
+          npm run test -- --run
+          npm run build
+
+      - name: Build Python distributions
+        run: |
+          rm -rf dist
+          python -m build
+          twine check dist/*
+
+      - name: Build Docker image without pushing
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          docker build -t "openhub:release-${RELEASE_VERSION#v}" .
+
+      - name: Upload verified Python artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhub-python-dist-${{ inputs.version }}
+          path: dist/*
+          if-no-files-found: error

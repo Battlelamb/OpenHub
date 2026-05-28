@@ -26,7 +26,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **Phase 5: Release Readiness** — docs, pip install path, Docker hardening, graceful shutdown, Playwright E2E, v0.1.0 release
 - [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
 - [x] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, runtime ops docs, full verification, and tag decision evidence
-- [ ] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard
+- [ ] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard; local implementation complete, remote CI verification pending
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -160,8 +160,8 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **08-01 — GitHub Actions CI workflow**: added `.github/workflows/ci.yml` with backend, frontend, package/Compose, and Playwright jobs; locally verified before push.
 - [x] **08-02 — CI result follow-up**: first run failed before jobs due invalid job-level `runner.temp`; fixed path, rerun passed all 4 CI jobs.
 - [x] **08-03 — Docker dashboard packaging**: Docker image now builds/bundles `web/dist`; CI run `26600306093` proved `/dashboard` and bundled asset serving from the running container.
-- [ ] **08-04 — Release/tag automation guardrail**: add manual release workflow/docs without auto-publishing secrets.
-- [ ] **08-05 — Dependency drift guard**: detect backend/frontend dependency drift in CI.
+- [x] **08-04 — Release/tag automation guardrail**: manual read-only release verification workflow and docs added; no auto-tags or registry publishing.
+- [x] **08-05 — Dependency drift guard**: backend/frontend dependency drift script, tests, GSD command, and CI job added.
 
 ## Verification Gates
 
@@ -177,7 +177,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 7 / 8
-- **Completed plans:** 54 / 56
+- **Completed plans:** 56 / 56 locally; remote CI verification pending
 - **Current phase:** Phase 08 — CI + Release Automation
-- **Current slice:** 08-04 — Release/tag automation guardrail
-- **Next slice:** 08-05 — Dependency drift guard
+- **Current slice:** Remote CI verification for 08-04/08-05
+- **Next slice:** Phase 08 closeout after GitHub Actions confirms the pushed changes

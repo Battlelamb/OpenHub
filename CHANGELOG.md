@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to OpenHub will be documented in this file.
+All notable changes to OpenHub will be documented in this file. Release tags are created only after an explicit operator decision.
+
+## Unreleased
+
+### Added
+
+- Manual **OpenHub Release Verification** GitHub Actions workflow (`workflow_dispatch`) that validates an explicitly chosen version, builds Python artifacts, runs release-focused checks, builds the dashboard, builds the Docker image, and uploads local workflow artifacts without publishing to any registry.
+- Dependency drift guard (`scripts/check_dependency_drift.py`) for backend Python manifests and frontend `package.json` / `package-lock.json` root specs.
+- CI dependency drift job so manifest drift is caught before packaging/release work.
+
+### Guardrails
+
+- No automatic tag creation from CI or the release verification workflow.
+- No PyPI, Docker Hub, GHCR, or other registry publishing in the default workflow path.
+- The release workflow requires `confirm_no_publish=true` and refuses existing tags or versions that do not match `pyproject.toml`.
 
 ## [0.1.0] — 2026-05-20
 

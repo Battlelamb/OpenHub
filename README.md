@@ -70,6 +70,18 @@ openhub  # or: uvicorn app.main:app --host 0.0.0.0 --port 7788 --reload
 
 **Operations:** For production service names, Cloudflare Tunnel routing, bridge checks, and secret-safe recovery commands, see [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
+## CI and Release Guardrails
+
+GitHub Actions runs OpenHub CI on pushes and pull requests to `master`:
+
+- backend tests
+- frontend audit/lint/typecheck/tests/build
+- Compose + Python package smoke
+- Playwright dashboard E2E
+- dependency drift guard (`python scripts/check_dependency_drift.py`)
+
+Release verification is intentionally manual and non-publishing. Use **Actions → OpenHub Release Verification** only after a version/changelog commit exists, enter the exact tag-shaped version from `pyproject.toml` (for example `v0.1.1`), and set `confirm_no_publish=true`. The workflow builds artifacts and a Docker image, but it does not create tags, create GitHub releases, or publish to PyPI/Docker/GHCR. Create/push tags only after explicit operator approval.
+
 ## Key Features
 
 - **Agent registration** with capability declaration and smart matching

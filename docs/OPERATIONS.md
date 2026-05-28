@@ -182,6 +182,7 @@ Before a release/tag decision, run the GSD verification gates from `.gsdrc.toml`
 
 ```bash
 . .venv/bin/activate && pytest -q --tb=short --disable-warnings
+python scripts/check_dependency_drift.py
 cd web && npm audit --audit-level=moderate
 cd web && npm run lint -- --max-warnings=0
 cd web && npm run typecheck
@@ -191,3 +192,5 @@ docker compose --env-file .env.example config >/tmp/openhub-compose-config.yml
 curl -sS https://hub.brunhilde.cloud/v1/health/simple
 curl -sS https://hub.brunhilde.cloud/v1/acn/status
 ```
+
+The GitHub **OpenHub Release Verification** workflow is manual only (`workflow_dispatch`) and read-only (`contents: read`). It requires an explicit tag-shaped version that already matches `pyproject.toml`, refuses existing tags, builds Python distributions, runs `twine check`, builds the Docker image, and uploads artifacts to the workflow run. It does not create tags, create GitHub releases, push Docker images, or publish to PyPI/GHCR. Make any version bump and changelog update in a normal reviewed commit first, then create/push a tag only after an operator explicitly approves the release target.

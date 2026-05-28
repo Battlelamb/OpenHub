@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 08 CI + Release Automation in progress — 08-03 Docker dashboard packaging proved in CI; 08-04 release/tag automation guardrail next
-stopped_at: "08-04-RELEASE-TAG-AUTOMATION-GUARDRAIL"
-last_updated: "2026-05-28T20:31:00Z"
+status: Phase 08 CI + Release Automation local implementation complete — 08-04/08-05 remote CI verification pending
+stopped_at: "08-REMOTE-CI-VERIFY"
+last_updated: "2026-05-28T20:47:30Z"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 56
-  completed_plans: 54
+  completed_plans: 56
 ---
 
 # Project State
@@ -20,15 +20,15 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 08 CI + release automation; 08-03 Docker dashboard packaging is complete and 08-04 release/tag automation guardrail is next.
+**Current focus:** Phase 08 CI + release automation; 08-04 release/tag guardrail and 08-05 dependency drift guard are implemented locally and awaiting remote CI verification.
 
 ## Current Position
 
 - **Status:** in progress
 - **Current phase:** 08 — CI + Release Automation
 - **Current plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
-- **Current slice:** `08-04 — Release/tag automation guardrail`
-- **Next slice:** `08-05 — Dependency drift guard` after release/tag guardrail is documented or automated safely
+- **Current slice:** `Remote CI verification for 08-04/08-05`
+- **Next slice:** `Phase 08 closeout` after GitHub Actions confirms the pushed changes
 - **Previous phase:** 07 — Product Polish + Deployment Packaging complete
 - **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online from latest smoke
 
@@ -82,8 +82,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 08-01 | GitHub Actions CI workflow | ✅ |
 | 08-02 | CI result follow-up | ✅ |
 | 08-03 | Docker dashboard packaging | ✅ |
-| 08-04 | Release/tag automation guardrail | ⏳ |
-| 08-05 | Dependency drift guard | ⏳ |
+| 08-04 | Release/tag automation guardrail | ✅ Local; CI pending |
+| 08-05 | Dependency drift guard | ✅ Local; CI pending |
 
 ## Verification Status
 
@@ -109,12 +109,13 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **07-06 release gate (2026-05-27):** full backend/frontend/E2E/GSD/live verification passed; heartbeat timestamp advisory fixed and deployed via `openhub-api.service` restart; tag creation deferred pending explicit version decision.
 
 - **Docker dashboard packaging (2026-05-28):** CI run `26600306093` passed on `2ca0fb0`; Compose/package smoke built the Docker image, ran the container, verified `/v1/health/simple`, served `/dashboard`, fetched a bundled `/dashboard/assets/<hash>.js|css` asset, then verified package metadata.
+- **Release guardrail + dependency drift guard (2026-05-28):** manual read-only release verification workflow added; no tag/publish path; dependency drift guard added to CI and GSD; local full backend, frontend, actionlint, workflow bash, package build/twine, GSD health/consistency, Compose config all passed. Remote CI pending first push.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-28T20:31:00Z
-- **Stopped at:** 08-03 Docker dashboard packaging complete; 08-04 release/tag automation guardrail is next.
-- **Resume file:** `.planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md`
+- **Last state update:** 2026-05-28T20:47:30Z
+- **Stopped at:** 08-04/08-05 local implementation complete; remote GitHub Actions verification is next.
+- **Resume file:** `.planning/phases/08-ci-release-automation/08-05-DEPENDENCY-DRIFT-GUARD.md`
 - **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
 - **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
 - **Previous verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`
