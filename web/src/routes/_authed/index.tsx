@@ -21,10 +21,10 @@ function DashboardPage() {
           <h2 className="text-lg font-medium text-zinc-50">{t('nav:items.agents')}</h2>
           <p className="text-sm text-zinc-400 mt-1">View and manage connected agents</p>
         </Link>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+        <Link to="/tasks" className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 hover:bg-zinc-800">
           <h2 className="text-lg font-medium text-zinc-50">{t('nav:items.tasks')}</h2>
-          <p className="text-sm text-zinc-400 mt-1">Coming soon</p>
-        </div>
+          <p className="text-sm text-zinc-400 mt-1">Coordinate agent tasks on the Kanban board</p>
+        </Link>
         <Link to="/workflows" className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 hover:bg-zinc-800">
           <h2 className="text-lg font-medium text-zinc-50">{t('nav:items.workflows')}</h2>
           <p className="text-sm text-zinc-400 mt-1">Monitor workflow execution</p>
