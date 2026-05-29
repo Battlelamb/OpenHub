@@ -1,8 +1,40 @@
 import { test, expect } from '@playwright/test'
 
 const BASE = '/dashboard'
-const ADMIN_USER = process.env.E2E_ADMIN_USER || 'omer'
-const ADMIN_PASS = process.env.E2E_ADMIN_PASSWORD || 'OpenHub2026!'
+const ADMIN_USER = process.env.E2E_ADMIN_USER
+const ADMIN_PASS = process.env.E2E_ADMIN_PASSWORD
+const hasAdminCredentials = Boolean(ADMIN_USER && ADMIN_PASS)
+const createdTaskIds: string[] = []
+
+function adminCredentials(): { username: string; password: string } {
+  const username = ADMIN_USER
+  const password = ADMIN_PASS
+  if (!username || !password) {
+    throw new Error('E2E_ADMIN_USER and E2E_ADMIN_PASSWORD are required for authenticated dashboard tests')
+  }
+  return { username, password }
+}
+
+test.afterEach(async ({ request }) => {
+  if (!hasAdminCredentials) return
+  if (createdTaskIds.length === 0) return
+
+  const { username, password } = adminCredentials()
+  const ids = createdTaskIds.splice(0)
+  const login = await request.post('/v1/auth/admin/login', {
+    form: { username, password },
+  })
+  if (!login.ok()) return
+
+  const { access_token: token } = await login.json()
+  await Promise.all(
+    ids.map((taskId) =>
+      request.delete(`/v1/tasks/${taskId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    )
+  )
+})
 
 test.describe('Login flow', () => {
   test('redirects unauthenticated user to login page', async ({ page }) => {
@@ -27,9 +59,11 @@ test.describe('Login flow', () => {
   })
 
   test('logs in with valid credentials and redirects to agents', async ({ page }) => {
+    test.skip(!hasAdminCredentials, 'E2E_ADMIN_USER and E2E_ADMIN_PASSWORD are required for authenticated dashboard tests')
+    const { username, password } = adminCredentials()
     await page.goto(`${BASE}/login`)
-    await page.getByLabel('Username').fill(ADMIN_USER)
-    await page.getByLabel('Password').fill(ADMIN_PASS)
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: /sign in/i }).click()
     await expect(page).toHaveURL(/\/agents/, { timeout: 10_000 })
   })
@@ -37,10 +71,12 @@ test.describe('Login flow', () => {
 
 test.describe('Dashboard navigation', () => {
   test.beforeEach(async ({ page }) => {
+    test.skip(!hasAdminCredentials, 'E2E_ADMIN_USER and E2E_ADMIN_PASSWORD are required for authenticated dashboard tests')
+    const { username, password } = adminCredentials()
     page.setDefaultTimeout(15_000)
     await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' })
-    await page.getByLabel('Username').fill(ADMIN_USER)
-    await page.getByLabel('Password').fill(ADMIN_PASS)
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: /sign in/i }).click()
     await page.waitForURL(/\/agents/, { timeout: 10_000 })
   })
@@ -60,8 +96,9 @@ test.describe('Dashboard navigation', () => {
   })
 
   test('drag-drop updates task status through API and refetches the Kanban board', async ({ page, request }) => {
+    const { username, password } = adminCredentials()
     const login = await request.post('/v1/auth/admin/login', {
-      form: { username: ADMIN_USER, password: ADMIN_PASS },
+      form: { username, password },
     })
     expect(login.ok()).toBeTruthy()
     const { access_token: token } = await login.json()
@@ -72,12 +109,14 @@ test.describe('Dashboard navigation', () => {
         title,
         description: 'Created by Playwright to verify Kanban drag-drop persistence.',
         required_capabilities: [`phase06-e2e-unmatched-${Date.now()}`],
+        labels: { test: 'playwright-e2e' },
         priority: 50,
       },
     })
     expect(create.ok()).toBeTruthy()
     const created = await create.json()
     const taskId = created.id as string
+    createdTaskIds.push(taskId)
     expect(created.status).toBe('queued')
 
     await page.getByRole('link', { name: /tasks/i }).first().click()
@@ -122,8 +161,9 @@ test.describe('Dashboard navigation', () => {
   })
 
   test('opens a task detail workflow canvas from a Kanban card', async ({ page, request }) => {
+    const { username, password } = adminCredentials()
     const login = await request.post('/v1/auth/admin/login', {
-      form: { username: ADMIN_USER, password: ADMIN_PASS },
+      form: { username, password },
     })
     expect(login.ok()).toBeTruthy()
     const { access_token: token } = await login.json()
@@ -134,11 +174,13 @@ test.describe('Dashboard navigation', () => {
         title,
         description: 'Created by Playwright to verify Kanban card opens workflow canvas.',
         required_capabilities: [`phase06-workflow-unmatched-${Date.now()}`],
+        labels: { test: 'playwright-e2e' },
         priority: 40,
       },
     })
     expect(create.ok()).toBeTruthy()
     const taskId = ((await create.json()) as { id: string }).id
+    createdTaskIds.push(taskId)
 
     await page.getByRole('link', { name: /tasks/i }).first().click()
     await expect(page.getByTestId(`kanban-card-${taskId}`)).toContainText(title, { timeout: 15_000 })

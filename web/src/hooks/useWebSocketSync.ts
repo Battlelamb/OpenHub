@@ -28,6 +28,14 @@ export function buildWsUrl(): string {
   return `${proto}//${host}/v1/ws/ui`
 }
 
+export function shouldReconnectAfterClose(
+  cancelled: boolean,
+  currentSocket: WebSocket | null,
+  closedSocket: WebSocket,
+): boolean {
+  return !cancelled && currentSocket === closedSocket
+}
+
 export function handleEvent(qc: ReturnType<typeof useQueryClient>, msg: WSEvent) {
   switch (msg.event) {
     case 'agent_status_changed':
@@ -120,6 +128,7 @@ export function useWebSocketSync() {
       }
 
       ws.onclose = () => {
+        if (!shouldReconnectAfterClose(cancelled, wsRef.current, ws)) return
         setWsStatus('reconnecting')
         const delay = Math.min(MAX_DELAY, 1000 * 2 ** attemptRef.current) * (0.5 + Math.random() * 0.5)
         attemptRef.current += 1
@@ -136,7 +145,10 @@ export function useWebSocketSync() {
     return () => {
       cancelled = true
       if (timerRef.current) clearTimeout(timerRef.current)
-      if (wsRef.current) wsRef.current.close()
+      const ws = wsRef.current
+      wsRef.current = null
+      if (ws) ws.close()
+      setWsStatus('idle')
     }
   }, [token, queryClient, setWsStatus])
 }

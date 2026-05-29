@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildWsUrl, handleEvent } from './useWebSocketSync'
+import { buildWsUrl, handleEvent, shouldReconnectAfterClose } from './useWebSocketSync'
 import { qk } from '@/lib/query-keys'
 
 describe('useWebSocketSync', () => {
@@ -37,6 +37,27 @@ describe('useWebSocketSync', () => {
         value: { protocol: originalProtocol, host: 'localhost:5173' },
         writable: true,
       })
+    })
+  })
+
+  describe('shouldReconnectAfterClose', () => {
+    it('does not reconnect when the effect cleanup intentionally closed the socket', () => {
+      const socket = {} as WebSocket
+
+      expect(shouldReconnectAfterClose(true, socket, socket)).toBe(false)
+    })
+
+    it('does not reconnect when an old socket closes after a replacement is already active', () => {
+      const closedSocket = {} as WebSocket
+      const currentSocket = {} as WebSocket
+
+      expect(shouldReconnectAfterClose(false, currentSocket, closedSocket)).toBe(false)
+    })
+
+    it('reconnects only for the active socket after an unexpected close', () => {
+      const socket = {} as WebSocket
+
+      expect(shouldReconnectAfterClose(false, socket, socket)).toBe(true)
     })
   })
 

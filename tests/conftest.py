@@ -14,6 +14,17 @@ os.environ.setdefault("AGENTHUB_ADMIN_PASSWORD", "test-password-secure")
 os.environ.setdefault("AGENTHUB_SECRET_KEY", "test-secret-key-32-chars-minimum")
 os.environ.setdefault("AGENTHUB_JWT_SECRET_KEY", "test-jwt-secret-key-32-chars-ok")
 
+# Test isolation guard: app.config calls load_dotenv() at import time, and the
+# repository-local .env may point at the live Turso database used by the public
+# dashboard.  Pytest must never mutate that live database unless an operator
+# explicitly opts in for a Turso smoke run.
+if os.environ.get("OPENHUB_TEST_USE_TURSO") != "1":
+    os.environ["AGENTHUB_TURSO_DATABASE_URL"] = ""
+    os.environ["AGENTHUB_TURSO_AUTH_TOKEN"] = ""
+    os.environ["AGENTHUB_VECTOR_SEARCH_ENABLED"] = "false"
+    os.environ.pop("TURSO_DATABASE_URL", None)
+    os.environ.pop("TURSO_AUTH_TOKEN", None)
+
 # Use a real temp file for the DB so app.main.lifespan os.makedirs(dirname(db_path))
 # does not fail on ":memory:" (dirname would be ""). The file itself is disposable.
 _tmp_db_dir = tempfile.mkdtemp(prefix="openhub-test-db-")
@@ -91,9 +102,9 @@ def pytest_collection_modifyitems(config, items):
     Turso backend must skip cleanly on local dev so the rest of the suite
     stays green without configuration.
     """
-    has_turso = bool(
-        os.environ.get("TURSO_DATABASE_URL")
-        and os.environ.get("TURSO_AUTH_TOKEN")
+    has_turso = os.environ.get("OPENHUB_TEST_USE_TURSO") == "1" and bool(
+        os.environ.get("AGENTHUB_TURSO_DATABASE_URL")
+        and os.environ.get("AGENTHUB_TURSO_AUTH_TOKEN")
     )
     if has_turso:
         return
