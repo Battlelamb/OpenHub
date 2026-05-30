@@ -111,10 +111,23 @@ export function useTask(id: string | undefined) {
 
 export interface CreateTaskPayload {
   title: string
-  description?: string
+  description: string
   priority?: number
   required_capabilities?: string[]
   agent_id?: string | null
+}
+
+function toBackendCreateTaskPayload(payload: CreateTaskPayload) {
+  const capabilities = (payload.required_capabilities ?? ['general'])
+    .map((capability) => capability.trim())
+    .filter(Boolean)
+
+  return {
+    title: payload.title,
+    description: payload.description.trim(),
+    priority: payload.priority,
+    required_capabilities: capabilities.length ? capabilities : ['general'],
+  }
 }
 
 export function useCreateTask() {
@@ -124,7 +137,7 @@ export function useCreateTask() {
       // Trailing slash to avoid FastAPI 307 redirect
       const b = await api<BackendTaskResponse>('/v1/tasks/', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(toBackendCreateTaskPayload(payload)),
       })
       return adaptTask(b)
     },

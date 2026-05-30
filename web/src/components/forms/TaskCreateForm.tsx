@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -31,12 +32,14 @@ import {
 import { useCreateTask } from '@/hooks/queries/useTasks'
 import { useAgents } from '@/hooks/queries/useAgents'
 
+const ANY_AGENT_VALUE = '__any_agent__'
+
 const schema = z.object({
   title: z.string().min(1, 'Title required'),
-  description: z.string().optional(),
+  description: z.string().min(1, 'Description required'),
   priority: z.number().min(1).max(5).default(3),
   agent_id: z.string().optional().nullable(),
-  required_capabilities: z.array(z.string()).optional(),
+  required_capabilities: z.array(z.string()).min(1).default(['general']),
 })
 
 type TaskFormValues = z.infer<typeof schema>
@@ -57,7 +60,7 @@ export function TaskCreateForm({ onSuccess }: TaskCreateFormProps) {
       description: '',
       priority: 3,
       agent_id: null,
-      required_capabilities: [],
+      required_capabilities: ['general'],
     },
   })
 
@@ -80,6 +83,7 @@ export function TaskCreateForm({ onSuccess }: TaskCreateFormProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('dialogTitle')}</DialogTitle>
+          <DialogDescription>{t('dialogDescription')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -104,6 +108,29 @@ export function TaskCreateForm({ onSuccess }: TaskCreateFormProps) {
                   <FormLabel>{t('fields.description')}</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="required_capabilities"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('fields.capabilities')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={(field.value ?? []).join(', ')}
+                      onChange={(event) =>
+                        field.onChange(
+                          event.target.value
+                            .split(',')
+                            .map((capability) => capability.trim())
+                            .filter(Boolean)
+                        )
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,8 +170,8 @@ export function TaskCreateForm({ onSuccess }: TaskCreateFormProps) {
                 <FormItem>
                   <FormLabel>{t('fields.agent')}</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value ?? ''}
+                    value={field.value ?? ANY_AGENT_VALUE}
+                    onValueChange={(value) => field.onChange(value === ANY_AGENT_VALUE ? null : value)}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -152,7 +179,7 @@ export function TaskCreateForm({ onSuccess }: TaskCreateFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Any agent</SelectItem>
+                      <SelectItem value={ANY_AGENT_VALUE}>Any agent</SelectItem>
                       {agents?.map((agent) => (
                         <SelectItem key={agent.id} value={agent.id}>
                           {agent.name}
