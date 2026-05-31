@@ -1,39 +1,45 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T11:23:28Z",
+  "timestamp": "2026-05-31T11:45:54Z",
   "context": "phase",
   "phase": "09",
   "phase_name": "ANP Compatibility Spike",
   "phase_dir": ".planning/phases/09-anp-compatibility",
   "plan": 9,
-  "task": 1,
+  "task": 2,
   "total_tasks": 5,
-  "status": "planned",
-  "current_state": "Phase 09 is planned but implementation has not started. The plan defines a bounded ANP compatibility spike: public-safe ANP Agent Description JSON-LD and .well-known/agent-descriptions discovery, without replacing OpenHub ACN auth, scoped keys, task routing, evidence bundles, or review gates.",
+  "status": "in_progress",
+  "current_state": "Phase 09 is in progress. Slice 09-01 completed the public-safe ANP compatibility design doc and evidence. Resume with 09-02: TDD for a pure Agent-to-ANP JSON-LD serializer service; do not add routes until 09-03/09-04.",
   "completed_tasks": [
     {
       "id": "08",
       "name": "CI + Release Automation",
       "status": "complete",
       "evidence": ".planning/phases/08-ci-release-automation/08-SUMMARY.md"
-    }
-  ],
-  "active_task": {
-    "id": "09-01",
-    "name": "ANP mapping design",
-    "status": "planned",
-    "evidence": ".planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md"
-  },
-  "remaining_tasks": [
+    },
     {
       "id": "09-01",
       "name": "ANP mapping design",
-      "status": "planned"
-    },
+      "status": "complete",
+      "evidence": ".planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md",
+      "docs": "docs/ANP_COMPATIBILITY.md"
+    }
+  ],
+  "active_task": {
+    "id": "09-02",
+    "name": "Serializer service",
+    "status": "next",
+    "files": [
+      "app/models/anp.py",
+      "app/services/anp_compatibility_service.py",
+      "tests/unit/test_anp_compatibility_service.py"
+    ]
+  },
+  "remaining_tasks": [
     {
       "id": "09-02",
       "name": "Serializer service",
-      "status": "planned"
+      "status": "next"
     },
     {
       "id": "09-03",
@@ -53,7 +59,7 @@
   ],
   "blockers": [],
   "human_actions_pending": [
-    "None for planning. Release/tag creation still requires explicit operator version/target approval later."
+    "None for 09-02. Release/tag creation still requires explicit operator version/target approval later."
   ],
   "decisions": [
     {
@@ -67,25 +73,38 @@
     {
       "decision": "Do not fake DID values.",
       "rationale": "ANP's DID layer is deeper than this spike. The route should include DID only if an agent explicitly supplies one."
+    },
+    {
+      "decision": "Keep 09-02 route-free and dependency-free.",
+      "rationale": "A pure serializer service can be exhaustively tested for public/private filtering and no-leak behavior before any public endpoint exists."
     }
   ],
   "resume_instructions": [
-    "Read .planning/phases/09-anp-compatibility/09-PLAN.md and .continue-here.md.",
-    "Start with 09-01: create docs/ANP_COMPATIBILITY.md and 09-01 evidence.",
-    "Use TDD for 09-02 through 09-04 exactly as listed in the plan.",
-    "Run focused tests, dependency drift, GSD health/consistency, git diff --check, and secret/no-leak scans before each commit.",
+    "Read .planning/phases/09-anp-compatibility/09-PLAN.md, .continue-here.md, and docs/ANP_COMPATIBILITY.md.",
+    "Start 09-02 by writing failing tests in tests/unit/test_anp_compatibility_service.py.",
+    "Use direct Agent(...) objects for serializer tests; do not touch the database in 09-02.",
+    "Implement app/models/anp.py and app/services/anp_compatibility_service.py only after the failing tests are in place.",
+    "Run .venv/bin/python -m pytest tests/unit/test_anp_compatibility_service.py -q --tb=short until green.",
+    "Run dependency drift, GSD health/consistency, git diff --check, and changed-file secret/no-leak scans before committing.",
     "Commit and push each completed slice; verify HEAD = origin/master = remote/master before reporting done."
   ],
   "verification": {
-    "last_known_git_head": "7cb049d",
+    "last_verified_base_head": "46eae90",
     "plan_file": ".planning/phases/09-anp-compatibility/09-PLAN.md",
     "continue_file": ".planning/phases/09-anp-compatibility/.continue-here.md",
+    "design_doc": "docs/ANP_COMPATIBILITY.md",
     "required_gates": [
-      "python scripts/check_dependency_drift.py",
+      ".venv/bin/python scripts/check_dependency_drift.py",
       "node .codex/get-shit-done/bin/gsd-tools.cjs validate health",
       "node .codex/get-shit-done/bin/gsd-tools.cjs validate consistency",
       "git diff --check",
       "focused pytest for changed backend routes/services"
-    ]
+    ],
+    "last_09_01_validation": {
+      "dependency_drift": "passed",
+      "gsd_health": "healthy; 0 errors; 0 warnings; 1 expected open-phase info entry",
+      "gsd_consistency": "passed; 0 errors; 0 warnings",
+      "diff_check": "passed"
+    }
   }
 }

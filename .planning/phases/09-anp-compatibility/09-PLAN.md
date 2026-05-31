@@ -1,10 +1,10 @@
 ---
 phase: 09
 name: ANP Compatibility Spike
-status: planned
+status: in_progress
 wave: anp-compatibility
 created: 2026-05-31
-updated: 2026-05-31T11:23:28Z
+updated: 2026-05-31T11:45:54Z
 owner: OpenHub GSD
 ---
 

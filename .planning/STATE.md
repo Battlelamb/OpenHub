@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 09 ANP Compatibility Spike planned — implementation not started
-stopped_at: "PHASE-09-PLANNED"
-last_updated: "2026-05-31T11:23:28Z"
+status: Phase 09 ANP Compatibility Spike in progress — 09-01 complete, 09-02 next
+stopped_at: "PHASE-09-SLICE-09-02-NEXT"
+last_updated: "2026-05-31T11:45:54Z"
 progress:
   total_phases: 9
   completed_phases: 8
   total_plans: 61
-  completed_plans: 56
+  completed_plans: 57
 ---
 
 # Project State
@@ -20,15 +20,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 09 ANP Compatibility Spike is planned. Implementation should start with a design/mapping doc, then TDD for the serializer and public-safe discovery endpoints.
+**Current focus:** Phase 09 ANP Compatibility Spike is in progress. Slice 09-01 is complete; resume with 09-02 TDD for the pure serializer and public-safe JSON-LD mapping.
 
 ## Current Position
 
-- **Status:** planned
+- **Status:** in progress
 - **Current phase:** 09 — ANP Compatibility Spike
 - **Current plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
-- **Current slice:** `09-01 — ANP mapping design`
-- **Next slice:** write `docs/ANP_COMPATIBILITY.md`, then TDD serializer service and public endpoints
+- **Current slice:** `09-02 — Serializer service`
+- **Next slice:** write failing serializer tests, then implement pure mapping in `app/models/anp.py` and `app/services/anp_compatibility_service.py`
+- **Previous slice:** `09-01 — ANP mapping design` complete; see `docs/ANP_COMPATIBILITY.md`
 - **Previous phase:** 08 — CI + Release Automation complete; release/tag creation still deferred pending explicit version choice
 - **Live status:** `https://hub.brunhilde.cloud` healthy from latest smoke before Phase 09 planning
 
@@ -89,8 +90,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 | Slice | Description | Status |
 |-------|-------------|--------|
-| 09-01 | ANP mapping design | ⏳ planned |
-| 09-02 | Serializer service | ⏳ planned |
+| 09-01 | ANP mapping design | ✅ |
+| 09-02 | Serializer service | ⏳ next |
 | 09-03 | Per-agent ADP endpoint | ⏳ planned |
 | 09-04 | Well-known discovery endpoint | ⏳ planned |
 | 09-05 | Docs + verification closeout | ⏳ planned |
@@ -123,10 +124,12 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T11:23:28Z
-- **Stopped at:** Phase 09 planned; implementation not started.
+- **Last state update:** 2026-05-31T11:45:54Z
+- **Stopped at:** 09-01 complete; 09-02 serializer service next.
 - **Resume file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
 - **Continue file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
 - **Phase 09 plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
-- **Next action:** begin 09-01 by writing `docs/ANP_COMPATIBILITY.md` and 09-01 evidence, then run GSD health/consistency.
+- **Completed 09-01 evidence:** `.planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md`
+- **ANP design doc:** `docs/ANP_COMPATIBILITY.md`
+- **Next action:** begin 09-02 by writing failing tests in `tests/unit/test_anp_compatibility_service.py`, then implement `app/models/anp.py` and `app/services/anp_compatibility_service.py`.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

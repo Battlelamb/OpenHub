@@ -179,7 +179,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 
 **Planned slices:**
 
-- [ ] **09-01 — ANP mapping design**: document OpenHub → ANP ADP/ADSP field mapping and secret-safe public policy.
+- [x] **09-01 — ANP mapping design**: documented OpenHub → ANP ADP/ADSP field mapping and secret-safe public policy in `docs/ANP_COMPATIBILITY.md`.
 - [ ] **09-02 — Serializer service**: pure Pydantic/service mapping from `Agent` to safe JSON-LD.
 - [ ] **09-03 — Per-agent ADP endpoint**: public route for explicitly opted-in agents.
 - [ ] **09-04 — Well-known discovery endpoint**: public collection page with pagination.
@@ -199,7 +199,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 8 / 9
-- **Completed plans:** 56 / 61
-- **Current phase:** Phase 09 — ANP Compatibility Spike planned
-- **Current slice:** 09-01 — ANP mapping design
-- **Next slice:** write `docs/ANP_COMPATIBILITY.md`, then TDD serializer service
+- **Completed plans:** 57 / 61
+- **Current phase:** Phase 09 — ANP Compatibility Spike in progress
+- **Current slice:** 09-02 — Serializer service
+- **Next slice:** write failing `tests/unit/test_anp_compatibility_service.py`, then implement pure serializer mapping
