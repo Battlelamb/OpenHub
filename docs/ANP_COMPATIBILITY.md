@@ -1,11 +1,29 @@
 # ANP Compatibility
 
-Status: experimental design, Phase 09
+Status: implemented experimental spike, Phase 09
 Updated: 2026-05-31
 
-OpenHub can expose a small, read-only Agent Network Protocol (ANP) compatibility surface so external tools can discover public-safe OpenHub agents without weakening OpenHub's own trust model.
+OpenHub exposes a small, read-only Agent Network Protocol (ANP) compatibility surface so external tools can discover public-safe OpenHub agents without weakening OpenHub's own trust model.
 
 This document is the source of truth for the Phase 09 ANP compatibility spike.
+
+## Implementation status
+
+Implemented endpoints:
+
+- `GET /.well-known/agent-descriptions?page=1&page_size=50`
+- `GET /v1/anp/agents/{agent_id}/ad.json`
+
+Implemented modules:
+
+- `app/models/anp.py`
+- `app/services/anp_compatibility_service.py`
+- `app/api/routes_anp.py`
+
+Verification coverage:
+
+- Serializer/public-private/filtering tests: `tests/unit/test_anp_compatibility_service.py`
+- Public route/discovery/pagination/no-leak tests: `tests/unit/test_anp_routes.py`
 
 ## Scope
 

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 09 ANP Compatibility Spike in progress — 09-01 complete, 09-02 next
-stopped_at: "PHASE-09-SLICE-09-02-NEXT"
-last_updated: "2026-05-31T11:45:54Z"
+status: Phase 09 ANP Compatibility Spike complete — public-safe ANP discovery implemented
+stopped_at: "PHASE-09-COMPLETE"
+last_updated: "2026-05-31T12:26:07Z"
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 61
-  completed_plans: 57
+  completed_plans: 61
 ---
 
 # Project State
@@ -20,18 +20,18 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 09 ANP Compatibility Spike is in progress. Slice 09-01 is complete; resume with 09-02 TDD for the pure serializer and public-safe JSON-LD mapping.
+**Current focus:** Phase 09 ANP Compatibility Spike is complete. OpenHub now exposes public-safe ANP-style discovery for explicitly opted-in agents through `/.well-known/agent-descriptions` and `/v1/anp/agents/{agent_id}/ad.json`, without replacing ACN auth/trust.
 
 ## Current Position
 
-- **Status:** in progress
+- **Status:** complete
 - **Current phase:** 09 — ANP Compatibility Spike
 - **Current plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
-- **Current slice:** `09-02 — Serializer service`
-- **Next slice:** write failing serializer tests, then implement pure mapping in `app/models/anp.py` and `app/services/anp_compatibility_service.py`
-- **Previous slice:** `09-01 — ANP mapping design` complete; see `docs/ANP_COMPATIBILITY.md`
+- **Current slice:** none — Phase 09 complete
+- **Next slice:** release/tag decision remains deferred until the operator chooses a version and publish target
+- **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 08 — CI + Release Automation complete; release/tag creation still deferred pending explicit version choice
-- **Live status:** `https://hub.brunhilde.cloud` healthy from latest smoke before Phase 09 planning
+- **Live status:** local implementation verified; public live smoke follows deploy/restart gate
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -86,15 +86,15 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 08-04 | Release/tag automation guardrail | ✅ |
 | 08-05 | Dependency drift guard | ✅ |
 
-## Phase 09 Progress (PLANNED)
+## Phase 09 Progress (COMPLETE)
 
 | Slice | Description | Status |
 |-------|-------------|--------|
 | 09-01 | ANP mapping design | ✅ |
-| 09-02 | Serializer service | ⏳ next |
-| 09-03 | Per-agent ADP endpoint | ⏳ planned |
-| 09-04 | Well-known discovery endpoint | ⏳ planned |
-| 09-05 | Docs + verification closeout | ⏳ planned |
+| 09-02 | Serializer service | ✅ |
+| 09-03 | Per-agent ADP endpoint | ✅ |
+| 09-04 | Well-known discovery endpoint | ✅ |
+| 09-05 | Docs + verification closeout | ✅ |
 
 ## Verification Status
 
@@ -122,14 +122,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Docker dashboard packaging (2026-05-28):** CI run `26600306093` passed on `2ca0fb0`; Compose/package smoke built the Docker image, ran the container, verified `/v1/health/simple`, served `/dashboard`, fetched a bundled `/dashboard/assets/<hash>.js|css` asset, then verified package metadata.
 - **Release guardrail + dependency drift guard (2026-05-28):** manual read-only release verification workflow added; no tag/publish path; dependency drift guard added to CI and GSD; local full backend, frontend, actionlint, workflow bash, package build/twine, GSD health/consistency, Compose config all passed. GitHub Actions run `26601647394` passed all five jobs on commit `77f71ed`.
 
+- **Phase 09 ANP compatibility (2026-05-31):** focused serializer + route tests prove default-private public discovery, per-agent ADP documents, no raw metadata/labels, no credential/runtime leakage, DID only when explicit, and pagination for `/.well-known/agent-descriptions`.
+
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T11:45:54Z
-- **Stopped at:** 09-01 complete; 09-02 serializer service next.
+- **Last state update:** 2026-05-31T12:26:07Z
+- **Stopped at:** Phase 09 complete; no active implementation slice.
 - **Resume file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
 - **Continue file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
 - **Phase 09 plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
-- **Completed 09-01 evidence:** `.planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md`
-- **ANP design doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** begin 09-02 by writing failing tests in `tests/unit/test_anp_compatibility_service.py`, then implement `app/models/anp.py` and `app/services/anp_compatibility_service.py`.
+- **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
+- **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
+- **Next action:** choose an explicit version/release target if the operator wants a tag or release; otherwise keep OpenHub on `master` with Phase 09 complete.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

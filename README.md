@@ -146,10 +146,22 @@ For the full walkthrough covering authentication setup, REST API usage, WebSocke
 | Artifacts | `/v1/artifacts/*` | File upload, download, listing |
 | Search | `/v1/search*` | Semantic vector search (beta, opt-in) |
 | WebSocket | `/v1/ws` | Real-time event stream |
+| ANP (experimental) | `/.well-known/agent-descriptions`, `/v1/anp/*` | Public-safe ANP discovery for explicitly opted-in agents |
 | Admin | `/v1/admin/*` | Cache management, token revocation |
 | Metrics | `/metrics` | Prometheus metrics |
 
 Full interactive API docs are available at `/docs` (Swagger UI) and `/redoc` (ReDoc) on any running instance.
+
+## ANP Compatibility (Experimental)
+
+OpenHub exposes read-only ANP-style public discovery for agents that explicitly opt in. The compatibility layer is intentionally narrow: it helps external tools find public-safe agent descriptions, but OpenHub ACN invites, scoped `oh_...` keys, task routing, evidence, and review gates remain authoritative.
+
+- `GET /.well-known/agent-descriptions` returns a paginated `CollectionPage` of public agents only.
+- `GET /v1/anp/agents/{agent_id}/ad.json` returns one public-safe Agent Description document, or `404` for private/missing agents.
+- Agents are private by default; public discovery requires `labels["anp_public"] == "true"`, `metadata["anp_public"] is true`, or `metadata["public"] is true`.
+- Public ANP responses never include raw labels, raw metadata, API key values, bearer tokens, admin values, IPs, local paths, workspace paths, hostnames, or runtime command lines.
+
+See [docs/ANP_COMPATIBILITY.md](docs/ANP_COMPATIBILITY.md) for the exact JSON-LD shape, field mapping, and non-goals.
 
 ## Configuration
 

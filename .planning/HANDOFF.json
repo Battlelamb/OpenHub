@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T11:45:54Z",
+  "timestamp": "2026-05-31T12:26:07Z",
   "context": "phase",
   "phase": "09",
   "phase_name": "ANP Compatibility Spike",
   "phase_dir": ".planning/phases/09-anp-compatibility",
   "plan": 9,
-  "task": 2,
+  "task": null,
   "total_tasks": 5,
-  "status": "in_progress",
-  "current_state": "Phase 09 is in progress. Slice 09-01 completed the public-safe ANP compatibility design doc and evidence. Resume with 09-02: TDD for a pure Agent-to-ANP JSON-LD serializer service; do not add routes until 09-03/09-04.",
+  "status": "complete",
+  "current_state": "Phase 09 is complete. OpenHub now exposes public-safe ANP-style discovery for explicitly opted-in agents through /.well-known/agent-descriptions and /v1/anp/agents/{agent_id}/ad.json. OpenHub ACN identity, invites, scoped keys, task routing, evidence, and review gates remain authoritative.",
   "completed_tasks": [
     {
       "id": "08",
@@ -23,48 +23,57 @@
       "status": "complete",
       "evidence": ".planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md",
       "docs": "docs/ANP_COMPATIBILITY.md"
-    }
-  ],
-  "active_task": {
-    "id": "09-02",
-    "name": "Serializer service",
-    "status": "next",
-    "files": [
-      "app/models/anp.py",
-      "app/services/anp_compatibility_service.py",
-      "tests/unit/test_anp_compatibility_service.py"
-    ]
-  },
-  "remaining_tasks": [
+    },
     {
       "id": "09-02",
       "name": "Serializer service",
-      "status": "next"
+      "status": "complete",
+      "evidence": ".planning/phases/09-anp-compatibility/09-02-SERIALIZER-SERVICE.md",
+      "files": [
+        "app/models/anp.py",
+        "app/services/anp_compatibility_service.py",
+        "tests/unit/test_anp_compatibility_service.py"
+      ]
     },
     {
       "id": "09-03",
       "name": "Per-agent ADP endpoint",
-      "status": "planned"
+      "status": "complete",
+      "evidence": ".planning/phases/09-anp-compatibility/09-03-ADP-ENDPOINT.md",
+      "files": [
+        "app/api/routes_anp.py",
+        "app/main.py",
+        "tests/unit/test_anp_routes.py"
+      ]
     },
     {
       "id": "09-04",
       "name": "Well-known discovery endpoint",
-      "status": "planned"
+      "status": "complete",
+      "evidence": ".planning/phases/09-anp-compatibility/09-04-WELL-KNOWN-DISCOVERY.md",
+      "files": [
+        "app/api/routes_anp.py",
+        "tests/unit/test_anp_routes.py"
+      ]
     },
     {
       "id": "09-05",
       "name": "Docs + verification closeout",
-      "status": "planned"
+      "status": "complete",
+      "evidence": ".planning/phases/09-anp-compatibility/09-05-VERIFICATION.md",
+      "summary": ".planning/phases/09-anp-compatibility/09-SUMMARY.md"
     }
   ],
+  "active_task": null,
+  "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [
-    "None for 09-02. Release/tag creation still requires explicit operator version/target approval later."
+    "Release/tag creation still requires explicit operator version/target approval."
   ],
   "decisions": [
     {
       "decision": "Treat ANP as an interoperability/discovery compatibility layer, not an auth/control-plane replacement.",
-      "rationale": "OpenHub's current value depends on scoped keys, invite-based onboarding, task routing, evidence, and review gates. ANP discovery can help external agents find public OpenHub agents without weakening those controls."
+      "rationale": "OpenHub's current value depends on scoped keys, invite-based onboarding, task routing, evidence, and review gates. ANP discovery can help external tools find public OpenHub agents without weakening those controls."
     },
     {
       "decision": "Default ANP public discovery to opt-in only.",
@@ -72,39 +81,52 @@
     },
     {
       "decision": "Do not fake DID values.",
-      "rationale": "ANP's DID layer is deeper than this spike. The route should include DID only if an agent explicitly supplies one."
+      "rationale": "ANP's DID layer is deeper than this spike. The route includes DID only if an agent explicitly supplies one."
     },
     {
-      "decision": "Keep 09-02 route-free and dependency-free.",
-      "rationale": "A pure serializer service can be exhaustively tested for public/private filtering and no-leak behavior before any public endpoint exists."
+      "decision": "Keep ANP mapping pure and routes thin.",
+      "rationale": "Pure serializers are easier to test for no-leak behavior, and route tests can override the repository dependency without touching the database."
     }
   ],
   "resume_instructions": [
-    "Read .planning/phases/09-anp-compatibility/09-PLAN.md, .continue-here.md, and docs/ANP_COMPATIBILITY.md.",
-    "Start 09-02 by writing failing tests in tests/unit/test_anp_compatibility_service.py.",
-    "Use direct Agent(...) objects for serializer tests; do not touch the database in 09-02.",
-    "Implement app/models/anp.py and app/services/anp_compatibility_service.py only after the failing tests are in place.",
-    "Run .venv/bin/python -m pytest tests/unit/test_anp_compatibility_service.py -q --tb=short until green.",
-    "Run dependency drift, GSD health/consistency, git diff --check, and changed-file secret/no-leak scans before committing.",
-    "Commit and push each completed slice; verify HEAD = origin/master = remote/master before reporting done."
+    "No active Phase 09 implementation task remains.",
+    "If continuing OpenHub, first verify git status, GSD health/consistency, public health, and CI state.",
+    "If the operator wants a release, ask for explicit version and target before creating tags or publishing artifacts.",
+    "Do not weaken ANP privacy defaults: agents remain private unless explicitly opted into public discovery."
   ],
   "verification": {
-    "last_verified_base_head": "46eae90",
     "plan_file": ".planning/phases/09-anp-compatibility/09-PLAN.md",
     "continue_file": ".planning/phases/09-anp-compatibility/.continue-here.md",
+    "summary_file": ".planning/phases/09-anp-compatibility/09-SUMMARY.md",
     "design_doc": "docs/ANP_COMPATIBILITY.md",
     "required_gates": [
       ".venv/bin/python scripts/check_dependency_drift.py",
       "node .codex/get-shit-done/bin/gsd-tools.cjs validate health",
       "node .codex/get-shit-done/bin/gsd-tools.cjs validate consistency",
       "git diff --check",
-      "focused pytest for changed backend routes/services"
+      ".venv/bin/python -m pytest tests/unit/test_anp_compatibility_service.py tests/unit/test_anp_routes.py tests/unit/test_static_mount.py -q --tb=short",
+      "full backend/frontend/E2E verification before final report"
     ],
-    "last_09_01_validation": {
+    "last_focused_validation": {
+      "anp_serializer_routes_static": "19 passed"
+    },
+    "last_full_validation": {
+      "timestamp": "2026-05-31T12:34:34Z",
+      "log": "/tmp/openhub-deep-gsd/phase09-verify-20260531T123110Z.log",
+      "handoff_json": "passed",
       "dependency_drift": "passed",
-      "gsd_health": "healthy; 0 errors; 0 warnings; 1 expected open-phase info entry",
+      "gsd_health": "healthy; 0 errors; 0 warnings",
       "gsd_consistency": "passed; 0 errors; 0 warnings",
-      "diff_check": "passed"
+      "diff_check": "passed",
+      "changed_file_secret_scan": "clean",
+      "backend_pytest": "passed; Turso-dependent vector tests skipped when credentials are not set",
+      "frontend_audit": "0 vulnerabilities",
+      "frontend_lint": "passed",
+      "frontend_typecheck": "passed",
+      "frontend_tests": "19 files passed; 49 tests passed",
+      "frontend_build": "passed; known Vite large-chunk advisory",
+      "compose_config": "passed",
+      "playwright_e2e": "10 passed"
     }
   }
 }

@@ -302,6 +302,11 @@ from .api.routes_search import router as search_router
 
 app.include_router(search_router)
 
+# Import and include public ANP compatibility routes (Phase 09, experimental)
+from .api.routes_anp import router as anp_router
+
+app.include_router(anp_router)
+
 # Import and include P1 routers (locks, tracing, costs)
 from .api.routes_p1 import lock_router, trace_router, cost_router
 

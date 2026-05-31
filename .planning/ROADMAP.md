@@ -4,7 +4,7 @@
 
 OpenHub ships as a self-hosted multi-agent coordination platform: FastAPI backend, React/Vite command center, SQLite/Turso persistence, WebSocket-backed live updates, vector search, and GSD-managed delivery.
 
-The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass. Phase 08 completed CI + release automation. Phase 09 is now planned as a bounded ANP compatibility spike: public-safe agent description JSON-LD and `.well-known/agent-descriptions` discovery without replacing OpenHub ACN trust or verification gates.
+The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass. Phase 08 completed CI + release automation. Phase 09 completed a bounded ANP compatibility spike: public-safe agent description JSON-LD and `.well-known/agent-descriptions` discovery without replacing OpenHub ACN trust or verification gates.
 
 ## Current Truth
 
@@ -27,7 +27,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **Phase 6: Kanban + Workflow Canvas** — task Kanban, backend status transitions, drag/drop persistence, embedded workflow canvas
 - [x] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, runtime ops docs, full verification, and tag decision evidence
 - [x] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard
-- [ ] **Phase 9: ANP Compatibility Spike** — public-safe ANP Agent Description JSON-LD and `.well-known/agent-descriptions` discovery, without replacing OpenHub ACN auth/trust
+- [x] **Phase 9: ANP Compatibility Spike** — public-safe ANP Agent Description JSON-LD and `.well-known/agent-descriptions` discovery, without replacing OpenHub ACN auth/trust
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -164,7 +164,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **08-04 — Release/tag automation guardrail**: manual read-only release verification workflow and docs added; no auto-tags or registry publishing.
 - [x] **08-05 — Dependency drift guard**: backend/frontend dependency drift script, tests, GSD command, and CI job added.
 
-## Phase 9: ANP Compatibility Spike — PLANNED
+## Phase 9: ANP Compatibility Spike — COMPLETE
 
 **Goal:** Expose a public-safe ANP compatibility surface for OpenHub agents while keeping OpenHub ACN identity, scoped keys, task routing, evidence bundles, and review gates authoritative.
 
@@ -180,10 +180,10 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 **Planned slices:**
 
 - [x] **09-01 — ANP mapping design**: documented OpenHub → ANP ADP/ADSP field mapping and secret-safe public policy in `docs/ANP_COMPATIBILITY.md`.
-- [ ] **09-02 — Serializer service**: pure Pydantic/service mapping from `Agent` to safe JSON-LD.
-- [ ] **09-03 — Per-agent ADP endpoint**: public route for explicitly opted-in agents.
-- [ ] **09-04 — Well-known discovery endpoint**: public collection page with pagination.
-- [ ] **09-05 — Docs + verification closeout**: README/docs, focused tests, GSD validation, summary, push/live smoke if deployed.
+- [x] **09-02 — Serializer service**: added pure `Agent` → ANP JSON-LD mapping with default-private public filtering and no raw metadata/label serialization.
+- [x] **09-03 — Per-agent ADP endpoint**: added `GET /v1/anp/agents/{agent_id}/ad.json` for public agents only; private/missing agents return `404`.
+- [x] **09-04 — Well-known discovery endpoint**: added `GET /.well-known/agent-descriptions` with public-only pagination and `next` links.
+- [x] **09-05 — Docs + verification closeout**: README/docs, evidence, GSD state, and verification closeout updated.
 
 ## Verification Gates
 
@@ -198,8 +198,8 @@ Before claiming a future feature or phase complete:
 
 ## Progress
 
-- **Completed phases:** 8 / 9
-- **Completed plans:** 57 / 61
-- **Current phase:** Phase 09 — ANP Compatibility Spike in progress
-- **Current slice:** 09-02 — Serializer service
-- **Next slice:** write failing `tests/unit/test_anp_compatibility_service.py`, then implement pure serializer mapping
+- **Completed phases:** 9 / 9
+- **Completed plans:** 61 / 61
+- **Current phase:** Phase 09 — ANP Compatibility Spike complete
+- **Current slice:** none
+- **Next slice:** release/tag decision only if the operator explicitly chooses version and publish target
