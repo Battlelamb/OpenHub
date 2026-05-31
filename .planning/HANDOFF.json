@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T15:30:52Z",
+  "timestamp": "2026-05-31T15:39:46Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
@@ -9,7 +9,7 @@
   "task": "10-03",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives. Slice 10-02 completed task evidence service/API endpoints with local verification; commit/push/CI/live closeout is in progress for this execution window. Next implementation slice is 10-03 unified task timeline API.",
+  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives. Slice 10-02 completed task evidence service/API endpoints and was pushed, CI-verified, deployed, and live-smoked. Next implementation slice is 10-03 unified task timeline API.",
   "completed_tasks": [
     {
       "id": "09",
@@ -32,12 +32,14 @@
     {
       "id": "10-02",
       "name": "Task evidence service + API endpoints",
-      "status": "complete-local",
+      "status": "complete-shipped",
       "evidence": [
         "tests/integration/test_task_evidence_endpoints.py",
         "app/services/task_evidence_service.py",
         "app/api/routes_tasks.py",
-        "app/models/tasks.py"
+        "app/models/tasks.py",
+        "GitHub Actions run 26716859212",
+        "public GET /v1/tasks/smoke-task/evidence -> 401 unauthenticated"
       ]
     }
   ],
@@ -73,7 +75,6 @@
   ],
   "resume_instructions": [
     "Start from /home/brunhilde/OpenHub on master and verify git status before editing.",
-    "If 10-02 ship closeout is incomplete, first verify local HEAD/origin/remote equality, GitHub Actions, service restart, and public health/evidence API smoke.",
     "Start 10-03 with strict TDD for GET /v1/tasks/{task_id}/timeline merging trace_events and task_evidence chronologically.",
     "Do not add dashboard evidence UI in 10-03.",
     "Do not add public evidence sharing in Phase 10.",
@@ -87,7 +88,7 @@
     "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> 289 passed / 9 skipped",
     "last_frontend_validation": "npm audit 0 vulnerabilities; eslint passed; typecheck passed; Vitest 49 passed; npm run build passed",
     "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed/untracked secret scan passed; docker compose config rendered",
-    "last_ci_validation": "pending for 10-02 until pushed",
-    "last_live_validation": "pending for 10-02 until deployed/restarted and smoked"
+    "last_ci_validation": "GitHub Actions run 26716859212 passed all jobs",
+    "last_live_validation": "openhub-api.service restarted; public /v1/health/simple -> 200; public /.well-known/agent-descriptions -> 200; public unauthenticated /v1/tasks/smoke-task/evidence -> 401"
   }
 }

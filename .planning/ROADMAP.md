@@ -224,5 +224,5 @@ Before claiming a future feature or phase complete:
 - **Completed phases:** 9 / 10
 - **Completed plans:** 63 / 67
 - **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
-- **Current slice:** 10-02 — Task evidence service + API endpoints complete and locally verified
+- **Current slice:** 10-02 — Task evidence service + API endpoints complete, pushed, CI-verified, deployed, and live-smoked
 - **Next slice:** 10-03 — Unified task timeline API

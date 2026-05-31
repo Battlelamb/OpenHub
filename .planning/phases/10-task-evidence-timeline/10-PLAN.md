@@ -4,7 +4,7 @@ name: Task Evidence Timeline + Verification Detail
 status: in_progress
 wave: task-evidence-timeline
 created: 2026-05-31
-updated: 2026-05-31T15:30:52Z
+updated: 2026-05-31T15:39:46Z
 owner: OpenHub GSD
 ---
 
@@ -91,7 +91,7 @@ Expected GREEN after implementation: focused tests pass.
 
 **Acceptance:** nonexistent tasks return 404; authenticated agents/admin can submit safe evidence; response does not echo forbidden fields.
 
-**Status:** Complete locally in this execution window. Added `TaskEvidenceService`, safe `TaskEvidenceResponse`, endpoint integration tests, principal source attribution, task existence checks, and secret-like content-key stripping. Focused/full backend and GSD verify gates passed before ship closeout.
+**Status:** Complete, pushed, CI-verified, deployed, and live-smoked. Added `TaskEvidenceService`, safe `TaskEvidenceResponse`, endpoint integration tests, principal source attribution, task existence checks, and secret-like content-key stripping. Focused/full backend and GSD verify gates passed; CI run `26716859212` passed; public unauthenticated `GET /v1/tasks/smoke-task/evidence` returns `401`, proving the route is live behind auth.
 
 ### 10-03 — Unified task timeline API
 

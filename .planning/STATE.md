@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
 status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01 and 10-02 complete; 10-03 next
-stopped_at: "PHASE-10-02-COMPLETE"
-last_updated: "2026-05-31T15:30:52Z"
+stopped_at: "PHASE-10-02-SHIPPED"
+last_updated: "2026-05-31T15:39:46Z"
 progress:
   total_phases: 10
   completed_phases: 9
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Status:** in progress
 - **Current phase:** 10 — Task Evidence Timeline + Verification Detail
 - **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
-- **Current slice:** `10-02 — Task evidence service + API endpoints` complete and locally verified
+- **Current slice:** `10-02 — Task evidence service + API endpoints` complete, pushed, CI-verified, deployed, and live-smoked
 - **Next slice:** `10-03 — Unified task timeline API`
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
@@ -136,12 +136,12 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Phase 09 ANP compatibility (2026-05-31):** focused serializer + route tests prove default-private public discovery, per-agent ADP documents, no raw metadata/labels, no credential/runtime leakage, DID only when explicit, and pagination for `/.well-known/agent-descriptions`.
 - **Phase 10 opened (2026-05-31):** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`, `.continue-here.md`, and handoff state created. 10-01 RED tests added for task evidence models and repository behavior.
 - **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Commit `731b8fe` pushed; CI run `26714617644` passed; OpenHub API restarted and live Turso schema verified at `alembic_version=0006`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned OK.
-- **Phase 10 10-02 task evidence API (2026-05-31):** RED endpoint tests first failed with missing `POST/GET /v1/tasks/{task_id}/evidence` routes. GREEN added `TaskEvidenceService`, safe `TaskEvidenceResponse` DTO, authenticated create/list endpoints, task existence checks, principal source attribution, and secret-like content-key stripping. Focused evidence tests passed (`10 passed`); full backend suite passed (`289 passed / 9 skipped`); frontend audit/lint/typecheck/tests/build passed (`49 passed`); dependency drift, GSD health/consistency, Compose config, diff check, and changed/untracked secret scan passed.
+- **Phase 10 10-02 task evidence API (2026-05-31):** RED endpoint tests first failed with missing `POST/GET /v1/tasks/{task_id}/evidence` routes. GREEN added `TaskEvidenceService`, safe `TaskEvidenceResponse` DTO, authenticated create/list endpoints, task existence checks, principal source attribution, and secret-like content-key stripping. Focused evidence tests passed (`10 passed`); full backend suite passed (`289 passed / 9 skipped`); frontend audit/lint/typecheck/tests/build passed (`49 passed`); dependency drift, GSD health/consistency, Compose config, diff check, and changed/untracked secret scan passed. Commit `dc51ecb` pushed; CI run `26716859212` passed; OpenHub API restarted under `openhub-api.service`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned `200`; public unauthenticated `GET /v1/tasks/smoke-task/evidence` returned `401`, proving the new evidence route is live behind auth.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T15:30:52Z
-- **Stopped at:** Phase 10 slice 10-02 complete and locally verified; commit/push/CI/live verification pending in this execution window until ship step finishes.
+- **Last state update:** 2026-05-31T15:39:46Z
+- **Stopped at:** Phase 10 slice 10-02 complete, pushed, CI-verified, deployed, and live-smoked.
 - **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
