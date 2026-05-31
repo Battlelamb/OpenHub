@@ -1,3 +1,11 @@
+---
+phase: 06
+name: Kanban Board + Workflow Canvas
+status: complete
+wave: kanban-canvas
+updated: 2026-05-31T07:49:37Z
+---
+
 # Phase 06: Kanban Board + Workflow Canvas — Implementation Plan
 
 > **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task.

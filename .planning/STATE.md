@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: OpenHub v1.0
 status: Phase 08 CI + Release Automation complete — release tag deferred pending explicit version decision
 stopped_at: "PHASE-08-COMPLETE"
-last_updated: "2026-05-28T20:56:52Z"
+last_updated: "2026-05-31T07:49:37Z"
 progress:
   total_phases: 8
   completed_phases: 8
@@ -30,7 +30,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Current slice:** `Phase 08 complete`
 - **Next slice:** explicit release version/tag decision or future roadmap planning
 - **Previous phase:** 07 — Product Polish + Deployment Packaging complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 8 agents / 1 online from latest smoke
+- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 10 agents / 1 online from latest smoke
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -75,7 +75,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 07-05 | Runtime ops cleanup docs | ✅ |
 | 07-06 | Full verification + tag decision | ✅ |
 
-## Phase 08 Progress (IN PROGRESS)
+## Phase 08 Progress (COMPLETE)
 
 | Slice | Description | Status |
 |-------|-------------|--------|
@@ -95,7 +95,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Audit:** `npm audit --audit-level=moderate` reports 0 vulnerabilities
 - **Backend strict lint baseline:** tools are installed, but `black --check app/` has broad pre-existing formatting drift; kept as `backend_lint_baseline` rather than a required GSD gate
 - **E2E:** 10 passed (Playwright), including Kanban drag-drop API persistence via real drag handle/dropzone
-- **Planning/GSD validation:** repo-local `gsd-tools.cjs validate health` healthy; `validate consistency` passed with 6 known non-blocking warnings
+- **Planning/GSD validation:** repo-local `gsd-tools.cjs validate health` healthy; `validate consistency` passed. `/gsd-progress` artifact analyzer reconciled to 38/38 after adding umbrella summaries
 - **GSD Redux next integration (2026-05-25):** local Claude Code + Hermes Agent surfaces refreshed from `open-gsd/get-shit-done-redux` `next` commit `dc4b90a`; full profile installed with 67 commands/skills and 33 agents per runtime; `validate health` healthy; `validate consistency` passed; changed-file secret scan clean
 - **Codex GSD runtime integration (2026-05-25):** local Codex surface added from the same `next` commit; full profile installed with 67 skills, 33 agent markdown files, and 33 agent TOML configs; Codex CLI `0.132.0`; Codex-surface `validate health` healthy; `validate consistency` passed
 - **GSD model default alignment (2026-05-25):** `.planning/config.json`, `.gsd/provider-config.json`, and `.gsdrc.toml` now default to OpenAI Codex / GPT 5.5 with max effort / xhigh reasoning; Codex + Hermes GSD health/consistency passed; focused backend tests passed; changed-file secret scan clean
@@ -113,9 +113,9 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-28T20:56:52Z
+- **Last state update:** 2026-05-31T07:49:37Z
 - **Stopped at:** Phase 08 complete; release tag/version still requires explicit operator decision.
-- **Resume file:** `.planning/phases/08-ci-release-automation/08-05-DEPENDENCY-DRIFT-GUARD.md`
+- **Resume file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
 - **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
 - **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
 - **Previous verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`

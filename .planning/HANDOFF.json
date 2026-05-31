@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T20:56:52Z",
+  "timestamp": "2026-05-31T07:49:37Z",
   "context": "phase",
   "phase": "08",
   "phase_name": "CI + Release Automation",
@@ -9,7 +9,7 @@
   "task": 5,
   "total_tasks": 5,
   "status": "complete",
-  "current_state": "Phase 08 CI + Release Automation is complete. 08-04 release/tag guardrail and 08-05 dependency drift guard were implemented, committed as 77f71ed, pushed, and verified by GitHub Actions run 26601647394. Release tag creation remains deferred pending explicit operator version/target decision.",
+  "current_state": "Phase 08 CI + Release Automation is complete. GSD progress artifact drift was reconciled on 2026-05-31T07:49:37Z: umbrella SUMMARY files were added for Phases 05/06/07/08, plan wave metadata was aligned, and the local dependency drift command now uses the repo virtualenv. Release tag creation remains deferred pending explicit operator version/target decision.",
   "completed_tasks": [
     {
       "id": "07-06",
@@ -101,14 +101,7 @@
       "slice": "08-04/08-05"
     }
   ],
-  "uncommitted_files": [
-    ".planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md",
-    ".planning/STATE.md",
-    ".planning/ROADMAP.md",
-    ".planning/phases/08-ci-release-automation/.continue-here.md",
-    ".planning/phases/08-ci-release-automation/08-PLAN.md",
-    ".planning/HANDOFF.json"
-  ],
+  "uncommitted_files": [],
   "background_processes": [
     {
       "name": "openhub-api.service",
@@ -170,8 +163,10 @@
     "actionlint_release_ci": "passed locally",
     "python_package_build_twine": "passed locally and in CI compose/package smoke",
     "remote_ci_for_0804_0805": "success",
-    "github_actions_run_26601647394": "success; all five CI jobs passed"
+    "github_actions_run_26601647394": "success; all five CI jobs passed",
+    "gsd_progress_reconciliation": "raw analyzer 38/38; GSD health healthy; GSD consistency passed with 0 warnings after umbrella summaries and Phase 05 numbering repair",
+    "local_dependency_drift_command": "aligned to repo virtualenv command in .gsdrc.toml"
   },
-  "next_action": "Ask the operator for an explicit version and release target before creating any tag or publishing artifacts.",
-  "context_notes": "Phase 08 remains infrastructure-first: local packaging and verification are now repeatable in GitHub; release/tag and dependency-drift automation remain."
+  "next_action": "Choose an explicit release version/tag target or open Phase 09; no tag or publishing without explicit operator approval.",
+  "context_notes": "Phase 08 is complete and GSD progress artifacts have been reconciled; next work should be either an explicit release decision or a new Phase 09 roadmap."
 }

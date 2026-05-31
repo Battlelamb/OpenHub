@@ -1,3 +1,11 @@
+---
+phase: 07
+name: Product Polish + Deployment Packaging
+status: complete
+wave: product-polish
+updated: 2026-05-31T07:49:37Z
+---
+
 # Phase 07 Product Polish + Deployment Packaging Implementation Plan
 
 > **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task when code changes are needed. Keep docs-only slices direct and small.

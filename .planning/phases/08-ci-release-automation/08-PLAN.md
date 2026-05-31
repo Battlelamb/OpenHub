@@ -2,7 +2,9 @@
 phase: 08
 name: CI + Release Automation
 status: complete
+wave: ci-release-automation
 created: 2026-05-28
+updated: 2026-05-31T07:49:37Z
 owner: OpenHub GSD
 ---
 
