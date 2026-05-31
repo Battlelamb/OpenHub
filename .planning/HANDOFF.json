@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T13:55:31Z",
+  "timestamp": "2026-05-31T14:02:22Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
@@ -9,7 +9,7 @@
   "task": "10-02",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives. Commit/push/CI/live closeout is in progress; next implementation slice is 10-02 task evidence service + API endpoints.",
+  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives and is pushed, CI-verified, deployed, and live-smoked. Next implementation slice is 10-02 task evidence service + API endpoints.",
   "completed_tasks": [
     {
       "id": "09",
@@ -59,7 +59,6 @@
   ],
   "resume_instructions": [
     "Start from /home/brunhilde/OpenHub on master and verify git status before editing.",
-    "If 10-01 is not yet pushed, commit/push it first and verify CI/live health.",
     "Start 10-02 with strict TDD for POST/GET task evidence endpoints, task existence checks, auth, and safe internal DTOs.",
     "Do not add public evidence sharing in 10-02.",
     "Do not modify Plankton or OpenHub .claude/settings.json in this phase.",
@@ -71,8 +70,8 @@
     "last_focused_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py -q --tb=short -> 5 passed",
     "last_migration_validation": "Alembic ScriptDirectory head/current_head = 0006; fresh SQLite upgrade creates task_evidence columns/indexes",
     "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> passed with 9 skipped Turso-vector tests",
-    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed-file secret scan passed",
-    "last_ci_validation": null,
-    "last_live_validation": null
+    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed/untracked secret scan passed",
+    "last_ci_validation": "GitHub Actions OpenHub CI run 26714617644 passed on commit 731b8fe688e4328ca624c995532c80b8fa6c4b7c",
+    "last_live_validation": "OpenHub API restarted; runtime alembic_version=0006; active task_evidence columns/indexes verified; https://hub.brunhilde.cloud/v1/health/simple returned ok; /.well-known/agent-descriptions returned 200"
   }
 }

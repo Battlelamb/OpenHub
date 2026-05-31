@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Status:** in progress
 - **Current phase:** 10 — Task Evidence Timeline + Verification Detail
 - **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
-- **Current slice:** `10-01 — Backend evidence schema + models` complete; awaiting commit/push/CI/live verification closeout
+- **Current slice:** `10-01 — Backend evidence schema + models` complete and shipped
 - **Next slice:** `10-02 — Task evidence service + API endpoints`
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
@@ -135,16 +135,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 - **Phase 09 ANP compatibility (2026-05-31):** focused serializer + route tests prove default-private public discovery, per-agent ADP documents, no raw metadata/labels, no credential/runtime leakage, DID only when explicit, and pagination for `/.well-known/agent-descriptions`.
 - **Phase 10 opened (2026-05-31):** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`, `.continue-here.md`, and handoff state created. 10-01 RED tests added for task evidence models and repository behavior.
-- **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed.
+- **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Commit `731b8fe` pushed; CI run `26714617644` passed; OpenHub API restarted and live Turso schema verified at `alembic_version=0006`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned OK.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T13:55:31Z
-- **Stopped at:** Phase 10 slice 10-01 complete; commit/push/CI/live closeout is in progress.
+- **Last state update:** 2026-05-31T14:02:22Z
+- **Stopped at:** Phase 10 slice 10-01 complete, pushed, CI-verified, deployed, and live-smoked.
 - **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
 - **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** commit/push 10-01, verify remote equality, GitHub Actions CI, and live OpenHub health; then open 10-02 with TDD for task evidence service/API endpoints.
+- **Next action:** open 10-02 with TDD for task evidence service/API endpoints.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

@@ -224,5 +224,5 @@ Before claiming a future feature or phase complete:
 - **Completed phases:** 9 / 10
 - **Completed plans:** 62 / 67
 - **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
-- **Current slice:** 10-01 — Backend evidence schema + models complete; commit/push/CI/live closeout in progress
+- **Current slice:** 10-01 — Backend evidence schema + models complete and shipped
 - **Next slice:** 10-02 — Task evidence service + API endpoints
