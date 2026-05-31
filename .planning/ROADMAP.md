@@ -202,7 +202,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 **Planned slices:**
 
 - [x] **10-01 — Backend evidence schema + models**: added table/migrations, Pydantic models, repository, and focused backend tests.
-- [ ] **10-02 — Task evidence service + API endpoints**: add `POST /v1/tasks/{task_id}/evidence` and `GET /v1/tasks/{task_id}/evidence`.
+- [x] **10-02 — Task evidence service + API endpoints**: added authenticated create/list endpoints, task existence checks, principal source attribution, safe response DTOs, and integration tests.
 - [ ] **10-03 — Unified task timeline API**: merge `trace_events` and `task_evidence` into a timeline DTO.
 - [ ] **10-04 — Task detail UI evidence/timeline panel**: render evidence/logs/commands/files/artifacts/quality-gate results.
 - [ ] **10-05 — Verification lifecycle + quality gate foundation**: represent verification state and `quality_gate` evidence outcomes.
@@ -222,7 +222,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 9 / 10
-- **Completed plans:** 62 / 67
+- **Completed plans:** 63 / 67
 - **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
-- **Current slice:** 10-01 — Backend evidence schema + models complete and shipped
-- **Next slice:** 10-02 — Task evidence service + API endpoints
+- **Current slice:** 10-02 — Task evidence service + API endpoints complete and locally verified
+- **Next slice:** 10-03 — Unified task timeline API

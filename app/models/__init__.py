@@ -12,6 +12,7 @@ from .tasks import (
     TaskEvidence,
     TaskEvidenceCreate,
     TaskEvidenceOutcome,
+    TaskEvidenceResponse,
     TaskEvidenceType,
 )
 from .events import Event, EventCreate, EventType
@@ -37,6 +38,7 @@ __all__ = [
     "TaskEvidence",
     "TaskEvidenceCreate",
     "TaskEvidenceOutcome",
+    "TaskEvidenceResponse",
     "TaskEvidenceType",
     
     # Event models

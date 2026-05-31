@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01 backend evidence schema + models complete; 10-02 next
-stopped_at: "PHASE-10-01-COMPLETE"
-last_updated: "2026-05-31T13:55:31Z"
+status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01 and 10-02 complete; 10-03 next
+stopped_at: "PHASE-10-02-COMPLETE"
+last_updated: "2026-05-31T15:30:52Z"
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 67
-  completed_plans: 62
+  completed_plans: 63
 ---
 
 # Project State
@@ -20,15 +20,15 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slice 10-01 completed private/internal task evidence persistence primitives: table/migrations, Pydantic schemas, repository methods, and focused tests. Next is 10-02 service + API endpoints.
+**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slices 10-01 and 10-02 are complete: durable private/internal task evidence persistence now has authenticated create/list API endpoints with task existence checks, principal source attribution, and safe response DTOs. Next is 10-03 unified task timeline API.
 
 ## Current Position
 
 - **Status:** in progress
 - **Current phase:** 10 — Task Evidence Timeline + Verification Detail
 - **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
-- **Current slice:** `10-01 — Backend evidence schema + models` complete and shipped
-- **Next slice:** `10-02 — Task evidence service + API endpoints`
+- **Current slice:** `10-02 — Task evidence service + API endpoints` complete and locally verified
+- **Next slice:** `10-03 — Unified task timeline API`
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
 - **Live status:** baseline before Phase 10 is `f161c3d`; `https://hub.brunhilde.cloud/v1/health/simple` and `/.well-known/agent-descriptions` were live-verified after Phase 09.
@@ -101,7 +101,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | Slice | Description | Status |
 |-------|-------------|--------|
 | 10-01 | Backend evidence schema + models | ✅ |
-| 10-02 | Task evidence service + API endpoints | ⏳ |
+| 10-02 | Task evidence service + API endpoints | ✅ |
 | 10-03 | Unified task timeline API | ⏳ |
 | 10-04 | Task detail UI evidence/timeline panel | ⏳ |
 | 10-05 | Verification lifecycle + quality gate foundation | ⏳ |
@@ -136,15 +136,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Phase 09 ANP compatibility (2026-05-31):** focused serializer + route tests prove default-private public discovery, per-agent ADP documents, no raw metadata/labels, no credential/runtime leakage, DID only when explicit, and pagination for `/.well-known/agent-descriptions`.
 - **Phase 10 opened (2026-05-31):** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`, `.continue-here.md`, and handoff state created. 10-01 RED tests added for task evidence models and repository behavior.
 - **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Commit `731b8fe` pushed; CI run `26714617644` passed; OpenHub API restarted and live Turso schema verified at `alembic_version=0006`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned OK.
+- **Phase 10 10-02 task evidence API (2026-05-31):** RED endpoint tests first failed with missing `POST/GET /v1/tasks/{task_id}/evidence` routes. GREEN added `TaskEvidenceService`, safe `TaskEvidenceResponse` DTO, authenticated create/list endpoints, task existence checks, principal source attribution, and secret-like content-key stripping. Focused evidence tests passed (`10 passed`); full backend suite passed (`289 passed / 9 skipped`); frontend audit/lint/typecheck/tests/build passed (`49 passed`); dependency drift, GSD health/consistency, Compose config, diff check, and changed/untracked secret scan passed.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T14:02:22Z
-- **Stopped at:** Phase 10 slice 10-01 complete, pushed, CI-verified, deployed, and live-smoked.
+- **Last state update:** 2026-05-31T15:30:52Z
+- **Stopped at:** Phase 10 slice 10-02 complete and locally verified; commit/push/CI/live verification pending in this execution window until ship step finishes.
 - **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
 - **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** open 10-02 with TDD for task evidence service/API endpoints.
+- **Next action:** open 10-03 with TDD for unified task timeline API merging trace events and task evidence.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

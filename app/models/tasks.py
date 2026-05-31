@@ -354,6 +354,23 @@ class TaskEvidence(IDMixin, TimestampMixin):
     )
 
 
+class TaskEvidenceResponse(IDMixin, TimestampMixin):
+    """API-safe task evidence DTO that omits internal labels/metadata."""
+
+    task_id: str = Field(description="Associated task ID")
+    evidence_type: TaskEvidenceType = Field(description="Evidence category")
+    title: str = Field(description="Short evidence title")
+    summary: Optional[str] = Field(default=None, description="Evidence summary")
+    content: Dict[str, Any] = Field(default_factory=dict, description="Sanitized payload")
+    artifact_ids: List[str] = Field(default_factory=list, description="Related artifacts")
+    outcome: TaskEvidenceOutcome = Field(
+        default=TaskEvidenceOutcome.UNKNOWN,
+        description="Evidence result state",
+    )
+    source_agent_id: Optional[str] = Field(default=None, description="Emitting principal")
+    occurred_at: datetime = Field(description="When the evidenced event occurred")
+
+
 class TaskAttempt(IDMixin, TimestampMixin):
     """Model for task execution attempts"""
     

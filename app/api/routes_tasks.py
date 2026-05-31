@@ -11,11 +11,12 @@ from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database
 from ..services.task_service import TaskService
+from ..services.task_evidence_service import TaskEvidenceService
 from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
     Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, TaskRecover,
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter,
-    StaleTaskResponse,
+    StaleTaskResponse, TaskEvidenceCreate, TaskEvidenceResponse,
 )
 from ..auth.dependencies import CurrentAgent, CurrentAdmin, get_current_admin
 from ..database.vector_availability import require_vector
@@ -31,6 +32,12 @@ def get_task_service() -> TaskService:
     """Get task service instance"""
     database = get_database()
     return TaskService(database)
+
+
+def get_task_evidence_service() -> TaskEvidenceService:
+    """Get task evidence service instance"""
+    database = get_database()
+    return TaskEvidenceService(database)
 
 
 async def _broadcast_task_status(
@@ -278,6 +285,58 @@ async def get_task(
         )
 
     return _task_to_response(task)
+
+
+@router.post(
+    "/{task_id}/evidence",
+    response_model=TaskEvidenceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create private/internal evidence for a task",
+)
+async def create_task_evidence(
+    task_id: str,
+    evidence_data: TaskEvidenceCreate,
+    current_agent: CurrentAgent,
+    evidence_service: TaskEvidenceService = Depends(get_task_evidence_service),
+) -> TaskEvidenceResponse:
+    """Create sanitized task evidence for an existing task."""
+    evidence = evidence_service.create_evidence(
+        task_id,
+        evidence_data,
+        source_agent_id=current_agent.agent_id,
+    )
+    if evidence is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found",
+        )
+    return evidence
+
+
+@router.get(
+    "/{task_id}/evidence",
+    response_model=List[TaskEvidenceResponse],
+    summary="List private/internal evidence for a task",
+)
+async def list_task_evidence(
+    task_id: str,
+    current_agent: CurrentAgent,
+    limit: Optional[int] = Query(None, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    evidence_service: TaskEvidenceService = Depends(get_task_evidence_service),
+) -> List[TaskEvidenceResponse]:
+    """List task evidence oldest-first for an existing task."""
+    evidence = evidence_service.list_evidence(
+        task_id,
+        limit=limit,
+        offset=offset,
+    )
+    if evidence is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found",
+        )
+    return evidence
 
 
 def _trace_row_to_span(r: Dict[str, Any]) -> Dict[str, Any]:

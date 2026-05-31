@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T14:02:22Z",
+  "timestamp": "2026-05-31T15:30:52Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
   "phase_dir": ".planning/phases/10-task-evidence-timeline",
   "plan": 10,
-  "task": "10-02",
+  "task": "10-03",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives and is pushed, CI-verified, deployed, and live-smoked. Next implementation slice is 10-02 task evidence service + API endpoints.",
+  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives. Slice 10-02 completed task evidence service/API endpoints with local verification; commit/push/CI/live closeout is in progress for this execution window. Next implementation slice is 10-03 unified task timeline API.",
   "completed_tasks": [
     {
       "id": "09",
@@ -28,16 +28,26 @@
         "database/migrations/004_task_evidence.sql",
         "app/database/repositories/task_evidence.py"
       ]
+    },
+    {
+      "id": "10-02",
+      "name": "Task evidence service + API endpoints",
+      "status": "complete-local",
+      "evidence": [
+        "tests/integration/test_task_evidence_endpoints.py",
+        "app/services/task_evidence_service.py",
+        "app/api/routes_tasks.py",
+        "app/models/tasks.py"
+      ]
     }
   ],
   "active_task": {
-    "id": "10-02",
-    "name": "Task evidence service + API endpoints",
+    "id": "10-03",
+    "name": "Unified task timeline API",
     "status": "next",
     "plan": ".planning/phases/10-task-evidence-timeline/10-PLAN.md"
   },
   "remaining_tasks": [
-    "10-02 — Task evidence service + API endpoints",
     "10-03 — Unified task timeline API",
     "10-04 — Task detail UI evidence/timeline panel",
     "10-05 — Verification lifecycle + quality gate foundation",
@@ -53,25 +63,31 @@
       "rationale": "Evidence can contain logs, commands, file paths, branch names, and quality-gate output. Public DTOs must be designed separately and must not leak raw labels, metadata, credentials, or unsanitized logs."
     },
     {
-      "decision": "Slice 10-01 stops at persistence primitives only.",
-      "rationale": "API routes and dashboard timeline UI belong to later slices so storage, auth, DTO safety, and UI behavior remain testable in small increments."
+      "decision": "Task evidence API responses use a safe DTO.",
+      "rationale": "The 10-02 endpoints omit internal labels/metadata, attribute source_agent_id from the authenticated principal rather than caller input, and strip obvious secret-like keys from structured content before persistence."
+    },
+    {
+      "decision": "Slice 10-02 stops at create/list task evidence endpoints.",
+      "rationale": "Unified timeline merging and dashboard rendering belong to later slices so API behavior, timeline composition, and UI behavior remain testable in small increments."
     }
   ],
   "resume_instructions": [
     "Start from /home/brunhilde/OpenHub on master and verify git status before editing.",
-    "Start 10-02 with strict TDD for POST/GET task evidence endpoints, task existence checks, auth, and safe internal DTOs.",
-    "Do not add public evidence sharing in 10-02.",
+    "If 10-02 ship closeout is incomplete, first verify local HEAD/origin/remote equality, GitHub Actions, service restart, and public health/evidence API smoke.",
+    "Start 10-03 with strict TDD for GET /v1/tasks/{task_id}/timeline merging trace_events and task_evidence chronologically.",
+    "Do not add dashboard evidence UI in 10-03.",
+    "Do not add public evidence sharing in Phase 10.",
     "Do not modify Plankton or OpenHub .claude/settings.json in this phase.",
     "Run GSD health/consistency, dependency drift, diff check, secret scan, focused tests, full backend tests, push, CI, and live health verification before final done report."
   ],
   "verification": {
     "plan_file": ".planning/phases/10-task-evidence-timeline/10-PLAN.md",
     "continue_file": ".planning/phases/10-task-evidence-timeline/.continue-here.md",
-    "last_focused_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py -q --tb=short -> 5 passed",
-    "last_migration_validation": "Alembic ScriptDirectory head/current_head = 0006; fresh SQLite upgrade creates task_evidence columns/indexes",
-    "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> passed with 9 skipped Turso-vector tests",
-    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed/untracked secret scan passed",
-    "last_ci_validation": "GitHub Actions OpenHub CI run 26714617644 passed on commit 731b8fe688e4328ca624c995532c80b8fa6c4b7c",
-    "last_live_validation": "OpenHub API restarted; runtime alembic_version=0006; active task_evidence columns/indexes verified; https://hub.brunhilde.cloud/v1/health/simple returned ok; /.well-known/agent-descriptions returned 200"
+    "last_focused_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 10 passed",
+    "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> 289 passed / 9 skipped",
+    "last_frontend_validation": "npm audit 0 vulnerabilities; eslint passed; typecheck passed; Vitest 49 passed; npm run build passed",
+    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed/untracked secret scan passed; docker compose config rendered",
+    "last_ci_validation": "pending for 10-02 until pushed",
+    "last_live_validation": "pending for 10-02 until deployed/restarted and smoked"
   }
 }
