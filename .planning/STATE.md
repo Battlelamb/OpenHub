@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 08 CI + Release Automation complete — release tag deferred pending explicit version decision
-stopped_at: "PHASE-08-COMPLETE"
-last_updated: "2026-05-31T07:49:37Z"
+status: Phase 09 ANP Compatibility Spike planned — implementation not started
+stopped_at: "PHASE-09-PLANNED"
+last_updated: "2026-05-31T11:23:28Z"
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 8
-  total_plans: 56
+  total_plans: 61
   completed_plans: 56
 ---
 
@@ -20,17 +20,17 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 08 CI + release automation is complete. Release/tag creation remains deferred until the operator explicitly chooses a version and target.
+**Current focus:** Phase 09 ANP Compatibility Spike is planned. Implementation should start with a design/mapping doc, then TDD for the serializer and public-safe discovery endpoints.
 
 ## Current Position
 
-- **Status:** complete
-- **Current phase:** 08 — CI + Release Automation
-- **Current plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
-- **Current slice:** `Phase 08 complete`
-- **Next slice:** explicit release version/tag decision or future roadmap planning
-- **Previous phase:** 07 — Product Polish + Deployment Packaging complete
-- **Live status:** `https://hub.brunhilde.cloud` healthy; ACN status endpoint reports 10 agents / 1 online from latest smoke
+- **Status:** planned
+- **Current phase:** 09 — ANP Compatibility Spike
+- **Current plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
+- **Current slice:** `09-01 — ANP mapping design`
+- **Next slice:** write `docs/ANP_COMPATIBILITY.md`, then TDD serializer service and public endpoints
+- **Previous phase:** 08 — CI + Release Automation complete; release/tag creation still deferred pending explicit version choice
+- **Live status:** `https://hub.brunhilde.cloud` healthy from latest smoke before Phase 09 planning
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -85,6 +85,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 08-04 | Release/tag automation guardrail | ✅ |
 | 08-05 | Dependency drift guard | ✅ |
 
+## Phase 09 Progress (PLANNED)
+
+| Slice | Description | Status |
+|-------|-------------|--------|
+| 09-01 | ANP mapping design | ⏳ planned |
+| 09-02 | Serializer service | ⏳ planned |
+| 09-03 | Per-agent ADP endpoint | ⏳ planned |
+| 09-04 | Well-known discovery endpoint | ⏳ planned |
+| 09-05 | Docs + verification closeout | ⏳ planned |
+
 ## Verification Status
 
 - **Backend:** 07-06 full suite passed (`python -m pytest tests/ -x -q --tb=short`) with 249 passed / 9 skipped; added naive/aware heartbeat regression coverage.
@@ -113,9 +123,10 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T07:49:37Z
-- **Stopped at:** Phase 08 complete; release tag/version still requires explicit operator decision.
-- **Resume file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
-- **Continue file:** `.planning/phases/08-ci-release-automation/.continue-here.md`
-- **Phase 08 plan:** `.planning/phases/08-ci-release-automation/08-PLAN.md`
-- **Previous verification evidence:** `.planning/phases/07-product-polish-deployment-packaging/07-06-VERIFICATION.md`
+- **Last state update:** 2026-05-31T11:23:28Z
+- **Stopped at:** Phase 09 planned; implementation not started.
+- **Resume file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
+- **Continue file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
+- **Phase 09 plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
+- **Next action:** begin 09-01 by writing `docs/ANP_COMPATIBILITY.md` and 09-01 evidence, then run GSD health/consistency.
+- **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

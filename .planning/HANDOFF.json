@@ -1,172 +1,91 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T07:49:37Z",
+  "timestamp": "2026-05-31T11:23:28Z",
   "context": "phase",
-  "phase": "08",
-  "phase_name": "CI + Release Automation",
-  "phase_dir": ".planning/phases/08-ci-release-automation",
-  "plan": 8,
-  "task": 5,
+  "phase": "09",
+  "phase_name": "ANP Compatibility Spike",
+  "phase_dir": ".planning/phases/09-anp-compatibility",
+  "plan": 9,
+  "task": 1,
   "total_tasks": 5,
-  "status": "complete",
-  "current_state": "Phase 08 CI + Release Automation is complete. GSD progress artifact drift was reconciled on 2026-05-31T07:49:37Z: umbrella SUMMARY files were added for Phases 05/06/07/08, plan wave metadata was aligned, and the local dependency drift command now uses the repo virtualenv. Release tag creation remains deferred pending explicit operator version/target decision.",
+  "status": "planned",
+  "current_state": "Phase 09 is planned but implementation has not started. The plan defines a bounded ANP compatibility spike: public-safe ANP Agent Description JSON-LD and .well-known/agent-descriptions discovery, without replacing OpenHub ACN auth, scoped keys, task routing, evidence bundles, or review gates.",
   "completed_tasks": [
     {
-      "id": "07-06",
-      "name": "Phase 07 full verification + live smoke",
-      "status": "done",
-      "commit": "c3cddff"
-    },
-    {
-      "id": "08-01",
-      "name": "GitHub Actions CI workflow",
-      "status": "done",
-      "evidence": ".planning/phases/08-ci-release-automation/08-01-CI-WORKFLOW.md"
-    },
-    {
-      "id": "08-02",
-      "name": "CI result follow-up",
-      "status": "done",
-      "evidence": ".planning/phases/08-ci-release-automation/08-02-CI-RUN-EVIDENCE.md",
-      "ci_run": "26597813831",
-      "commit": "27f1703",
-      "result": "success"
-    },
-    {
-      "id": "08-03",
-      "name": "Docker dashboard packaging",
-      "status": "done",
-      "evidence": ".planning/phases/08-ci-release-automation/08-03-DOCKER-DASHBOARD-PACKAGING.md",
-      "ci_run": "26600306093",
-      "commit": "2ca0fb0",
-      "result": "success"
-    },
-    {
-      "id": "08-04",
-      "name": "Release/tag automation guardrail",
-      "status": "done",
-      "evidence": ".planning/phases/08-ci-release-automation/08-04-RELEASE-TAG-AUTOMATION-GUARDRAIL.md",
-      "commit": "77f71ed",
-      "ci_run": "26601647394",
-      "result": "success"
-    },
-    {
-      "id": "08-05",
-      "name": "Dependency drift guard",
-      "status": "done",
-      "evidence": ".planning/phases/08-ci-release-automation/08-05-DEPENDENCY-DRIFT-GUARD.md",
-      "commit": "77f71ed",
-      "ci_run": "26601647394",
-      "result": "success"
+      "id": "08",
+      "name": "CI + Release Automation",
+      "status": "complete",
+      "evidence": ".planning/phases/08-ci-release-automation/08-SUMMARY.md"
     }
   ],
   "active_task": {
-    "id": "release-decision",
-    "name": "Explicit release version/tag decision",
-    "status": "deferred_human_decision",
-    "evidence": ".planning/phases/08-ci-release-automation/.continue-here.md"
+    "id": "09-01",
+    "name": "ANP mapping design",
+    "status": "planned",
+    "evidence": ".planning/phases/09-anp-compatibility/09-01-ANP-MAPPING-DESIGN.md"
   },
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    {
+      "id": "09-01",
+      "name": "ANP mapping design",
+      "status": "planned"
+    },
+    {
+      "id": "09-02",
+      "name": "Serializer service",
+      "status": "planned"
+    },
+    {
+      "id": "09-03",
+      "name": "Per-agent ADP endpoint",
+      "status": "planned"
+    },
+    {
+      "id": "09-04",
+      "name": "Well-known discovery endpoint",
+      "status": "planned"
+    },
+    {
+      "id": "09-05",
+      "name": "Docs + verification closeout",
+      "status": "planned"
+    }
+  ],
   "blockers": [],
   "human_actions_pending": [
-    "Choose a version/tag later if an actual release should be cut; no tag will be created without explicit approval."
+    "None for planning. Release/tag creation still requires explicit operator version/target approval later."
   ],
   "decisions": [
     {
-      "decision": "Open Phase 08 rather than tagging immediately.",
-      "rationale": "User asked to keep building OpenHub. Codebase concerns still list CI absence and dashboard packaging verification as critical release gaps.",
-      "phase": "08"
+      "decision": "Treat ANP as an interoperability/discovery compatibility layer, not an auth/control-plane replacement.",
+      "rationale": "OpenHub's current value depends on scoped keys, invite-based onboarding, task routing, evidence, and review gates. ANP discovery can help external agents find public OpenHub agents without weakening those controls."
     },
     {
-      "decision": "CI must use dummy credentials and local temp DB state only.",
-      "rationale": "OpenHub is security-first; no local admin/API/provider secrets belong in repository or CI logs.",
-      "phase": "08"
+      "decision": "Default ANP public discovery to opt-in only.",
+      "rationale": "The public endpoints must not leak private agents or raw metadata. Agents appear only when explicitly marked public via labels or metadata."
     },
     {
-      "decision": "Docker bundles dashboard assets rather than relying on checkout-local web/dist.",
-      "rationale": "FastAPI only mounts /dashboard when web/dist/index.html exists beside the app; release packaging now proves the image contains and serves those assets.",
-      "phase": "08",
-      "slice": "08-03"
-    },
-    {
-      "decision": "Release/tag automation stays manual and non-publishing unless explicitly selected.",
-      "rationale": "08-04 must prepare safe guardrails without implicitly creating tags or using PyPI/Docker registry secrets.",
-      "phase": "08",
-      "slice": "08-04"
-    },
-    {
-      "decision": "Release verification workflow is manual/read-only and dependency drift is a required CI/GSD gate.",
-      "rationale": "Phase 08 must make releases repeatable without creating tags or publishing artifacts until the operator explicitly selects a release version and target.",
-      "phase": "08",
-      "slice": "08-04/08-05"
+      "decision": "Do not fake DID values.",
+      "rationale": "ANP's DID layer is deeper than this spike. The route should include DID only if an agent explicitly supplies one."
     }
   ],
-  "uncommitted_files": [],
-  "background_processes": [
-    {
-      "name": "openhub-api.service",
-      "state": "active",
-      "notes": "No restart needed for 08-03 Docker/CI packaging changes."
-    },
-    {
-      "name": "openhub-bridge-brunhilde.service",
-      "state": "active",
-      "notes": "No restart needed for 08-03 Docker/CI packaging changes."
-    }
+  "resume_instructions": [
+    "Read .planning/phases/09-anp-compatibility/09-PLAN.md and .continue-here.md.",
+    "Start with 09-01: create docs/ANP_COMPATIBILITY.md and 09-01 evidence.",
+    "Use TDD for 09-02 through 09-04 exactly as listed in the plan.",
+    "Run focused tests, dependency drift, GSD health/consistency, git diff --check, and secret/no-leak scans before each commit.",
+    "Commit and push each completed slice; verify HEAD = origin/master = remote/master before reporting done."
   ],
-  "blocking_constraints": [],
-  "advisory_constraints": [
-    {
-      "name": "Local Docker socket unavailable",
-      "severity": "advisory",
-      "description": "docker info is denied for the current user and sudo requires a password. Runtime container proof was completed in GitHub Actions instead."
-    },
-    {
-      "name": "Node.js 20 action deprecation advisory",
-      "severity": "advisory",
-      "description": "GitHub Actions passes, but emits non-blocking Node.js 20 action deprecation notices for actions/* versions."
-    },
-    {
-      "name": "Release tag still deferred",
-      "severity": "advisory",
-      "description": "No version bump/tag is part of 08-03. Choose v0.1.1/v0.2.0 or a later version only through an explicit release workflow."
-    }
-  ],
-  "validation_snapshot": {
-    "phase08_plan_created": true,
-    "ci_workflow_created": true,
-    "github_actions_run_26597813831": "success",
-    "github_actions_run_26598053442": "success",
-    "dockerfile_dashboard_build_stage": "added",
-    "dockerignore_tracked": true,
-    "ci_docker_dashboard_smoke": "success in run 26600306093",
-    "local_dashboard_build": "passed",
-    "docker_dashboard_packaging_tests": "2 passed",
-    "static_mount_plus_packaging_tests": "8 passed",
-    "workflow_yaml_parse": "passed; 4 jobs",
-    "workflow_bash_n": "passed for 26 run steps locally",
-    "actionlint": "passed",
-    "diff_check": "passed",
-    "changed_file_secret_scan": "no hits",
-    "gsd_health": "healthy",
-    "gsd_consistency": "passed with 6 known non-blocking warnings",
-    "local_docker_runtime_smoke": "skipped: socket permission denied",
-    "github_actions_run_26600306093": "success",
-    "compose_package_smoke_ci": "success; 2m25s",
-    "playwright_e2e_ci": "success; 2m36s",
-    "frontend_ci": "success; 41s",
-    "backend_ci": "success; 1m35s",
-    "release_workflow_manual_read_only": "local static tests passed; remote CI static coverage passed",
-    "dependency_drift_guard": "passed locally and in GitHub Actions job 78386517166",
-    "full_backend_pytest": "249 passed / 9 skipped locally; backend CI success",
-    "frontend_verify": "audit/lint/typecheck/42 tests/build passed locally and in CI",
-    "actionlint_release_ci": "passed locally",
-    "python_package_build_twine": "passed locally and in CI compose/package smoke",
-    "remote_ci_for_0804_0805": "success",
-    "github_actions_run_26601647394": "success; all five CI jobs passed",
-    "gsd_progress_reconciliation": "raw analyzer 38/38; GSD health healthy; GSD consistency passed with 0 warnings after umbrella summaries and Phase 05 numbering repair",
-    "local_dependency_drift_command": "aligned to repo virtualenv command in .gsdrc.toml"
-  },
-  "next_action": "Choose an explicit release version/tag target or open Phase 09; no tag or publishing without explicit operator approval.",
-  "context_notes": "Phase 08 is complete and GSD progress artifacts have been reconciled; next work should be either an explicit release decision or a new Phase 09 roadmap."
+  "verification": {
+    "last_known_git_head": "7cb049d",
+    "plan_file": ".planning/phases/09-anp-compatibility/09-PLAN.md",
+    "continue_file": ".planning/phases/09-anp-compatibility/.continue-here.md",
+    "required_gates": [
+      "python scripts/check_dependency_drift.py",
+      "node .codex/get-shit-done/bin/gsd-tools.cjs validate health",
+      "node .codex/get-shit-done/bin/gsd-tools.cjs validate consistency",
+      "git diff --check",
+      "focused pytest for changed backend routes/services"
+    ]
+  }
 }
