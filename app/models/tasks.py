@@ -46,6 +46,29 @@ class TaskType(str, Enum):
     AUTOMATION = "automation"
 
 
+class TaskEvidenceType(str, Enum):
+    """Supported durable task evidence categories."""
+
+    TEST = "test"
+    LOG = "log"
+    DIFF = "diff"
+    ARTIFACT = "artifact"
+    PR = "pr"
+    REVIEW = "review"
+    COMMAND = "command"
+    QUALITY_GATE = "quality_gate"
+
+
+class TaskEvidenceOutcome(str, Enum):
+    """Optional outcome attached to task evidence."""
+
+    PASSED = "passed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    RUNNING = "running"
+    UNKNOWN = "unknown"
+
+
 class TaskCreate(BaseModel):
     """Model for creating a new task"""
     
@@ -251,6 +274,83 @@ class TaskRecover(BaseModel):
         default=None,
         max_length=500,
         description="Why the task is being recovered (for the audit trail)"
+    )
+
+
+class TaskEvidenceCreate(BaseModel):
+    """Model for creating private/internal task evidence."""
+
+    evidence_type: TaskEvidenceType = Field(description="Evidence category")
+
+    title: str = Field(
+        description="Short evidence title",
+        min_length=1,
+        max_length=200,
+    )
+
+    summary: Optional[str] = Field(
+        default=None,
+        max_length=2000,
+        description="Human-readable evidence summary",
+    )
+
+    content: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Structured, sanitized evidence payload",
+    )
+
+    artifact_ids: List[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="Related artifact IDs",
+    )
+
+    outcome: TaskEvidenceOutcome = Field(
+        default=TaskEvidenceOutcome.UNKNOWN,
+        description="Evidence result state",
+    )
+
+    source_agent_id: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Agent that emitted the evidence",
+    )
+
+    labels: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Internal evidence labels",
+    )
+
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Internal evidence metadata",
+    )
+
+    occurred_at: Optional[datetime] = Field(
+        default=None,
+        description="When the evidenced event occurred",
+    )
+
+
+class TaskEvidence(IDMixin, TimestampMixin):
+    """Persisted private/internal evidence row for a task."""
+
+    task_id: str = Field(description="Associated task ID")
+    evidence_type: TaskEvidenceType = Field(description="Evidence category")
+    title: str = Field(description="Short evidence title")
+    summary: Optional[str] = Field(default=None, description="Evidence summary")
+    content: Dict[str, Any] = Field(default_factory=dict, description="Structured payload")
+    artifact_ids: List[str] = Field(default_factory=list, description="Related artifacts")
+    outcome: TaskEvidenceOutcome = Field(
+        default=TaskEvidenceOutcome.UNKNOWN,
+        description="Evidence result state",
+    )
+    source_agent_id: Optional[str] = Field(default=None, description="Emitting agent")
+    labels: Dict[str, str] = Field(default_factory=dict, description="Internal labels")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Internal metadata")
+    occurred_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When the evidenced event occurred",
     )
 
 

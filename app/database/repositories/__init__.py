@@ -4,6 +4,7 @@ Repository pattern implementations for database access
 from .base import BaseRepository
 from .agents import AgentRepository
 from .tasks import TaskRepository
+from .task_evidence import TaskEvidenceRepository
 from .acn_nodes import ACNNodeRepository
 from .remote_agent_mappings import RemoteAgentMappingRepository
 
@@ -19,6 +20,7 @@ __all__ = [
     "BaseRepository",
     "AgentRepository",
     "TaskRepository",
+    "TaskEvidenceRepository",
     "ACNNodeRepository",
     "RemoteAgentMappingRepository",
 ]

@@ -4,7 +4,7 @@ These models are used by Alembic for migration autogenerate.
 The existing raw SQL Database class in connection.py remains unchanged.
 """
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, Text, DateTime, BigInteger
+    Column, String, Integer, Float, Boolean, Text, DateTime, BigInteger, Index
 )
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timezone
@@ -59,6 +59,31 @@ class TaskModel(Base):
     artifact_ids = Column(Text, default="[]")
     duration_seconds = Column(Float)
     created_by = Column(String)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+
+class TaskEvidenceModel(Base):
+    __tablename__ = "task_evidence"
+    __table_args__ = (
+        Index("idx_task_evidence_task", "task_id"),
+        Index("idx_task_evidence_task_occurred", "task_id", "occurred_at"),
+        Index("idx_task_evidence_type", "evidence_type"),
+        Index("idx_task_evidence_source", "source_agent_id"),
+    )
+
+    id = Column(String, primary_key=True)
+    task_id = Column(String, nullable=False)
+    evidence_type = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    summary = Column(Text)
+    content = Column(Text, default="{}")
+    artifact_ids = Column(Text, default="[]")
+    outcome = Column(String, default="unknown")
+    source_agent_id = Column(String)
+    labels = Column(Text, default="{}")
+    metadata_ = Column("metadata", Text, default="{}")
+    occurred_at = Column(DateTime)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
 

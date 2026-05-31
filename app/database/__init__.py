@@ -6,6 +6,7 @@ from .migrations import MigrationManager, run_migrations
 from .repositories import (
     AgentRepository,
     TaskRepository,
+    TaskEvidenceRepository,
 )
 
 # The following repositories do not exist yet:
@@ -19,4 +20,5 @@ __all__ = [
     "run_migrations",
     "AgentRepository",
     "TaskRepository",
+    "TaskEvidenceRepository",
 ]

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 09 ANP Compatibility Spike complete — public-safe ANP discovery implemented
-stopped_at: "PHASE-09-COMPLETE"
-last_updated: "2026-05-31T12:26:07Z"
+status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01 backend evidence schema + models complete; 10-02 next
+stopped_at: "PHASE-10-01-COMPLETE"
+last_updated: "2026-05-31T13:55:31Z"
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 9
-  total_plans: 61
-  completed_plans: 61
+  total_plans: 67
+  completed_plans: 62
 ---
 
 # Project State
@@ -20,18 +20,18 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 09 ANP Compatibility Spike is complete. OpenHub now exposes public-safe ANP-style discovery for explicitly opted-in agents through `/.well-known/agent-descriptions` and `/v1/anp/agents/{agent_id}/ad.json`, without replacing ACN auth/trust.
+**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slice 10-01 completed private/internal task evidence persistence primitives: table/migrations, Pydantic schemas, repository methods, and focused tests. Next is 10-02 service + API endpoints.
 
 ## Current Position
 
-- **Status:** complete
-- **Current phase:** 09 — ANP Compatibility Spike
-- **Current plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
-- **Current slice:** none — Phase 09 complete
-- **Next slice:** release/tag decision remains deferred until the operator chooses a version and publish target
+- **Status:** in progress
+- **Current phase:** 10 — Task Evidence Timeline + Verification Detail
+- **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
+- **Current slice:** `10-01 — Backend evidence schema + models` complete; awaiting commit/push/CI/live verification closeout
+- **Next slice:** `10-02 — Task evidence service + API endpoints`
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
-- **Previous phase:** 08 — CI + Release Automation complete; release/tag creation still deferred pending explicit version choice
-- **Live status:** deployed at `ad08ce1`; `https://hub.brunhilde.cloud/v1/health/simple` and `/.well-known/agent-descriptions` both returned HTTP 200 after `openhub-api.service` restart.
+- **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
+- **Live status:** baseline before Phase 10 is `f161c3d`; `https://hub.brunhilde.cloud/v1/health/simple` and `/.well-known/agent-descriptions` were live-verified after Phase 09.
 
 ## Phase 05 Progress (COMPLETE)
 
@@ -96,6 +96,17 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 09-04 | Well-known discovery endpoint | ✅ |
 | 09-05 | Docs + verification closeout | ✅ |
 
+## Phase 10 Progress (IN PROGRESS)
+
+| Slice | Description | Status |
+|-------|-------------|--------|
+| 10-01 | Backend evidence schema + models | ✅ |
+| 10-02 | Task evidence service + API endpoints | ⏳ |
+| 10-03 | Unified task timeline API | ⏳ |
+| 10-04 | Task detail UI evidence/timeline panel | ⏳ |
+| 10-05 | Verification lifecycle + quality gate foundation | ⏳ |
+| 10-06 | Full verification + live closeout | ⏳ |
+
 ## Verification Status
 
 - **Backend:** 07-06 full suite passed (`python -m pytest tests/ -x -q --tb=short`) with 249 passed / 9 skipped; added naive/aware heartbeat regression coverage.
@@ -123,15 +134,17 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Release guardrail + dependency drift guard (2026-05-28):** manual read-only release verification workflow added; no tag/publish path; dependency drift guard added to CI and GSD; local full backend, frontend, actionlint, workflow bash, package build/twine, GSD health/consistency, Compose config all passed. GitHub Actions run `26601647394` passed all five jobs on commit `77f71ed`.
 
 - **Phase 09 ANP compatibility (2026-05-31):** focused serializer + route tests prove default-private public discovery, per-agent ADP documents, no raw metadata/labels, no credential/runtime leakage, DID only when explicit, and pagination for `/.well-known/agent-descriptions`.
+- **Phase 10 opened (2026-05-31):** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`, `.continue-here.md`, and handoff state created. 10-01 RED tests added for task evidence models and repository behavior.
+- **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed.
 
 ## Session Continuity
 
-- **Last state update:** 2026-05-31T12:26:07Z
-- **Stopped at:** Phase 09 complete; no active implementation slice.
-- **Resume file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
-- **Continue file:** `.planning/phases/09-anp-compatibility/.continue-here.md`
-- **Phase 09 plan:** `.planning/phases/09-anp-compatibility/09-PLAN.md`
+- **Last state update:** 2026-05-31T13:55:31Z
+- **Stopped at:** Phase 10 slice 10-01 complete; commit/push/CI/live closeout is in progress.
+- **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
+- **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
+- **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
 - **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** choose an explicit version/release target if the operator wants a tag or release; otherwise keep OpenHub on `master` with Phase 09 complete.
+- **Next action:** commit/push 10-01, verify remote equality, GitHub Actions CI, and live OpenHub health; then open 10-02 with TDD for task evidence service/API endpoints.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

@@ -4,7 +4,7 @@
 
 OpenHub ships as a self-hosted multi-agent coordination platform: FastAPI backend, React/Vite command center, SQLite/Turso persistence, WebSocket-backed live updates, vector search, and GSD-managed delivery.
 
-The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass. Phase 08 completed CI + release automation. Phase 09 completed a bounded ANP compatibility spike: public-safe agent description JSON-LD and `.well-known/agent-descriptions` discovery without replacing OpenHub ACN trust or verification gates.
+The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow Canvas real rather than cosmetic. Phase 07 completed the polish and packaging pass. Phase 08 completed CI + release automation. Phase 09 completed a bounded ANP compatibility spike: public-safe agent description JSON-LD and `.well-known/agent-descriptions` discovery without replacing OpenHub ACN trust or verification gates. Phase 10 is now open to turn task detail pages into durable evidence/timeline workspaces.
 
 ## Current Truth
 
@@ -28,6 +28,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **Phase 7: Product Polish + Deployment Packaging** — dashboard truth audit/fixes, deploy/package smoke, CI command alignment, runtime ops docs, full verification, and tag decision evidence
 - [x] **Phase 8: CI + Release Automation** — GitHub Actions gates, CI follow-up, Docker dashboard packaging, release guardrails, dependency drift guard
 - [x] **Phase 9: ANP Compatibility Spike** — public-safe ANP Agent Description JSON-LD and `.well-known/agent-descriptions` discovery, without replacing OpenHub ACN auth/trust
+- [ ] **Phase 10: Task Evidence Timeline + Verification Detail** — task evidence persistence, logs/timeline APIs, dashboard evidence panels, and verification/quality-gate foundation
 
 ## Phase 1: Backend Hardening — COMPLETE
 
@@ -185,6 +186,28 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **09-04 — Well-known discovery endpoint**: added `GET /.well-known/agent-descriptions` with public-only pagination and `next` links.
 - [x] **09-05 — Docs + verification closeout**: README/docs, evidence, GSD state, and verification closeout updated.
 
+## Phase 10: Task Evidence Timeline + Verification Detail — IN PROGRESS
+
+**Goal:** Make every task carry durable, queryable evidence so operators can inspect logs, commands, changed files, artifacts, PRs, reviews, and quality-gate results from the task detail workflow page.
+
+**Success criteria:**
+
+1. `task_evidence` persistence exists with typed models, JSON round-tripping, and task/type/source/timeline indexes.
+2. Authenticated evidence create/list endpoints exist and validate task existence.
+3. A task timeline endpoint merges trace events and evidence in chronological order.
+4. Dashboard task detail renders Logs / Timeline / Evidence / Commands / Files / Artifacts while preserving the embedded Workflow Canvas.
+5. Verification lifecycle and `quality_gate` outcomes are represented without allowing agents to self-close work without verification.
+6. Backend/frontend/E2E/GSD/live verification evidence is recorded before closeout.
+
+**Planned slices:**
+
+- [x] **10-01 — Backend evidence schema + models**: added table/migrations, Pydantic models, repository, and focused backend tests.
+- [ ] **10-02 — Task evidence service + API endpoints**: add `POST /v1/tasks/{task_id}/evidence` and `GET /v1/tasks/{task_id}/evidence`.
+- [ ] **10-03 — Unified task timeline API**: merge `trace_events` and `task_evidence` into a timeline DTO.
+- [ ] **10-04 — Task detail UI evidence/timeline panel**: render evidence/logs/commands/files/artifacts/quality-gate results.
+- [ ] **10-05 — Verification lifecycle + quality gate foundation**: represent verification state and `quality_gate` evidence outcomes.
+- [ ] **10-06 — Full verification + live closeout**: run gates, update evidence, push, verify CI/live, and summarize.
+
 ## Verification Gates
 
 Before claiming a future feature or phase complete:
@@ -198,8 +221,8 @@ Before claiming a future feature or phase complete:
 
 ## Progress
 
-- **Completed phases:** 9 / 9
-- **Completed plans:** 61 / 61
-- **Current phase:** Phase 09 — ANP Compatibility Spike complete
-- **Current slice:** none
-- **Next slice:** release/tag decision only if the operator explicitly chooses version and publish target
+- **Completed phases:** 9 / 10
+- **Completed plans:** 62 / 67
+- **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
+- **Current slice:** 10-01 — Backend evidence schema + models complete; commit/push/CI/live closeout in progress
+- **Next slice:** 10-02 — Task evidence service + API endpoints
