@@ -75,10 +75,23 @@ cd web && npx playwright test --reporter=list
 
 ## Live/public smoke
 
-Live smoke follows commit/push and service restart/deploy. Record the final public result before claiming production done.
+Deployed by restarting `openhub-api.service` after commit `ad08ce1` was pushed and CI run `26712796182` passed.
 
 ```text
-pending
+systemctl --user restart openhub-api.service
+→ service active; local /v1/health/simple ready on attempt 4
+
+curl http://127.0.0.1:7788/.well-known/agent-descriptions?page=1&page_size=2
+→ HTTP 200; @type=CollectionPage; items=0; next omitted
+
+curl https://hub.brunhilde.cloud/v1/health/simple
+→ HTTP 200; status=ok
+
+curl https://hub.brunhilde.cloud/.well-known/agent-descriptions?page=1&page_size=2
+→ HTTP 200; @type=CollectionPage; items=0; next omitted; url=https://hub.brunhilde.cloud/.well-known/agent-descriptions?page=1&page_size=2
+
+curl https://hub.brunhilde.cloud/v1/acn/status
+→ HTTP 200
 ```
 
 ## Release decision

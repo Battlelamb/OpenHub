@@ -127,6 +127,29 @@
       "frontend_build": "passed; known Vite large-chunk advisory",
       "compose_config": "passed",
       "playwright_e2e": "10 passed"
+    },
+    "last_ci_validation": {
+      "run_id": "26712796182",
+      "url": "https://github.com/Battlelamb/OpenHub/actions/runs/26712796182",
+      "commit": "ad08ce1",
+      "conclusion": "success",
+      "jobs": [
+        "Compose and package smoke",
+        "Playwright dashboard E2E",
+        "Backend tests",
+        "Frontend lint, tests, and build",
+        "Dependency drift guard"
+      ]
+    },
+    "last_live_validation": {
+      "timestamp": "2026-05-31T12:40:35Z",
+      "deployed_commit": "ad08ce1",
+      "api_service_restart": "openhub-api.service active",
+      "local_health": "HTTP 200; status=ok",
+      "local_anp_discovery": "HTTP 200; CollectionPage; items=0; next omitted",
+      "public_health": "HTTP 200; status=ok",
+      "public_anp_discovery": "HTTP 200; CollectionPage; items=0; next omitted",
+      "public_acn_status": "HTTP 200"
     }
   }
 }

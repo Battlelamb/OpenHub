@@ -67,4 +67,12 @@ cd web && npx playwright test --reporter=list
 
 ## Release decision
 
+Live smoke after deploy:
+
+```text
+https://hub.brunhilde.cloud/v1/health/simple → HTTP 200, status=ok
+https://hub.brunhilde.cloud/.well-known/agent-descriptions?page=1&page_size=2 → HTTP 200, CollectionPage, items=0
+https://hub.brunhilde.cloud/v1/acn/status → HTTP 200
+```
+
 No release, tag, package publish, Docker registry publish, or GitHub release was created. Those actions still require explicit operator approval for version and target.

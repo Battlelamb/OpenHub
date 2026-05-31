@@ -31,7 +31,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Next slice:** release/tag decision remains deferred until the operator chooses a version and publish target
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 08 — CI + Release Automation complete; release/tag creation still deferred pending explicit version choice
-- **Live status:** local implementation verified; public live smoke follows deploy/restart gate
+- **Live status:** deployed at `ad08ce1`; `https://hub.brunhilde.cloud/v1/health/simple` and `/.well-known/agent-descriptions` both returned HTTP 200 after `openhub-api.service` restart.
 
 ## Phase 05 Progress (COMPLETE)
 
