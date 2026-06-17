@@ -104,7 +104,7 @@ Expected GREEN after implementation: focused tests pass.
 **Route:**
 - `GET /v1/tasks/{task_id}/timeline`
 
-**Status:** Locally verified on 2026-06-17. RED endpoint tests first failed with missing route. GREEN added `TaskTimelineItem`, authenticated route, task existence `404`, chronological merge of `trace_events` and `task_evidence`, safe timeline DTO shaping, and recursive secret-like key stripping for trace payloads. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips). Dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Publish/CI/live proof pending before slice is called shipped.
+**Status:** Shipped on 2026-06-17. RED endpoint tests first failed with missing route. GREEN added `TaskTimelineItem`, authenticated route, task existence `404`, chronological merge of `trace_events` and `task_evidence`, safe timeline DTO shaping, and recursive secret-like key stripping for trace payloads. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips). Dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Branch CI run `27686969161` passed after the dashboard audit fix; master CI run `27687173141` passed all jobs; `openhub-api.service` was restarted; local/public health returned `200`; local/public unauthenticated `GET /v1/tasks/smoke-task/timeline` returned `401`.
 
 ### 10-04 — Task detail UI evidence/timeline panel
 

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01, 10-02, and 10-03 locally verified; 10-03 publish/live proof pending
-stopped_at: "PHASE-10-03-LOCAL-VERIFIED"
-last_updated: "2026-06-17T11:38:27Z"
+status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01, 10-02, and 10-03 complete, pushed, CI-verified, deployed, and live-smoked; 10-04 next
+stopped_at: "PHASE-10-03-SHIPPED"
+last_updated: "2026-06-17T12:00:25Z"
 progress:
   total_phases: 10
   completed_phases: 9
@@ -20,14 +20,14 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slices 10-01 and 10-02 are complete; slice 10-03 is locally verified with a unified authenticated task timeline API that merges private/internal task evidence and trace events chronologically. Publish/CI/live proof for 10-03 is pending before calling it shipped. Next implementation slice is 10-04 task detail UI evidence/timeline panel.
+**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slices 10-01, 10-02, and 10-03 are complete: the authenticated unified task timeline API is on `master`, CI-verified, deployed, and live-smoked. Next implementation slice is 10-04 task detail UI evidence/timeline panel.
 
 ## Current Position
 
 - **Status:** in progress
 - **Current phase:** 10 — Task Evidence Timeline + Verification Detail
 - **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
-- **Current slice:** `10-03 — Unified task timeline API` locally verified; publish/CI/live proof pending
+- **Current slice:** `10-03 — Unified task timeline API` complete, pushed, CI-verified, deployed, and live-smoked
 - **Next slice:** `10-04 — Task detail UI evidence/timeline panel`
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
@@ -102,7 +102,7 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 |-------|-------------|--------|
 | 10-01 | Backend evidence schema + models | ✅ |
 | 10-02 | Task evidence service + API endpoints | ✅ |
-| 10-03 | Unified task timeline API | ✅ local |
+| 10-03 | Unified task timeline API | ✅ |
 | 10-04 | Task detail UI evidence/timeline panel | ⏳ |
 | 10-05 | Verification lifecycle + quality gate foundation | ⏳ |
 | 10-06 | Full verification + live closeout | ⏳ |
@@ -137,16 +137,16 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Phase 10 opened (2026-05-31):** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`, `.continue-here.md`, and handoff state created. 10-01 RED tests added for task evidence models and repository behavior.
 - **Phase 10 10-01 task evidence persistence (2026-05-31):** RED import/repository tests confirmed missing symbols first; GREEN added `TaskEvidenceType`, `TaskEvidenceOutcome`, `TaskEvidenceCreate`, `TaskEvidence`, SQLAlchemy metadata, Alembic `0006`, legacy SQL `004`, and `TaskEvidenceRepository`. Focused evidence tests passed; vector migration tests passed; full backend suite passed; Alembic fresh-upgrade smoke created the expected `task_evidence` columns/indexes; dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Commit `731b8fe` pushed; CI run `26714617644` passed; OpenHub API restarted and live Turso schema verified at `alembic_version=0006`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned OK.
 - **Phase 10 10-02 task evidence API (2026-05-31):** RED endpoint tests first failed with missing `POST/GET /v1/tasks/{task_id}/evidence` routes. GREEN added `TaskEvidenceService`, safe `TaskEvidenceResponse` DTO, authenticated create/list endpoints, task existence checks, principal source attribution, and secret-like content-key stripping. Focused evidence tests passed (`10 passed`); full backend suite passed (`289 passed / 9 skipped`); frontend audit/lint/typecheck/tests/build passed (`49 passed`); dependency drift, GSD health/consistency, Compose config, diff check, and changed/untracked secret scan passed. Commit `dc51ecb` pushed; CI run `26716859212` passed; OpenHub API restarted under `openhub-api.service`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned `200`; public unauthenticated `GET /v1/tasks/smoke-task/evidence` returned `401`, proving the new evidence route is live behind auth.
-- **Phase 10 10-03 unified task timeline API (2026-06-17):** RED endpoint tests first failed with missing `GET /v1/tasks/{task_id}/timeline`. GREEN added `TaskTimelineItem`, authenticated timeline route, task existence `404`, chronological merge of `task_evidence` and `trace_events`, trace/evidence safe DTO shaping, and recursive secret-like key stripping for trace payload content. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips); dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Publish/CI/live proof is pending.
+- **Phase 10 10-03 unified task timeline API (2026-06-17):** RED endpoint tests first failed with missing `GET /v1/tasks/{task_id}/timeline`. GREEN added `TaskTimelineItem`, authenticated timeline route, task existence `404`, chronological merge of `task_evidence` and `trace_events`, trace/evidence safe DTO shaping, and recursive secret-like key stripping for trace payload content. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips); dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Branch CI run `27686969161` passed after refreshing dashboard audit dependencies (`Vite 8.0.16`, `@vitejs/plugin-react 6.0.2`, `npm audit` zero vulnerabilities). Fast-forwarded to `master`; master CI run `27687173141` passed all jobs. `openhub-api.service` restarted; local/public `/v1/health/simple` returned `200`; local/public unauthenticated `GET /v1/tasks/smoke-task/timeline` returned `401`, proving the new route is live behind auth.
 
 ## Session Continuity
 
-- **Last state update:** 2026-06-17T11:38:27Z
-- **Stopped at:** Phase 10 slice 10-03 locally verified; commit/push/CI/live proof pending before calling it shipped.
+- **Last state update:** 2026-06-17T12:00:25Z
+- **Stopped at:** Phase 10 slice 10-03 complete, pushed to `master`, CI-verified, deployed, and live-smoked.
 - **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
 - **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** commit and push 10-03, verify CI/live route behind auth, then start 10-04 task detail UI evidence/timeline panel.
+- **Next action:** start 10-04 task detail UI evidence/timeline panel.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.
