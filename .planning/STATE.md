@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: OpenHub v1.0
-status: Phase 10 Task Evidence Timeline + Verification Detail in progress — 10-01 through 10-04 shipped; 10-05 locally verified; 10-06 closeout pending
-stopped_at: "PHASE-10-05-LOCAL-VERIFIED"
-last_updated: "2026-06-17T14:30:22Z"
+status: Phase 10 Task Evidence Timeline + Verification Detail complete — all slices shipped, CI-verified, deployed, and live-smoked
+stopped_at: "PHASE-10-COMPLETE"
+last_updated: "2026-06-17T14:41:40Z"
 progress:
   total_phases: 10
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 67
   completed_plans: 65
 ---
@@ -20,15 +20,15 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 
 **Core value:** Any developer can self-host OpenHub, connect AI agents, and coordinate multi-agent workflows from a single command center — reliably and without conflicts.
 
-**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slices 10-01 through 10-04 are complete, pushed, CI-verified, deployed, and live-smoked. Slice 10-05 is locally implemented and verified: agent `/complete` now records a completion claim and moves tasks to `waiting_approval`, `GET /v1/tasks/{task_id}/verification` derives quality-gate lifecycle state, latest `quality_gate` outcome controls readiness, admin/human completion remains explicit, and frontend Kanban/status components render `waiting_approval`. Next slice is 10-06 full verification/live closeout.
+**Current focus:** Phase 10 Task Evidence Timeline + Verification Detail is open. Slices 10-01 through 10-04 are complete, pushed, CI-verified, deployed, and live-smoked. Slice 10-05 is complete and shipped: agent `/complete` records a completion claim and moves tasks to `waiting_approval`, `GET /v1/tasks/{task_id}/verification` derives quality-gate lifecycle state, latest `quality_gate` outcome controls readiness, admin/human completion remains explicit, and frontend Kanban/status components render `waiting_approval`. Slice 10-06 is complete: branch CI, master CI, deployment restart, public health/API/dashboard smoke, and Phase 10 summary were recorded.
 
 ## Current Position
 
-- **Status:** in progress
+- **Status:** complete
 - **Current phase:** 10 — Task Evidence Timeline + Verification Detail
 - **Current plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
-- **Current slice:** `10-05 — Verification lifecycle + quality gate foundation` locally verified
-- **Next slice:** `10-06 — Full verification + live closeout`
+- **Current slice:** Phase 10 complete
+- **Next slice:** next milestone/phase selection pending
 - **Previous slice:** `09-05 — Docs + verification closeout` complete; see `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **Previous phase:** 09 — ANP Compatibility Spike complete; release/tag creation still deferred pending explicit version choice
 - **Live status:** baseline before Phase 10 is `f161c3d`; `https://hub.brunhilde.cloud/v1/health/simple` and `/.well-known/agent-descriptions` were live-verified after Phase 09.
@@ -104,8 +104,8 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 | 10-02 | Task evidence service + API endpoints | ✅ |
 | 10-03 | Unified task timeline API | ✅ |
 | 10-04 | Task detail UI evidence/timeline panel | ✅ |
-| 10-05 | Verification lifecycle + quality gate foundation | ✅ local |
-| 10-06 | Full verification + live closeout | ⏳ |
+| 10-05 | Verification lifecycle + quality gate foundation | ✅ |
+| 10-06 | Full verification + live closeout | ✅ |
 
 ## Verification Status
 
@@ -139,16 +139,17 @@ See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
 - **Phase 10 10-02 task evidence API (2026-05-31):** RED endpoint tests first failed with missing `POST/GET /v1/tasks/{task_id}/evidence` routes. GREEN added `TaskEvidenceService`, safe `TaskEvidenceResponse` DTO, authenticated create/list endpoints, task existence checks, principal source attribution, and secret-like content-key stripping. Focused evidence tests passed (`10 passed`); full backend suite passed (`289 passed / 9 skipped`); frontend audit/lint/typecheck/tests/build passed (`49 passed`); dependency drift, GSD health/consistency, Compose config, diff check, and changed/untracked secret scan passed. Commit `dc51ecb` pushed; CI run `26716859212` passed; OpenHub API restarted under `openhub-api.service`; public `/v1/health/simple` and `/.well-known/agent-descriptions` returned `200`; public unauthenticated `GET /v1/tasks/smoke-task/evidence` returned `401`, proving the new evidence route is live behind auth.
 - **Phase 10 10-03 unified task timeline API (2026-06-17):** RED endpoint tests first failed with missing `GET /v1/tasks/{task_id}/timeline`. GREEN added `TaskTimelineItem`, authenticated timeline route, task existence `404`, chronological merge of `task_evidence` and `trace_events`, trace/evidence safe DTO shaping, and recursive secret-like key stripping for trace payload content. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips); dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Branch CI run `27686969161` passed after refreshing dashboard audit dependencies (`Vite 8.0.16`, `@vitejs/plugin-react 6.0.2`, `npm audit` zero vulnerabilities). Fast-forwarded to `master`; master CI run `27687173141` passed all jobs. `openhub-api.service` restarted; local/public `/v1/health/simple` returned `200`; local/public unauthenticated `GET /v1/tasks/smoke-task/timeline` returned `401`, proving the new route is live behind auth.
 - **Phase 10 10-04 task detail evidence/timeline panel (2026-06-17):** RED route test first failed because task detail did not render `Evidence Timeline` or fetch `/v1/tasks/{task_id}/timeline`. GREEN added `TaskTimelineItem` frontend type, `qk.tasks.timeline`, `useTaskTimeline`, MSW timeline handler, and an additive Evidence Timeline panel under the embedded Workflow Canvas showing source/type/outcome, actor, trace id/duration, artifacts, and sanitized payload JSON. Focused route test passed (`2 passed`); full frontend gate passed (`npm run lint -- --max-warnings=0`, `npm run typecheck`, full Vitest `50 passed`, `npm run build` with Vite 8.0.16); `npm audit --audit-level=moderate`, dependency drift, GSD health/consistency, `git diff --check`, and changed-file secret scan passed. Commit `819ea2a` was fast-forwarded to `master`; master CI run `27694461737` passed all jobs; `openhub-api.service` restarted; local health returned `200`; public `/v1/health/simple` returned `200`; public `/dashboard/tasks/smoke-task` returned `200`; public dashboard bundle `/dashboard/assets/index-CaaPEVZy.js` contains `Evidence Timeline` and the timeline route pattern; public unauthenticated `GET /v1/tasks/smoke-task/timeline` returned `401`, proving the route remains behind auth.
-- **Phase 10 10-05 verification lifecycle + quality gate foundation (2026-06-17):** RED service/HTTP/UI tests first failed because verification lifecycle service/endpoint and `waiting_approval` UI support were missing, while `/complete` still final-closed tasks. GREEN added `TaskVerificationState`, `TaskVerificationService`, authenticated `GET /v1/tasks/{task_id}/verification`, `/complete` completion-claim semantics that move tasks to `waiting_approval` without setting `completed_at`, explicit admin transition support from `waiting_approval`, quality-gate latest-outcome readiness, and frontend `waiting_approval` status/Kanban support. Focused backend gate passed (`tests/unit/test_task_verification_service.py`, `tests/integration/test_task_verification_lifecycle.py`, `tests/integration/test_task_lifecycle.py` -> 11 passed); related backend gate passed (`24 passed`); full backend suite passed (`python -m pytest tests/ -q --tb=short`, exit 0 with 9 expected Turso-vector skips); full frontend gate passed (`lint`, `typecheck`, full Vitest `50 passed`, `build`); `npm audit --audit-level=moderate`, dependency drift, GSD health/consistency, `git diff --check`, and changed/untracked secret scan passed locally. Commit/push/CI/live closeout remains for 10-06.
+- **Phase 10 10-05 verification lifecycle + quality gate foundation (2026-06-17):** RED service/HTTP/UI tests first failed because verification lifecycle service/endpoint and `waiting_approval` UI support were missing, while `/complete` still final-closed tasks. GREEN added `TaskVerificationState`, `TaskVerificationService`, authenticated `GET /v1/tasks/{task_id}/verification`, `/complete` completion-claim semantics that move tasks to `waiting_approval` without setting `completed_at`, explicit admin transition support from `waiting_approval`, quality-gate latest-outcome readiness, and frontend `waiting_approval` status/Kanban support. Focused backend gate passed (`tests/unit/test_task_verification_service.py`, `tests/integration/test_task_verification_lifecycle.py`, `tests/integration/test_task_lifecycle.py` -> 11 passed); related backend gate passed (`24 passed`); full backend suite passed (`python -m pytest tests/ -q --tb=short`, exit 0 with 9 expected Turso-vector skips); full frontend gate passed (`lint`, `typecheck`, full Vitest `50 passed`, `build`); `npm audit --audit-level=moderate`, dependency drift, GSD health/consistency, `git diff --check`, and changed/untracked secret scan passed locally. Branch CI run `27696708960` and master CI run `27697005665` passed all jobs; `openhub-api.service` restarted; local/public health returned `200`; local/public unauthenticated `GET /v1/tasks/smoke-task/verification` returned `401`; public `/dashboard/tasks/smoke-task` returned `200`; dashboard bundle contains `waiting_approval`.
+- **Phase 10 10-06 full verification/live closeout (2026-06-17):** Commit `96f8443` was pushed to the 10-05 branch and fast-forwarded to `master`. Branch CI run `27696708960` passed all jobs; master CI run `27697005665` passed all jobs. `openhub-api.service` restarted successfully; local `/v1/health/simple` returned `200`; local unauthenticated `GET /v1/tasks/smoke-task/verification` returned `401`; public `/v1/health/simple` returned `200`; public unauthenticated `GET /v1/tasks/smoke-task/verification` returned `401`; public `/dashboard/tasks/smoke-task` returned `200`; public dashboard bundle `/dashboard/assets/index-n7mqYpZH.js` contains `waiting_approval`. Phase summary written to `.planning/phases/10-task-evidence-timeline/10-SUMMARY.md`.
 
 ## Session Continuity
 
-- **Last state update:** 2026-06-17T14:30:22Z
-- **Stopped at:** Phase 10 slice 10-05 locally verified; closeout/CI/live proof pending in 10-06.
+- **Last state update:** 2026-06-17T14:41:40Z
+- **Stopped at:** Phase 10 complete; all slices shipped, CI-verified, deployed, and live-smoked.
 - **Resume file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Continue file:** `.planning/phases/10-task-evidence-timeline/.continue-here.md`
 - **Phase 10 plan:** `.planning/phases/10-task-evidence-timeline/10-PLAN.md`
 - **Completed Phase 09 evidence:** `.planning/phases/09-anp-compatibility/09-SUMMARY.md`
 - **ANP design/implementation doc:** `docs/ANP_COMPATIBILITY.md`
-- **Next action:** commit/push 10-05 branch, verify CI, then run 10-06 master/live closeout.
+- **Next action:** choose/start the next milestone or phase; release/tag remains deferred pending explicit operator version and target.
 - **Release decision:** still deferred; no tag/release/publish without explicit operator version/target approval.

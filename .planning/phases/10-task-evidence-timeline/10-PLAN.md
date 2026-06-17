@@ -67,7 +67,7 @@ owner: OpenHub GSD
 **TDD commands:**
 
 ```bash
-.venv/bin/python -m pytest tests/unit/test_task_verification_service.py tests/integration/test_task_verification_lifecycle.py tests/integration/test_task_lifecycle.py -q --tb=short
+Phase 10 is complete. Next command: select/start the next milestone or phase.
 ```
 
 Expected RED before implementation: imports fail for `TaskEvidence*` and `TaskEvidenceRepository`.
@@ -128,7 +128,7 @@ Expected GREEN after implementation: focused tests pass.
 
 **Status:** Locally verified on 2026-06-17. RED service/HTTP/UI tests first failed because verification lifecycle service/endpoint and `waiting_approval` UI support were missing, and agent `/complete` still self-closed tasks. GREEN added `TaskVerificationState`, `TaskVerificationService`, authenticated `GET /v1/tasks/{task_id}/verification`, completion-claim semantics that move tasks to `waiting_approval` without final `completed`, explicit admin/human closeout path, latest `quality_gate` outcome readiness, and frontend `waiting_approval` Kanban/status support.
 
-**Verification:** focused backend gate passed (`11 passed`); related backend gate passed (`24 passed`); full backend suite passed with 9 expected Turso-vector skips; full frontend gate passed (`lint`, `typecheck`, Vitest `50 passed`, build); `npm audit`, dependency drift, GSD health/consistency, `git diff --check`, and changed/untracked secret scan passed locally. Commit/push/CI/live proof is handled by 10-06.
+**Verification:** focused backend gate passed (`11 passed`); related backend gate passed (`24 passed`); full backend suite passed with 9 expected Turso-vector skips; full frontend gate passed (`lint`, `typecheck`, Vitest `50 passed`, build); `npm audit`, dependency drift, GSD health/consistency, `git diff --check`, and changed/untracked secret scan passed locally. Commit `96f8443` was pushed and fast-forwarded to `master`; branch CI `27696708960`, master CI `27697005665`, and live smoke passed in 10-06.
 
 **Files:**
 - `app/models/tasks.py` — `TaskVerificationState` DTO.
@@ -143,8 +143,10 @@ Expected GREEN after implementation: focused tests pass.
 
 **Objective:** Run focused/full backend/frontend/E2E/GSD gates, update evidence files, commit/push, verify CI and live health.
 
+**Status:** Shipped on 2026-06-17. Commit `96f8443` was pushed to the 10-05 branch and fast-forwarded to `master`. Branch CI run `27696708960` and master CI run `27697005665` passed all jobs. `openhub-api.service` restarted; local/public health returned `200`; local/public unauthenticated `GET /v1/tasks/smoke-task/verification` returned `401`; public `/dashboard/tasks/smoke-task` returned `200`; dashboard bundle contains `waiting_approval`. Phase summary written to `10-SUMMARY.md`.
+
 ## Ready-to-run next command
 
 ```bash
-.venv/bin/python -m pytest tests/unit/test_task_verification_service.py tests/integration/test_task_verification_lifecycle.py tests/integration/test_task_lifecycle.py -q --tb=short
+Phase 10 is complete. Next command: select/start the next milestone or phase.
 ```

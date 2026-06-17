@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-17T14:30:22Z",
+  "timestamp": "2026-06-17T14:41:40Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
   "phase_dir": ".planning/phases/10-task-evidence-timeline",
   "plan": 10,
-  "task": "10-06",
+  "task": "complete",
   "total_tasks": 6,
-  "status": "in_progress",
-  "current_state": "Phase 10 slices 10-01 through 10-04 are shipped. Slice 10-05 is locally implemented and verified; commit/push/CI/live closeout remains under 10-06.",
+  "status": "complete",
+  "current_state": "Phase 10 Task Evidence Timeline + Verification Detail is complete: all slices 10-01 through 10-06 are shipped, CI-verified, deployed, and live-smoked.",
   "completed_tasks": [
     {
       "id": "09",
@@ -88,7 +88,7 @@
     {
       "id": "10-05",
       "name": "Verification lifecycle + quality gate foundation",
-      "status": "complete-local",
+      "status": "complete-shipped",
       "evidence": [
         "app/models/tasks.py -> TaskVerificationState",
         "app/services/task_verification_service.py -> TaskVerificationService",
@@ -102,19 +102,37 @@
         "related backend gate -> 24 passed",
         "full backend suite -> exit 0 with 9 expected Turso-vector skips",
         "full frontend gate -> lint/typecheck/Vitest 50 passed/build",
-        "npm audit/dependency drift/GSD/diff/secret gates passed locally"
+        "npm audit/dependency drift/GSD/diff/secret gates passed locally",
+        "commit 96f8443",
+        "branch CI 27696708960",
+        "master CI 27697005665",
+        "public unauthenticated /v1/tasks/smoke-task/verification -> 401"
+      ]
+    },
+    {
+      "id": "10-06",
+      "name": "Full verification, live smoke, and closeout",
+      "status": "complete-shipped",
+      "evidence": [
+        "commit 96f8443",
+        "branch CI 27696708960 passed all jobs",
+        "master CI 27697005665 passed all jobs",
+        "openhub-api.service restarted",
+        "local/public health -> 200",
+        "local/public unauthenticated /v1/tasks/smoke-task/verification -> 401",
+        "public /dashboard/tasks/smoke-task -> 200",
+        "public dashboard bundle contains waiting_approval",
+        ".planning/phases/10-task-evidence-timeline/10-SUMMARY.md"
       ]
     }
   ],
   "active_task": {
-    "id": "10-06",
-    "name": "Full verification, live smoke, and closeout",
-    "status": "next",
+    "id": null,
+    "name": "Phase 10 complete",
+    "status": "complete",
     "plan": ".planning/phases/10-task-evidence-timeline/10-PLAN.md"
   },
-  "remaining_tasks": [
-    "10-06 — Full verification, live smoke, and closeout"
-  ],
+  "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [
     "Release/tag creation still requires explicit operator version/target approval."
@@ -134,12 +152,7 @@
     }
   ],
   "resume_instructions": [
-    "Start from /home/brunhilde/OpenHub and verify git status before mutating.",
-    "Commit and push the 10-05 branch if not already done.",
-    "Verify branch CI, then fast-forward/merge to master and verify master CI.",
-    "Restart openhub-api.service and live-smoke public health/dashboard/API auth routes before calling 10-06 complete.",
-    "Do not let agent self-claims close work without verification.",
-    "Do not add public evidence sharing in Phase 10.",
+    "Phase 10 is complete. Start the next milestone/phase only after choosing scope.",
     "Do not tag/release without explicit operator version and target."
   ],
   "verification": {
@@ -149,8 +162,9 @@
     "last_related_backend_validation": "10-05: evidence + verification + lifecycle related backend gate -> 24 passed",
     "last_full_validation": "10-05: python -m pytest tests/ -q --tb=short -> exit 0, 9 expected Turso-vector skips",
     "last_gsd_validation": "10-05: dependency drift, npm audit, GSD health/consistency, git diff --check, changed/untracked secret scan passed locally",
-    "last_ci_validation": "10-05: pending 10-06 closeout",
-    "last_live_validation": "10-05: pending 10-06 closeout",
-    "last_frontend_validation": "10-05: lint/typecheck/full Vitest 50 passed/build passed"
+    "last_ci_validation": "10-06: branch CI 27696708960 and master CI 27697005665 passed all jobs on 96f8443",
+    "last_live_validation": "10-06: openhub-api.service restarted; local/public health -> 200; local/public unauthenticated /v1/tasks/smoke-task/verification -> 401; public /dashboard/tasks/smoke-task -> 200; dashboard bundle contains waiting_approval",
+    "last_frontend_validation": "10-05: lint/typecheck/full Vitest 50 passed/build passed",
+    "summary_file": ".planning/phases/10-task-evidence-timeline/10-SUMMARY.md"
   }
 }
