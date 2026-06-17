@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-17T12:00:25Z",
+  "timestamp": "2026-06-17T13:51:06Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
@@ -9,7 +9,7 @@
   "task": "10-04",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slices 10-01, 10-02, and 10-03 are complete, pushed, CI-verified, deployed, and live-smoked. Slice 10-03 added the unified authenticated task timeline API. Next implementation slice is 10-04 task detail UI evidence/timeline panel.",
+  "current_state": "Phase 10 is open. Slices 10-01 through 10-03 are shipped. Slice 10-04 task detail UI evidence/timeline panel is locally verified on branch gsd/phase-10-task-evidence-timeline-10-04; commit/push/CI/live proof is pending before shipped closeout.",
   "completed_tasks": [
     {
       "id": "09",
@@ -60,18 +60,34 @@
         "Master CI run 27687173141 passed all jobs",
         "public GET /v1/tasks/smoke-task/timeline -> 401 unauthenticated"
       ]
+    },
+    {
+      "id": "10-04",
+      "name": "Task detail UI evidence/timeline panel",
+      "status": "local-verified",
+      "evidence": [
+        "web/src/routes/_authed/tasks/-task-detail-workflow.test.tsx -> focused route test 2 passed",
+        "web/src/hooks/queries/useTasks.ts -> useTaskTimeline",
+        "web/src/lib/query-keys.ts -> qk.tasks.timeline",
+        "web/src/types/entities.ts -> TaskTimelineItem frontend type",
+        "web/src/mocks/handlers/tasks.ts -> nested timeline MSW handler",
+        "web/src/routes/_authed/tasks/$taskId.tsx -> additive Evidence Timeline panel",
+        "full frontend gate -> lint/typecheck/Vitest 50 passed/build",
+        "npm audit -> 0 vulnerabilities",
+        "dependency drift, GSD health/consistency, diff check, changed-file secret scan passed"
+      ]
     }
   ],
   "active_task": {
     "id": "10-04",
     "name": "Task detail UI evidence/timeline panel",
-    "status": "next",
+    "status": "local-verified-publish-pending",
     "plan": ".planning/phases/10-task-evidence-timeline/10-PLAN.md"
   },
   "remaining_tasks": [
-    "10-04 — Task detail UI evidence/timeline panel",
-    "10-05 — Verification lifecycle + quality gate foundation",
-    "10-06 — Full verification, live smoke, and closeout"
+    "10-04 \u2014 commit/push/CI/live proof and shipped-state update",
+    "10-05 \u2014 Verification lifecycle + quality gate foundation",
+    "10-06 \u2014 Full verification, live smoke, and closeout"
   ],
   "blockers": [],
   "human_actions_pending": [
@@ -92,12 +108,14 @@
     }
   ],
   "resume_instructions": [
-    "Start from /home/brunhilde/OpenHub and verify git status before editing.",
-    "Start 10-04: add typed frontend API/client hook for GET /v1/tasks/{task_id}/timeline and render evidence/timeline UI around the existing embedded Workflow Canvas.",
+    "Start from /home/brunhilde/OpenHub and verify git status before mutating.",
+    "Commit and push 10-04 local implementation and GSD artifacts from branch gsd/phase-10-task-evidence-timeline-10-04.",
+    "Run/verify OpenHub CI on the branch, then fast-forward to master only if green.",
+    "Verify master CI and live-smoke the dashboard task detail evidence timeline before marking 10-04 shipped.",
+    "Then start 10-05 verification lifecycle + quality gate foundation.",
     "Do not add public evidence sharing in Phase 10.",
     "Do not replace the embedded Workflow Canvas in 10-04.",
-    "Do not modify Plankton or OpenHub .claude/settings.json in this phase.",
-    "Run focused frontend tests, build, GSD health/consistency, dependency drift, diff check, secret scan, push, CI, and live verification before final done report."
+    "Do not tag/release without explicit operator version and target."
   ],
   "verification": {
     "plan_file": ".planning/phases/10-task-evidence-timeline/10-PLAN.md",
@@ -105,8 +123,9 @@
     "last_focused_validation": ".venv/bin/python -m pytest tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 8 passed",
     "last_related_backend_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py tests/unit/test_task_trace_endpoint.py tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 15 passed",
     "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> exit 0, 9 expected Turso-vector skips",
-    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed-file secret scan passed",
-    "last_ci_validation": "Branch CI run 27686969161 passed all jobs; master CI run 27687173141 passed all jobs on commit 296bc75",
-    "last_live_validation": "openhub-api.service restarted; local/public /v1/health/simple -> 200; local/public unauthenticated /v1/tasks/smoke-task/timeline -> 401"
+    "last_gsd_validation": "10-04 local: dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed-file secret scan passed",
+    "last_ci_validation": "10-04 publish proof pending; latest master CI 27687463247 passed on 61ee2e6 before 10-04 local changes",
+    "last_live_validation": "10-04 live smoke pending; 10-03 API route previously live-smoked behind auth",
+    "last_frontend_validation": "10-04 local: focused route test -> 2 passed; full frontend gate -> lint/typecheck/Vitest 50 passed/build; npm audit -> 0 vulnerabilities"
   }
 }

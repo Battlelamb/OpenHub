@@ -60,6 +60,41 @@ export const tasksHandlers: HttpHandler[] = [
       },
     ]),
   ),
+  // Per-task timeline - MUST stay BEFORE the bare :id handler (msw insertion-order match).
+  http.get('/v1/tasks/:id/timeline', ({ params }) =>
+    HttpResponse.json([
+      {
+        id: `${params.id}-timeline-evidence-1`,
+        task_id: String(params.id),
+        source: 'evidence',
+        item_type: 'log',
+        title: 'Agent progress note',
+        summary: 'Agent emitted a progress note for this task.',
+        content: { message: 'Working on task context' },
+        artifact_ids: [],
+        outcome: 'unknown',
+        actor_id: 'agent-1',
+        occurred_at: new Date(Date.now() - 4_500).toISOString(),
+      },
+      {
+        id: `${params.id}-timeline-trace-1`,
+        task_id: String(params.id),
+        source: 'trace',
+        item_type: 'tool',
+        title: 'read_file(app/config.py)',
+        summary: null,
+        content: { path: 'app/config.py' },
+        artifact_ids: [],
+        outcome: null,
+        actor_id: 'agent-1',
+        occurred_at: new Date(Date.now() - 3_800).toISOString(),
+        trace_id: `${params.id}-trace-1`,
+        duration_ms: 12.4,
+        category: 'tool',
+        level: 0,
+      },
+    ]),
+  ),
   // Detail by id (single TaskResponse envelope - matches real backend).
   http.get('/v1/tasks/:id', ({ params }) =>
     HttpResponse.json(sampleTaskResponse(String(params.id))),

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api-client'
 import { qk } from '@/lib/query-keys'
-import type { Task, TaskStatus, TaskPriority } from '@/types/entities'
+import type { Task, TaskStatus, TaskPriority, TaskTimelineItem } from '@/types/entities'
 
 interface TaskFilters {
   status?: string
@@ -105,6 +105,14 @@ export function useTask(id: string | undefined) {
       const b = await api<BackendTaskResponse>(`/v1/tasks/${id}`)
       return adaptTask(b)
     },
+    enabled: !!id,
+  })
+}
+
+export function useTaskTimeline(id: string | undefined) {
+  return useQuery({
+    queryKey: id ? qk.tasks.timeline(id) : (['tasks', 'none', 'timeline'] as const),
+    queryFn: () => api<TaskTimelineItem[]>(`/v1/tasks/${id}/timeline`),
     enabled: !!id,
   })
 }

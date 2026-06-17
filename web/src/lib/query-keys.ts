@@ -9,6 +9,7 @@ export const qk = {
     summary: ['tasks', 'summary'] as const,
     detail: (id: string) => ['tasks', id] as const,
     trace: (id: string) => ['tasks', id, 'trace'] as const,
+    timeline: (id: string) => ['tasks', id, 'timeline'] as const,
   },
   workflows: {
     all: ['workflows'] as const,

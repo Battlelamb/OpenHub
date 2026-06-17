@@ -111,9 +111,16 @@ Expected GREEN after implementation: focused tests pass.
 **Objective:** Render evidence, logs, commands, files, artifacts, quality gate results, and timeline state below/alongside the embedded Workflow Canvas.
 
 **Files:**
-- Modify: `web/src/routes/_authed/tasks/$taskId.tsx`
-- Add/modify hooks under `web/src/hooks/queries/`
-- Test: task detail component tests
+- Modified: `web/src/routes/_authed/tasks/$taskId.tsx`
+- Modified: `web/src/hooks/queries/useTasks.ts`
+- Modified: `web/src/lib/query-keys.ts`
+- Modified: `web/src/types/entities.ts`
+- Modified: `web/src/mocks/handlers/tasks.ts`
+- Test: `web/src/routes/_authed/tasks/-task-detail-workflow.test.tsx`
+
+**Status:** Locally verified on 2026-06-17. RED route test first failed because task detail did not render `Evidence Timeline` or fetch `/v1/tasks/{task_id}/timeline`. GREEN added frontend `TaskTimelineItem` typing, `qk.tasks.timeline`, `useTaskTimeline`, MSW timeline handler, and an additive Evidence Timeline panel under the embedded Workflow Canvas. The panel renders source/type/outcome, actor, trace id, duration, artifact IDs, and sanitized payload JSON while preserving the canvas as the working surface.
+
+**Local verification:** focused route test passed (`2 passed`); full frontend gate passed (`npm run lint -- --max-warnings=0`, `npm run typecheck`, full Vitest `50 passed`, `npm run build` with Vite 8.0.16). `npm audit --audit-level=moderate`, dependency drift, GSD health/consistency, `git diff --check`, and changed-file secret scan passed. Publish/CI/live proof pending before calling this slice shipped.
 
 ### 10-05 — Verification lifecycle + quality gate foundation
 

@@ -126,6 +126,28 @@ export interface HealthResponse {
 
 export type TraceCategory = 'llm' | 'tool' | 'db' | 'http' | 'internal' | 'error'
 
+export type TaskTimelineSource = 'evidence' | 'trace'
+
+export interface TaskTimelineItem {
+  id: string
+  task_id: string
+  source: TaskTimelineSource
+  item_type: string
+  title: string
+  occurred_at: string
+  actor_id?: string | null
+  summary?: string | null
+  content?: Record<string, unknown>
+  artifact_ids?: string[]
+  outcome?: string | null
+  trace_id?: string | null
+  duration_ms?: number | null
+  category?: string | null
+  level?: number | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
 export interface TraceSpan {
   id: string
   name: string
