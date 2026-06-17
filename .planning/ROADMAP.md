@@ -204,7 +204,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 - [x] **10-01 — Backend evidence schema + models**: added table/migrations, Pydantic models, repository, and focused backend tests.
 - [x] **10-02 — Task evidence service + API endpoints**: added authenticated create/list endpoints, task existence checks, principal source attribution, safe response DTOs, and integration tests.
 - [x] **10-03 — Unified task timeline API**: added authenticated `GET /v1/tasks/{task_id}/timeline`, task existence checks, chronological trace/evidence merge, safe internal `TaskTimelineItem` DTO, backend/frontend/package CI proof, and live unauthenticated `401` route smoke.
-- [x] **10-04 — Task detail UI evidence/timeline panel**: locally verified additive Evidence Timeline panel below the embedded Workflow Canvas, with typed timeline query plumbing, MSW handler, route regression, full frontend gate, audit, dependency drift, GSD health/consistency, diff check, and changed-file secret scan. Publish/CI/live proof pending before shipped closeout.
+- [x] **10-04 — Task detail UI evidence/timeline panel**: shipped additive Evidence Timeline panel below the embedded Workflow Canvas, with typed timeline query plumbing, MSW handler, route regression, full frontend gate, audit, dependency drift, GSD health/consistency, branch CI, master CI `27694461737`, deployment restart, dashboard route/bundle smoke, and public unauthenticated timeline `401` smoke.
 - [ ] **10-05 — Verification lifecycle + quality gate foundation**: represent verification state and `quality_gate` evidence outcomes.
 - [ ] **10-06 — Full verification + live closeout**: run gates, update evidence, push, verify CI/live, and summarize.
 
@@ -222,7 +222,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 9 / 10
-- **Completed plans:** 64 / 67
+- **Completed plans:** 65 / 67
 - **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
-- **Current slice:** 10-04 — Task detail UI evidence/timeline panel locally verified; publish/CI/live proof pending
+- **Current slice:** 10-04 — Task detail UI evidence/timeline panel complete, pushed, CI-verified, deployed, and live-smoked
 - **Next slice:** 10-05 — Verification lifecycle + quality gate foundation
