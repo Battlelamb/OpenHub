@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-31T15:39:46Z",
+  "timestamp": "2026-06-17T11:38:27Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
   "phase_dir": ".planning/phases/10-task-evidence-timeline",
   "plan": 10,
-  "task": "10-03",
+  "task": "10-04",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slice 10-01 completed private/internal task evidence persistence primitives. Slice 10-02 completed task evidence service/API endpoints and was pushed, CI-verified, deployed, and live-smoked. Next implementation slice is 10-03 unified task timeline API.",
+  "current_state": "Phase 10 is open. Slices 10-01 and 10-02 are complete, pushed, CI-verified, deployed, and live-smoked. Slice 10-03 added the unified authenticated task timeline API and is locally verified; publish/CI/live proof is pending before calling it shipped. Next implementation slice is 10-04 task detail UI evidence/timeline panel.",
   "completed_tasks": [
     {
       "id": "09",
@@ -20,13 +20,14 @@
     {
       "id": "10-01",
       "name": "Backend evidence schema + models",
-      "status": "complete",
+      "status": "complete-shipped",
       "evidence": [
         "tests/unit/test_task_evidence_models.py",
         "tests/unit/test_task_evidence_repository.py",
         "alembic/versions/0006_task_evidence.py",
         "database/migrations/004_task_evidence.sql",
-        "app/database/repositories/task_evidence.py"
+        "app/database/repositories/task_evidence.py",
+        "GitHub Actions run 26714617644"
       ]
     },
     {
@@ -41,16 +42,30 @@
         "GitHub Actions run 26716859212",
         "public GET /v1/tasks/smoke-task/evidence -> 401 unauthenticated"
       ]
+    },
+    {
+      "id": "10-03",
+      "name": "Unified task timeline API",
+      "status": "local-verified-publish-pending",
+      "evidence": [
+        "tests/integration/test_task_evidence_endpoints.py",
+        "app/api/routes_tasks.py",
+        "app/models/tasks.py",
+        "app/models/__init__.py",
+        "app/services/task_evidence_service.py",
+        "focused endpoint tests -> 8 passed",
+        "related backend gate -> 15 passed",
+        "full backend suite -> exit 0 with 9 expected Turso-vector skips"
+      ]
     }
   ],
   "active_task": {
-    "id": "10-03",
-    "name": "Unified task timeline API",
-    "status": "next",
+    "id": "10-04",
+    "name": "Task detail UI evidence/timeline panel",
+    "status": "next-after-10-03-publish-proof",
     "plan": ".planning/phases/10-task-evidence-timeline/10-PLAN.md"
   },
   "remaining_tasks": [
-    "10-03 — Unified task timeline API",
     "10-04 — Task detail UI evidence/timeline panel",
     "10-05 — Verification lifecycle + quality gate foundation",
     "10-06 — Full verification, live smoke, and closeout"
@@ -69,26 +84,27 @@
       "rationale": "The 10-02 endpoints omit internal labels/metadata, attribute source_agent_id from the authenticated principal rather than caller input, and strip obvious secret-like keys from structured content before persistence."
     },
     {
-      "decision": "Slice 10-02 stops at create/list task evidence endpoints.",
-      "rationale": "Unified timeline merging and dashboard rendering belong to later slices so API behavior, timeline composition, and UI behavior remain testable in small increments."
+      "decision": "Task timeline API uses safe internal DTOs and remains authenticated.",
+      "rationale": "The 10-03 timeline route merges evidence with trace events for operators while preserving auth, task existence checks, and recursive secret-like key stripping for trace payloads."
     }
   ],
   "resume_instructions": [
-    "Start from /home/brunhilde/OpenHub on master and verify git status before editing.",
-    "Start 10-03 with strict TDD for GET /v1/tasks/{task_id}/timeline merging trace_events and task_evidence chronologically.",
-    "Do not add dashboard evidence UI in 10-03.",
+    "Start from /home/brunhilde/OpenHub and verify git status before editing.",
+    "First commit and push 10-03, verify CI, and live-smoke public unauthenticated GET /v1/tasks/smoke-task/timeline returns 401 before calling 10-03 shipped.",
+    "Then start 10-04: add typed frontend API/client hook for GET /v1/tasks/{task_id}/timeline and render evidence/timeline UI around the existing embedded Workflow Canvas.",
     "Do not add public evidence sharing in Phase 10.",
+    "Do not replace the embedded Workflow Canvas in 10-04.",
     "Do not modify Plankton or OpenHub .claude/settings.json in this phase.",
-    "Run GSD health/consistency, dependency drift, diff check, secret scan, focused tests, full backend tests, push, CI, and live health verification before final done report."
+    "Run focused frontend tests, build, GSD health/consistency, dependency drift, diff check, secret scan, push, CI, and live verification before final done report."
   ],
   "verification": {
     "plan_file": ".planning/phases/10-task-evidence-timeline/10-PLAN.md",
     "continue_file": ".planning/phases/10-task-evidence-timeline/.continue-here.md",
-    "last_focused_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 10 passed",
-    "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> 289 passed / 9 skipped",
-    "last_frontend_validation": "npm audit 0 vulnerabilities; eslint passed; typecheck passed; Vitest 49 passed; npm run build passed",
-    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed/untracked secret scan passed; docker compose config rendered",
-    "last_ci_validation": "GitHub Actions run 26716859212 passed all jobs",
-    "last_live_validation": "openhub-api.service restarted; public /v1/health/simple -> 200; public /.well-known/agent-descriptions -> 200; public unauthenticated /v1/tasks/smoke-task/evidence -> 401"
+    "last_focused_validation": ".venv/bin/python -m pytest tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 8 passed",
+    "last_related_backend_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py tests/unit/test_task_trace_endpoint.py tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 15 passed",
+    "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> exit 0, 9 expected Turso-vector skips",
+    "last_gsd_validation": "dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed-file secret scan passed",
+    "last_ci_validation": "pending for 10-03",
+    "last_live_validation": "pending for 10-03 timeline route"
   }
 }

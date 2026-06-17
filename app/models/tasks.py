@@ -371,6 +371,28 @@ class TaskEvidenceResponse(IDMixin, TimestampMixin):
     occurred_at: datetime = Field(description="When the evidenced event occurred")
 
 
+class TaskTimelineItem(BaseModel):
+    """Safe internal task timeline item merging trace and evidence sources."""
+
+    id: str = Field(description="Source row ID")
+    task_id: str = Field(description="Associated task ID")
+    source: str = Field(description="Timeline source: evidence or trace")
+    item_type: str = Field(description="Evidence type or trace event type")
+    title: str = Field(description="Operator-facing event title")
+    occurred_at: datetime = Field(description="When the event occurred")
+    actor_id: Optional[str] = Field(default=None, description="Agent/principal that emitted the event")
+    summary: Optional[str] = Field(default=None, description="Short human-readable summary")
+    content: Dict[str, Any] = Field(default_factory=dict, description="Sanitized structured payload")
+    artifact_ids: List[str] = Field(default_factory=list, description="Related artifacts")
+    outcome: Optional[str] = Field(default=None, description="Evidence outcome, when applicable")
+    trace_id: Optional[str] = Field(default=None, description="Trace ID, when source is trace")
+    duration_ms: Optional[float] = Field(default=None, description="Trace duration, when available")
+    category: Optional[str] = Field(default=None, description="Trace category, when available")
+    level: Optional[int] = Field(default=None, description="Trace nesting level, when available")
+    created_at: Optional[datetime] = Field(default=None, description="Source row creation timestamp")
+    updated_at: Optional[datetime] = Field(default=None, description="Source row update timestamp")
+
+
 class TaskAttempt(IDMixin, TimestampMixin):
     """Model for task execution attempts"""
     

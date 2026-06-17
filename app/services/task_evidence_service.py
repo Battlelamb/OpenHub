@@ -38,7 +38,13 @@ def _sanitize_value(value: Any) -> Any:
     return value
 
 
+def sanitize_task_payload(value: Any) -> Any:
+    """Return a copy with obvious secret-bearing keys removed recursively."""
+    return _sanitize_value(value)
+
+
 class TaskEvidenceService:
+
     """Business logic for creating and listing safe task evidence DTOs."""
 
     def __init__(self, database: Database):

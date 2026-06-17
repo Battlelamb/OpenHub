@@ -104,6 +104,8 @@ Expected GREEN after implementation: focused tests pass.
 **Route:**
 - `GET /v1/tasks/{task_id}/timeline`
 
+**Status:** Locally verified on 2026-06-17. RED endpoint tests first failed with missing route. GREEN added `TaskTimelineItem`, authenticated route, task existence `404`, chronological merge of `trace_events` and `task_evidence`, safe timeline DTO shaping, and recursive secret-like key stripping for trace payloads. Focused endpoint tests passed (`8 passed`); related evidence/model/trace gate passed (`15 passed`); full backend suite passed (`python -m pytest tests/ -x -q --tb=short`, exit 0 with 9 expected Turso-vector skips). Dependency drift, GSD health/consistency, diff check, and changed-file secret scan passed. Publish/CI/live proof pending before slice is called shipped.
+
 ### 10-04 — Task detail UI evidence/timeline panel
 
 **Objective:** Render evidence, logs, commands, files, artifacts, quality gate results, and timeline state below/alongside the embedded Workflow Canvas.

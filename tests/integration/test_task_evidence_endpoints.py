@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -47,6 +48,41 @@ def _seed_agent(agent_id: str = "test-agent-001") -> None:
             "now": now,
         },
     )
+
+
+def _insert_trace_event(
+    task_id: str,
+    *,
+    name: str,
+    created_at: str,
+    event_type: str = "span_end",
+    agent_id: str = "trace-agent",
+    data: dict | None = None,
+    duration_ms: float = 1.0,
+) -> str:
+    from app.database.connection import get_database
+
+    db = get_database()
+    event_id = str(uuid4())
+    db.execute(
+        """INSERT INTO trace_events (
+               id, trace_id, agent_id, event_type, name, data, task_id, duration_ms, created_at
+           ) VALUES (
+               :id, :trace_id, :agent_id, :event_type, :name, :data, :task_id, :duration_ms, :created_at
+           )""",
+        {
+            "id": event_id,
+            "trace_id": f"trace-{event_id}",
+            "agent_id": agent_id,
+            "event_type": event_type,
+            "name": name,
+            "data": json.dumps(data or {}),
+            "task_id": task_id,
+            "duration_ms": duration_ms,
+            "created_at": created_at,
+        },
+    )
+    return event_id
 
 
 def test_admin_can_create_evidence_with_safe_response(
@@ -184,3 +220,93 @@ def test_evidence_endpoints_require_authentication(
 
     assert post_response.status_code == 401, post_response.text
     assert get_response.status_code == 401, get_response.text
+
+
+def test_task_timeline_merges_trace_events_and_evidence_oldest_first(
+    test_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    task_id = _create_task(test_client, admin_headers, "timeline merge")
+    trace_id = _insert_trace_event(
+        task_id,
+        name="pytest focused gate",
+        created_at="2026-05-31T12:02:00Z",
+        data={
+            "category": "tool",
+            "level": 1,
+            "api_token": "should-not-echo",
+        },
+        duration_ms=42.0,
+    )
+
+    evidence_response = test_client.post(
+        f"/v1/tasks/{task_id}/evidence",
+        headers=admin_headers,
+        json={
+            "evidence_type": "quality_gate",
+            "title": "Backend focused tests",
+            "summary": "Focused timeline contract passed.",
+            "content": {
+                "command": "pytest tests/integration/test_task_evidence_endpoints.py",
+                "safe_detail": "timeline red contract",
+                "secret": "should-not-echo",
+            },
+            "artifact_ids": ["artifact-timeline-1"],
+            "outcome": "passed",
+            "occurred_at": "2026-05-31T12:01:00Z",
+        },
+    )
+    assert evidence_response.status_code == 201, evidence_response.text
+    evidence_id = evidence_response.json()["id"]
+
+    response = test_client.get(f"/v1/tasks/{task_id}/timeline", headers=admin_headers)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [item["source"] for item in body] == ["evidence", "trace"]
+
+    evidence_item = body[0]
+    assert evidence_item["id"] == evidence_id
+    assert evidence_item["task_id"] == task_id
+    assert evidence_item["source"] == "evidence"
+    assert evidence_item["item_type"] == "quality_gate"
+    assert evidence_item["title"] == "Backend focused tests"
+    assert evidence_item["summary"] == "Focused timeline contract passed."
+    assert evidence_item["outcome"] == "passed"
+    assert evidence_item["actor_id"] == "test-admin"
+    assert evidence_item["artifact_ids"] == ["artifact-timeline-1"]
+    assert evidence_item["content"]["safe_detail"] == "timeline red contract"
+    assert "secret" not in evidence_item["content"]
+    assert "labels" not in evidence_item
+    assert "metadata" not in evidence_item
+
+    trace_item = body[1]
+    assert trace_item["id"] == trace_id
+    assert trace_item["task_id"] == task_id
+    assert trace_item["source"] == "trace"
+    assert trace_item["item_type"] == "span_end"
+    assert trace_item["title"] == "pytest focused gate"
+    assert trace_item["actor_id"] == "trace-agent"
+    assert trace_item["trace_id"].startswith("trace-")
+    assert trace_item["duration_ms"] == 42.0
+    assert trace_item["category"] == "tool"
+    assert trace_item["level"] == 1
+    assert "api_token" not in trace_item["content"]
+
+
+def test_task_timeline_returns_404_for_unknown_task(
+    test_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = test_client.get("/v1/tasks/missing-task/timeline", headers=admin_headers)
+
+    assert response.status_code == 404, response.text
+    assert "not found" in response.text.lower()
+
+
+def test_task_timeline_requires_authentication(
+    test_client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    task_id = _create_task(test_client, admin_headers, "timeline auth")
+
+    response = test_client.get(f"/v1/tasks/{task_id}/timeline")
+
+    assert response.status_code == 401, response.text

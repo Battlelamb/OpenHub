@@ -11,12 +11,12 @@ from ..config import get_settings
 from ..logging import get_logger
 from ..database.connection import get_database
 from ..services.task_service import TaskService
-from ..services.task_evidence_service import TaskEvidenceService
+from ..services.task_evidence_service import TaskEvidenceService, sanitize_task_payload
 from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
     Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, TaskRecover,
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter,
-    StaleTaskResponse, TaskEvidenceCreate, TaskEvidenceResponse,
+    StaleTaskResponse, TaskEvidenceCreate, TaskEvidenceResponse, TaskTimelineItem,
 )
 from ..auth.dependencies import CurrentAgent, CurrentAdmin, get_current_admin
 from ..database.vector_availability import require_vector
@@ -337,6 +337,111 @@ async def list_task_evidence(
             detail=f"Task '{task_id}' not found",
         )
     return evidence
+
+
+def _timeline_dt(value: Any) -> datetime:
+    """Normalize string/naive/aware timestamps for deterministic timeline sort."""
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+    if isinstance(value, str) and value:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return datetime.min.replace(tzinfo=timezone.utc)
+        return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+    return datetime.min.replace(tzinfo=timezone.utc)
+
+
+def _enum_str(value: Any) -> str:
+    return value if isinstance(value, str) else value.value
+
+
+def _evidence_to_timeline_item(evidence: TaskEvidenceResponse) -> TaskTimelineItem:
+    return TaskTimelineItem(
+        id=evidence.id,
+        task_id=evidence.task_id,
+        source="evidence",
+        item_type=_enum_str(evidence.evidence_type),
+        title=evidence.title,
+        summary=evidence.summary,
+        occurred_at=evidence.occurred_at,
+        actor_id=evidence.source_agent_id,
+        content=sanitize_task_payload(evidence.content),
+        artifact_ids=evidence.artifact_ids,
+        outcome=_enum_str(evidence.outcome),
+        created_at=evidence.created_at,
+        updated_at=evidence.updated_at,
+    )
+
+
+def _trace_row_to_timeline_item(r: Dict[str, Any]) -> TaskTimelineItem:
+    data = r.get("data") or {}
+    if isinstance(data, str):
+        try:
+            data = _json.loads(data)
+        except Exception:
+            data = {}
+    data = data if isinstance(data, dict) else {}
+    span = _trace_row_to_span(r)
+    created_at = r.get("created_at")
+    return TaskTimelineItem(
+        id=r["id"],
+        task_id=r.get("task_id") or "",
+        source="trace",
+        item_type=r.get("event_type") or "info",
+        title=r.get("name") or r.get("event_type") or "Trace event",
+        summary=None,
+        occurred_at=_timeline_dt(created_at),
+        actor_id=r.get("agent_id"),
+        content=sanitize_task_payload(data),
+        artifact_ids=[],
+        trace_id=r.get("trace_id"),
+        duration_ms=span.get("duration_ms"),
+        category=span.get("category"),
+        level=span.get("level"),
+        created_at=_timeline_dt(created_at),
+    )
+
+
+def _timeline_sort_key(item: TaskTimelineItem) -> tuple[datetime, str, str]:
+    return (_timeline_dt(item.occurred_at), item.source, item.id)
+
+
+@router.get(
+    "/{task_id}/timeline",
+    response_model=List[TaskTimelineItem],
+    summary="List private/internal evidence and trace timeline for a task",
+)
+async def get_task_timeline(
+    task_id: str,
+    current_agent: CurrentAgent,
+    task_service: TaskService = Depends(get_task_service),
+    evidence_service: TaskEvidenceService = Depends(get_task_evidence_service),
+) -> List[TaskTimelineItem]:
+    """Merge task evidence and trace events into one safe internal timeline."""
+    if not task_service.get_task(task_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found",
+        )
+
+    evidence_items = [
+        _evidence_to_timeline_item(evidence)
+        for evidence in (evidence_service.list_evidence(task_id) or [])
+    ]
+
+    database = get_database()
+    rows = database.fetch_all(
+        "SELECT id, trace_id, agent_id, event_type, name, data, task_id, duration_ms, created_at "
+        "FROM trace_events WHERE task_id = :tid ORDER BY created_at ASC, id ASC",
+        {"tid": task_id},
+    )
+    trace_items = [
+        _trace_row_to_timeline_item(dict(row) if not isinstance(row, dict) else row)
+        for row in rows
+    ]
+
+    return sorted([*evidence_items, *trace_items], key=_timeline_sort_key)
 
 
 def _trace_row_to_span(r: Dict[str, Any]) -> Dict[str, Any]:

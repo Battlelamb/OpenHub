@@ -203,7 +203,7 @@ The original five-phase roadmap is complete. Phase 06 made Tasks/Kanban/Workflow
 
 - [x] **10-01 — Backend evidence schema + models**: added table/migrations, Pydantic models, repository, and focused backend tests.
 - [x] **10-02 — Task evidence service + API endpoints**: added authenticated create/list endpoints, task existence checks, principal source attribution, safe response DTOs, and integration tests.
-- [ ] **10-03 — Unified task timeline API**: merge `trace_events` and `task_evidence` into a timeline DTO.
+- [x] **10-03 — Unified task timeline API**: added authenticated `GET /v1/tasks/{task_id}/timeline`, task existence checks, chronological trace/evidence merge, safe internal `TaskTimelineItem` DTO, and backend verification; publish/CI/live proof pending before slice is called shipped.
 - [ ] **10-04 — Task detail UI evidence/timeline panel**: render evidence/logs/commands/files/artifacts/quality-gate results.
 - [ ] **10-05 — Verification lifecycle + quality gate foundation**: represent verification state and `quality_gate` evidence outcomes.
 - [ ] **10-06 — Full verification + live closeout**: run gates, update evidence, push, verify CI/live, and summarize.
@@ -222,7 +222,7 @@ Before claiming a future feature or phase complete:
 ## Progress
 
 - **Completed phases:** 9 / 10
-- **Completed plans:** 63 / 67
+- **Completed plans:** 64 / 67
 - **Current phase:** Phase 10 — Task Evidence Timeline + Verification Detail
-- **Current slice:** 10-02 — Task evidence service + API endpoints complete, pushed, CI-verified, deployed, and live-smoked
-- **Next slice:** 10-03 — Unified task timeline API
+- **Current slice:** 10-03 — Unified task timeline API locally verified; publish/CI/live proof pending
+- **Next slice:** 10-04 — Task detail UI evidence/timeline panel

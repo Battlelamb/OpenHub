@@ -14,6 +14,7 @@ from .tasks import (
     TaskEvidenceOutcome,
     TaskEvidenceResponse,
     TaskEvidenceType,
+    TaskTimelineItem,
 )
 from .events import Event, EventCreate, EventType
 from .responses import SuccessResponse, ErrorResponse, HealthResponse
@@ -40,6 +41,7 @@ __all__ = [
     "TaskEvidenceOutcome",
     "TaskEvidenceResponse",
     "TaskEvidenceType",
+    "TaskTimelineItem",
     
     # Event models
     "Event", 
