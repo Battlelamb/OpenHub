@@ -12,6 +12,7 @@ const taskTokens: Record<TaskStatus, { dot: string; text: string; pulse?: boolea
   queued: { dot: 'bg-zinc-400', text: 'text-zinc-400' },
   claimed: { dot: 'bg-violet-400', text: 'text-violet-400' },
   running: { dot: 'bg-sky-400', text: 'text-sky-400', pulse: true },
+  waiting_approval: { dot: 'bg-amber-400', text: 'text-amber-400', pulse: true },
   completed: { dot: 'bg-emerald-500', text: 'text-emerald-500' },
   failed: { dot: 'bg-red-500', text: 'text-red-500' },
   cancelled: { dot: 'bg-zinc-500', text: 'text-zinc-500', strike: true },

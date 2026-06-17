@@ -67,7 +67,7 @@ owner: OpenHub GSD
 **TDD commands:**
 
 ```bash
-.venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py -q --tb=short
+.venv/bin/python -m pytest tests/unit/test_task_verification_service.py tests/integration/test_task_verification_lifecycle.py tests/integration/test_task_lifecycle.py -q --tb=short
 ```
 
 Expected RED before implementation: imports fail for `TaskEvidence*` and `TaskEvidenceRepository`.
@@ -126,9 +126,18 @@ Expected GREEN after implementation: focused tests pass.
 
 **Objective:** Represent verification states and `quality_gate` outcomes without treating agent self-claim as final completion.
 
+**Status:** Locally verified on 2026-06-17. RED service/HTTP/UI tests first failed because verification lifecycle service/endpoint and `waiting_approval` UI support were missing, and agent `/complete` still self-closed tasks. GREEN added `TaskVerificationState`, `TaskVerificationService`, authenticated `GET /v1/tasks/{task_id}/verification`, completion-claim semantics that move tasks to `waiting_approval` without final `completed`, explicit admin/human closeout path, latest `quality_gate` outcome readiness, and frontend `waiting_approval` Kanban/status support.
+
+**Verification:** focused backend gate passed (`11 passed`); related backend gate passed (`24 passed`); full backend suite passed with 9 expected Turso-vector skips; full frontend gate passed (`lint`, `typecheck`, Vitest `50 passed`, build); `npm audit`, dependency drift, GSD health/consistency, `git diff --check`, and changed/untracked secret scan passed locally. Commit/push/CI/live proof is handled by 10-06.
+
 **Files:**
-- Modify task models/status handling only if needed; otherwise add verification DTO/state layer.
-- Add service tests for status transitions and quality gate evidence.
+- `app/models/tasks.py` — `TaskVerificationState` DTO.
+- `app/services/task_verification_service.py` — derived verification lifecycle service.
+- `app/services/task_service.py` — `/complete` completion-claim semantics and `waiting_approval` admin transitions.
+- `app/api/routes_tasks.py` — `GET /v1/tasks/{task_id}/verification`, response/broadcast semantics, admin transition validation.
+- `tests/unit/test_task_verification_service.py` — quality-gate readiness and latest-outcome service coverage.
+- `tests/integration/test_task_verification_lifecycle.py` and `tests/integration/test_task_lifecycle.py` — HTTP/lifecycle contract coverage.
+- `web/src/types/entities.ts`, `web/src/components/common/StatusBadge.tsx`, `web/src/components/kanban/KanbanBoard.tsx`, `web/src/components/kanban/KanbanBoard.test.tsx` — `waiting_approval` frontend support.
 
 ### 10-06 — Full verification, live smoke, and closeout
 
@@ -137,5 +146,5 @@ Expected GREEN after implementation: focused tests pass.
 ## Ready-to-run next command
 
 ```bash
-.venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py -q --tb=short
+.venv/bin/python -m pytest tests/unit/test_task_verification_service.py tests/integration/test_task_verification_lifecycle.py tests/integration/test_task_lifecycle.py -q --tb=short
 ```

@@ -276,67 +276,73 @@ class TaskService:
             return False
     
     def complete_task(self, task_id: str, agent_id: str, completion: TaskComplete) -> bool:
-        """Complete a task"""
-        logger.info("task_completion_started", 
+        """Record an agent completion claim and move the task to verification."""
+        logger.info("task_completion_started",
                    task_id=task_id,
                    agent_id=agent_id)
-        
+
         try:
             # Verify agent owns the task
             task = self.task_repo.get_by_id(task_id)
             if not task or task.owner_agent_id != agent_id:
-                logger.warning("task_completion_unauthorized", 
+                logger.warning("task_completion_unauthorized",
                               task_id=task_id,
                               agent_id=agent_id)
                 return False
-            
+
             task_status = task.status if isinstance(task.status, str) else task.status.value
             if task_status not in [TaskStatus.RUNNING.value, TaskStatus.WAITING_APPROVAL.value]:
                 logger.warning("task_completion_invalid_status",
                               task_id=task_id,
                               current_status=task_status)
                 return False
-            
-            # Calculate duration
+
+            # Calculate duration for the agent execution claim.
             duration = None
             if task.started_at:
                 duration = (datetime.now(timezone.utc) - task.started_at).total_seconds()
-            
-            # Update task (serialize dicts/lists to JSON for sqlite)
+
+            now = datetime.now(timezone.utc)
+            current_payload = task.payload or {}
+            current_payload["completion_claim"] = {
+                "claimed_by": agent_id,
+                "claimed_at": now.isoformat(),
+                "result_summary": completion.result_summary,
+                "requires_verification": True,
+            }
+            if completion.metrics:
+                current_payload["completion_metrics"] = completion.metrics
+
+            # Agents do not self-close canonical task status. Their /complete call
+            # records output/artifacts and moves the task into an approval/quality-
+            # gate state for admin/human verification.
             update_data = {
-                "status": TaskStatus.COMPLETED.value,
-                "completed_at": datetime.now(timezone.utc),
+                "status": TaskStatus.WAITING_APPROVAL.value,
                 "result_summary": completion.result_summary,
                 "output": _json.dumps(completion.output or {}),
                 "artifact_ids": _json.dumps(completion.artifact_ids or []),
-                "duration_seconds": duration
+                "duration_seconds": duration,
+                "payload": _json.dumps(current_payload),
             }
 
-            # Add completion metrics to payload
-            if completion.metrics:
-                current_payload = task.payload or {}
-                current_payload["completion_metrics"] = completion.metrics
-                update_data["payload"] = _json.dumps(current_payload)
-            
             updated_task = self.task_repo.update(task_id, update_data)
             if not updated_task:
                 return False
-            
-            # Free up the agent
+
+            # Free up the agent once its completion claim is recorded.
             self.agent_repo.update(agent_id, {
                 "status": AgentStatus.IDLE.value,
                 "current_task": None
             })
-            
-            logger.info("task_completed_successfully", 
+
+            logger.info("task_completion_claim_recorded",
                        task_id=task_id,
                        agent_id=agent_id,
                        duration_seconds=duration)
-            
+
             return True
-        
         except Exception as e:
-            logger.error("task_completion_failed", 
+            logger.error("task_completion_failed",
                         task_id=task_id,
                         agent_id=agent_id,
                         error=str(e))
@@ -755,7 +761,8 @@ class TaskService:
     _ADMIN_TRANSITIONS: dict[str, set[str]] = {
         "queued":    {"claimed", "running", "cancelled"},
         "claimed":   {"queued", "running", "cancelled"},
-        "running":   {"queued", "completed", "failed", "cancelled"},
+        "running":   {"queued", "waiting_approval", "completed", "failed", "cancelled"},
+        "waiting_approval": {"queued", "running", "completed", "failed", "cancelled"},
         "completed": {"queued"},
         "failed":    {"queued"},
         "cancelled": {"queued"},

@@ -1,15 +1,15 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-17T14:04:00Z",
+  "timestamp": "2026-06-17T14:30:22Z",
   "context": "phase",
   "phase": "10",
   "phase_name": "Task Evidence Timeline + Verification Detail",
   "phase_dir": ".planning/phases/10-task-evidence-timeline",
   "plan": 10,
-  "task": "10-05",
+  "task": "10-06",
   "total_tasks": 6,
   "status": "in_progress",
-  "current_state": "Phase 10 is open. Slices 10-01 through 10-04 are complete, pushed, CI-verified, deployed, and live-smoked. Next implementation slice is 10-05 verification lifecycle + quality gate foundation.",
+  "current_state": "Phase 10 slices 10-01 through 10-04 are shipped. Slice 10-05 is locally implemented and verified; commit/push/CI/live closeout remains under 10-06.",
   "completed_tasks": [
     {
       "id": "09",
@@ -84,17 +84,36 @@
         "public dashboard bundle contains Evidence Timeline",
         "public unauthenticated GET /v1/tasks/smoke-task/timeline -> 401"
       ]
+    },
+    {
+      "id": "10-05",
+      "name": "Verification lifecycle + quality gate foundation",
+      "status": "complete-local",
+      "evidence": [
+        "app/models/tasks.py -> TaskVerificationState",
+        "app/services/task_verification_service.py -> TaskVerificationService",
+        "app/services/task_service.py -> completion claim moves to waiting_approval, no agent self-close",
+        "app/api/routes_tasks.py -> GET /v1/tasks/{task_id}/verification",
+        "tests/unit/test_task_verification_service.py -> focused service tests",
+        "tests/integration/test_task_verification_lifecycle.py -> HTTP lifecycle contract",
+        "tests/integration/test_task_lifecycle.py -> /complete waits for verification",
+        "web waiting_approval status/Kanban support",
+        "focused backend gate -> 11 passed",
+        "related backend gate -> 24 passed",
+        "full backend suite -> exit 0 with 9 expected Turso-vector skips",
+        "full frontend gate -> lint/typecheck/Vitest 50 passed/build",
+        "npm audit/dependency drift/GSD/diff/secret gates passed locally"
+      ]
     }
   ],
   "active_task": {
-    "id": "10-05",
-    "name": "Verification lifecycle + quality gate foundation",
+    "id": "10-06",
+    "name": "Full verification, live smoke, and closeout",
     "status": "next",
     "plan": ".planning/phases/10-task-evidence-timeline/10-PLAN.md"
   },
   "remaining_tasks": [
-    "10-05 \u2014 Verification lifecycle + quality gate foundation",
-    "10-06 \u2014 Full verification, live smoke, and closeout"
+    "10-06 — Full verification, live smoke, and closeout"
   ],
   "blockers": [],
   "human_actions_pending": [
@@ -116,21 +135,22 @@
   ],
   "resume_instructions": [
     "Start from /home/brunhilde/OpenHub and verify git status before mutating.",
-    "Start 10-05 with RED backend/service tests for verification lifecycle + quality_gate evidence semantics.",
+    "Commit and push the 10-05 branch if not already done.",
+    "Verify branch CI, then fast-forward/merge to master and verify master CI.",
+    "Restart openhub-api.service and live-smoke public health/dashboard/API auth routes before calling 10-06 complete.",
     "Do not let agent self-claims close work without verification.",
     "Do not add public evidence sharing in Phase 10.",
-    "Run focused/full gates, GSD health/consistency, secret scan, commit/push/CI/live proof before calling 10-05 shipped.",
     "Do not tag/release without explicit operator version and target."
   ],
   "verification": {
     "plan_file": ".planning/phases/10-task-evidence-timeline/10-PLAN.md",
     "continue_file": ".planning/phases/10-task-evidence-timeline/.continue-here.md",
-    "last_focused_validation": ".venv/bin/python -m pytest tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 8 passed",
-    "last_related_backend_validation": ".venv/bin/python -m pytest tests/unit/test_task_evidence_models.py tests/unit/test_task_evidence_repository.py tests/unit/test_task_trace_endpoint.py tests/integration/test_task_evidence_endpoints.py -q --tb=short -> 15 passed",
-    "last_full_validation": ".venv/bin/python -m pytest tests/ -x -q --tb=short -> exit 0, 9 expected Turso-vector skips",
-    "last_gsd_validation": "10-04: dependency drift passed; GSD health passed; GSD consistency passed; git diff --check passed; changed-file secret scan passed",
-    "last_ci_validation": "10-04: branch CI 27694168399 passed all jobs; master CI 27694461737 passed all jobs on 819ea2a",
-    "last_live_validation": "10-04: openhub-api.service restarted; local/public health -> 200; public /dashboard/tasks/smoke-task -> 200; public bundle contains Evidence Timeline; public unauthenticated /v1/tasks/smoke-task/timeline -> 401",
-    "last_frontend_validation": "10-04: focused route test -> 2 passed; full frontend gate -> lint/typecheck/Vitest 50 passed/build; npm audit -> 0 vulnerabilities"
+    "last_focused_validation": "10-05: service + HTTP lifecycle + existing lifecycle focused backend gate -> 11 passed",
+    "last_related_backend_validation": "10-05: evidence + verification + lifecycle related backend gate -> 24 passed",
+    "last_full_validation": "10-05: python -m pytest tests/ -q --tb=short -> exit 0, 9 expected Turso-vector skips",
+    "last_gsd_validation": "10-05: dependency drift, npm audit, GSD health/consistency, git diff --check, changed/untracked secret scan passed locally",
+    "last_ci_validation": "10-05: pending 10-06 closeout",
+    "last_live_validation": "10-05: pending 10-06 closeout",
+    "last_frontend_validation": "10-05: lint/typecheck/full Vitest 50 passed/build passed"
   }
 }

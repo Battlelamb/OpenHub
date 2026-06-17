@@ -1,5 +1,5 @@
 export type AgentStatus = 'online' | 'offline' | 'idle' | 'error'
-export type TaskStatus = 'queued' | 'claimed' | 'running' | 'completed' | 'failed' | 'cancelled'
+export type TaskStatus = 'queued' | 'claimed' | 'running' | 'waiting_approval' | 'completed' | 'failed' | 'cancelled'
 export type TaskPriority = 1 | 2 | 3 | 4 | 5
 
 export interface Agent {

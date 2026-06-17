@@ -12,11 +12,13 @@ from ..logging import get_logger
 from ..database.connection import get_database
 from ..services.task_service import TaskService
 from ..services.task_evidence_service import TaskEvidenceService, sanitize_task_payload
+from ..services.task_verification_service import TaskVerificationService
 from ..services.embedding_hooks import schedule_embedding
 from ..models.tasks import (
     Task, TaskCreate, TaskUpdate, TaskClaim, TaskComplete, TaskFail, TaskRecover,
     TaskProgress, TaskStatus, TaskPriority, TaskType, TaskResponse, TaskFilter,
     StaleTaskResponse, TaskEvidenceCreate, TaskEvidenceResponse, TaskTimelineItem,
+    TaskVerificationState,
 )
 from ..auth.dependencies import CurrentAgent, CurrentAdmin, get_current_admin
 from ..database.vector_availability import require_vector
@@ -38,6 +40,12 @@ def get_task_evidence_service() -> TaskEvidenceService:
     """Get task evidence service instance"""
     database = get_database()
     return TaskEvidenceService(database)
+
+
+def get_task_verification_service() -> TaskVerificationService:
+    """Get task verification service instance"""
+    database = get_database()
+    return TaskVerificationService(database)
 
 
 async def _broadcast_task_status(
@@ -444,6 +452,26 @@ async def get_task_timeline(
     return sorted([*evidence_items, *trace_items], key=_timeline_sort_key)
 
 
+@router.get(
+    "/{task_id}/verification",
+    response_model=TaskVerificationState,
+    summary="Get verification lifecycle state for a task",
+)
+async def get_task_verification(
+    task_id: str,
+    current_agent: CurrentAgent,
+    verification_service: TaskVerificationService = Depends(get_task_verification_service),
+) -> TaskVerificationState:
+    """Return derived verification state from task status and quality_gate evidence."""
+    state = verification_service.get_verification_state(task_id)
+    if state is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task '{task_id}' not found",
+        )
+    return state
+
+
 def _trace_row_to_span(r: Dict[str, Any]) -> Dict[str, Any]:
     """
     Map a trace_events row to the UI TraceSpan shape (see
@@ -647,12 +675,15 @@ async def complete_task(
     await _broadcast_task_status(
         request,
         task_id=task_id,
-        new_status=TaskStatus.COMPLETED.value,
+        new_status=TaskStatus.WAITING_APPROVAL.value,
         previous_status=TaskStatus.RUNNING.value,
         agent_id=current_agent.agent_id,
     )
 
-    return {"status": "completed", "message": "Task completed successfully"}
+    return {
+        "status": "waiting_approval",
+        "message": "Task completion claim recorded; verification required",
+    }
 
 
 @router.post("/{task_id}/fail")
@@ -972,7 +1003,7 @@ async def task_search_shortcut(req: SearchRequest) -> SearchResponse:
 
 class AdminStatusTransition(BaseModel):
     """Body for admin Kanban drag-drop status change."""
-    status: str = Field(description="Target status", pattern=r"^(queued|claimed|running|completed|failed|cancelled)$")
+    status: str = Field(description="Target status", pattern=r"^(queued|claimed|running|waiting_approval|completed|failed|cancelled)$")
 
 
 @router.patch(

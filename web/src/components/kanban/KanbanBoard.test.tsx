@@ -108,6 +108,17 @@ function mockTasks() {
             updated_at: '2026-05-21T10:00:00Z',
           },
           {
+            id: 'task-waiting-approval',
+            title: 'Waiting approval task',
+            description: 'Agent claim needs verification',
+            status: 'waiting_approval',
+            priority: 2,
+            assigned_agent_id: null,
+            requested_capabilities: ['review'],
+            created_at: '2026-05-21T10:00:00Z',
+            updated_at: '2026-05-21T10:06:00Z',
+          },
+          {
             id: 'task-cancelled',
             title: 'Cancelled task',
             description: 'Stopped by admin',
@@ -119,7 +130,7 @@ function mockTasks() {
             updated_at: '2026-05-21T10:05:00Z',
           },
         ],
-        total: 2,
+        total: 3,
         page: 1,
         limit: 100,
       })
@@ -156,11 +167,13 @@ describe('KanbanBoard', () => {
     renderWithQuery(<KanbanBoard />)
 
     expect(await screen.findByRole('heading', { name: 'Tasks' })).toBeInTheDocument()
-    for (const column of ['Queued', 'Claimed', 'Running', 'Completed', 'Failed', 'Cancelled']) {
+    for (const column of ['Queued', 'Claimed', 'Running', 'Waiting approval', 'Completed', 'Failed', 'Cancelled']) {
       expect(screen.getByText(column)).toBeInTheDocument()
     }
     expect(screen.getByText('Queued task')).toBeInTheDocument()
+    expect(screen.getByText('Waiting approval task')).toBeInTheDocument()
     expect(screen.getByText('Cancelled task')).toBeInTheDocument()
+    expect(screen.getByTestId('column-waiting_approval')).toContainElement(screen.getByText('Waiting approval task'))
     expect(screen.getByTestId('column-cancelled')).toContainElement(screen.getByText('Cancelled task'))
   })
 

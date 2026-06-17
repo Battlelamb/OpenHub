@@ -10,6 +10,7 @@ import {
   Inbox,
   Hand,
   PlayCircle,
+  Clock3,
   CheckCircle2,
   XCircle,
   LayoutGrid,
@@ -27,6 +28,7 @@ const COLUMNS: {
   { id: 'queued', title: 'Queued', icon: <Inbox className="h-4 w-4" />, color: 'text-zinc-400' },
   { id: 'claimed', title: 'Claimed', icon: <Hand className="h-4 w-4" />, color: 'text-violet-400' },
   { id: 'running', title: 'Running', icon: <PlayCircle className="h-4 w-4" />, color: 'text-sky-400' },
+  { id: 'waiting_approval', title: 'Waiting approval', icon: <Clock3 className="h-4 w-4" />, color: 'text-amber-400' },
   { id: 'completed', title: 'Completed', icon: <CheckCircle2 className="h-4 w-4" />, color: 'text-emerald-400' },
   { id: 'failed', title: 'Failed', icon: <XCircle className="h-4 w-4" />, color: 'text-red-400' },
   { id: 'cancelled', title: 'Cancelled', icon: <Ban className="h-4 w-4" />, color: 'text-amber-400' },
@@ -138,7 +140,7 @@ export function KanbanBoard() {
 
       {/* Kanban Board */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 gap-4 overflow-x-auto pb-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 overflow-x-auto pb-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7">
           {COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}

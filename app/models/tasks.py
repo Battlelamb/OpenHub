@@ -371,6 +371,32 @@ class TaskEvidenceResponse(IDMixin, TimestampMixin):
     occurred_at: datetime = Field(description="When the evidenced event occurred")
 
 
+class TaskVerificationState(BaseModel):
+    """Verification lifecycle DTO for a task's quality-gate state.
+
+    This does not mutate task status. It summarizes whether an agent completion
+    claim has enough quality-gate evidence for an admin/human to close the task.
+    """
+
+    task_id: str = Field(description="Task ID")
+    task_status: TaskStatus = Field(description="Canonical task status")
+    lifecycle_state: str = Field(
+        description="Derived verification state: not_started, in_progress, awaiting_quality_gate, quality_gate_passed, quality_gate_failed, skipped, completed, or terminal"
+    )
+    ready_for_completion: bool = Field(
+        description="True when the latest quality_gate evidence passed and the task awaits approval"
+    )
+    required_action: str = Field(description="Next operator/system action")
+    quality_gate_counts: Dict[str, int] = Field(
+        default_factory=lambda: {"passed": 0, "failed": 0, "skipped": 0, "unknown": 0},
+        description="Counts of quality_gate evidence by outcome",
+    )
+    latest_quality_gate: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Latest quality_gate evidence summary, if present",
+    )
+
+
 class TaskTimelineItem(BaseModel):
     """Safe internal task timeline item merging trace and evidence sources."""
 

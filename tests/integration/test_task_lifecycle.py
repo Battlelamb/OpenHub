@@ -153,7 +153,7 @@ def test_start_task(test_client, claim_agent):
 
 
 def test_complete_task_full_lifecycle(test_client, claim_agent):
-    """create -> claim -> start -> complete ends with status COMPLETED."""
+    """create -> claim -> start -> complete records an agent claim awaiting verification."""
     _, headers = claim_agent
 
     task_id = test_client.post(
@@ -179,10 +179,11 @@ def test_complete_task_full_lifecycle(test_client, claim_agent):
         headers=headers,
     )
     assert complete.status_code == 200, complete.text
-    assert complete.json()["status"] == "completed"
+    assert complete.json()["status"] == "waiting_approval"
 
     fetched = test_client.get(f"/v1/tasks/{task_id}", headers=headers)
-    assert fetched.json()["status"] == "completed"
+    assert fetched.json()["status"] == "waiting_approval"
+    assert fetched.json()["completed_at"] is None
 
 
 def test_fail_task_non_retryable(test_client, claim_agent):
