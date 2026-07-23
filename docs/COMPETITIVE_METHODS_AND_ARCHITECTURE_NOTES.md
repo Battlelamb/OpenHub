@@ -331,6 +331,40 @@ Avoid:
 - Do not let a quality sidecar mutate protected lint/config files without explicit policy.
 - Do not accept “Plankton passed” as the whole review for risky auth, database, deployment, or secrets work.
 
+### 14. Contract-first operability reference
+
+Benchmark: Google Cloud Platform Online Boutique / `GoogleCloudPlatform/microservices-demo`, inspected at commit `9a4616e77f0f9cbcbecaf27d711c38890dda1404` on 2026-07-23.
+
+Online Boutique is useful to OpenHub as an **operability and delivery reference**, not as a service-decomposition template. The repository demonstrates versioned gRPC/Protocol Buffer boundaries, workload-specific health probes, restrictive container security contexts, composable deployment variations, a persistent load generator, and a pull-request workflow that builds and deploys an isolated namespace before traffic-based smoke verification.
+
+Patterns worth adapting:
+
+- **Contract-first adapters:** keep OpenHub's REST/MCP/WebSocket and event schemas versioned, then require bridge/provider compatibility fixtures at every boundary. Protocol Buffers are evidence for the pattern, not a decision to replace current OpenHub protocols.
+- **Dependency-aware health:** component readiness must describe the component being probed; aggregate health must not hide ACN, task, persistence, or bridge failures behind one process-level `200`.
+- **Restricted runtime defaults:** non-root execution, dropped Linux capabilities, read-only root filesystems, explicit service accounts, and bounded resource requests/limits are the right deployment posture where the runtime supports them.
+- **Composable optional capabilities:** observability, network policy, external persistence, and public exposure should remain explicit deployment features rather than forks of the base application.
+- **Realistic verification traffic:** a durable scenario driver is more valuable than a single health request. OpenHub's reference flow should connect an agent, create and claim a task, submit evidence, enter `waiting_approval`, verify, and confirm API/database/dashboard convergence.
+- **Disposable integration environments:** when deployment scale justifies them, isolate preview runs by namespace or equivalent environment, wait for every required component, run the reference flow, capture evidence, and tear the environment down.
+
+Do not copy:
+
+- the broad polyglot microservice split; OpenHub's Python control-plane ownership and function-specific edge-language ADR remain authoritative;
+- GKE/Kubernetes as a mandatory local or self-hosted topology;
+- unauthenticated demo behavior, mock business operations, insecure baseline service transport, or test coverage that relies on deployment smoke for languages lacking focused unit tests;
+- configuration practices that substitute provider secrets directly into committed/rendered YAML.
+
+OpenHub-specific conclusion:
+
+> Borrow the contracts, probes, isolation, scenario traffic, and deployment evidence. Do not borrow the topology merely because the reference is called a microservices demo.
+
+Primary sources:
+
+- https://github.com/GoogleCloudPlatform/microservices-demo/tree/9a4616e77f0f9cbcbecaf27d711c38890dda1404
+- https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/9a4616e77f0f9cbcbecaf27d711c38890dda1404/kubernetes-manifests/checkoutservice.yaml
+- https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/9a4616e77f0f9cbcbecaf27d711c38890dda1404/.github/workflows/ci-pr.yaml
+- https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/9a4616e77f0f9cbcbecaf27d711c38890dda1404/kustomize/README.md
+- https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/9a4616e77f0f9cbcbecaf27d711c38890dda1404/kustomize/components/shopping-assistant/README.md
+
 ## Language / microservice architecture guidance
 
 OpenHub should stay coherent at the core, but allow function-specific language choices where the job clearly benefits.
